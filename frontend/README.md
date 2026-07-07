@@ -1,56 +1,81 @@
-# Welcome to your Expo app 👋
+# Simplifix
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+AI-assisted complaint management for residential communities — one app for residents, facility employees, maintenance staff, and facility managers.
 
-## Get started
+## What it does
 
-1. Install dependencies
+Simplifix streamlines the maintenance-complaint lifecycle for a residential community:
 
-   ```bash
-   npm install
-   ```
+- **Residents** file complaints (plumbing, electrical, etc.) with AI-assisted category/priority suggestions, attach photos or videos, and track status through to resolution.
+- **Facility employees** triage incoming complaints and assign them to maintenance staff.
+- **Maintenance staff** work through their assigned jobs and update progress.
+- **Facility managers** get a portfolio-wide view of history and team performance.
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Getting started
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then, in the terminal:
 
-### Other setup steps
+- Press `i` — open in iOS Simulator
+- Press `a` — open in Android Emulator
+- Press `w` — open in a web browser
+- Scan the QR code with the **Expo Go** app on your phone (same Wi-Fi network)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+No environment variables or API keys are needed — the app runs entirely on local mock data (`src/data`) and on-device storage (`AsyncStorage`).
 
-## Learn more
+### Try it without creating an account
 
-To learn more about developing your project with Expo, look at the following resources:
+On the login screen, tap any of the listed demo accounts to jump straight into the app as a Resident, Facility Employee, Maintenance Staff, or Facility Manager.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Project structure
 
-## Join the community
+```
+frontend/
+├─ src/
+│  ├─ app/                 # Expo Router screens (file-based routing)
+│  │  ├─ (auth)/           # Welcome, login, register
+│  │  ├─ (resident)/       # Resident tabs, complaint detail, new complaint
+│  │  ├─ (employee)/       # Facility employee tabs, complaint detail
+│  │  ├─ (maintenance)/    # Maintenance staff tabs, job detail
+│  │  └─ (manager)/        # Facility manager tabs, complaint detail
+│  ├─ components/
+│  │  ├─ ui/               # Design-system primitives (Button, Card, Badge, Chip, ...)
+│  │  └─ shared/           # Domain components built on the UI kit (TicketCard, CommentsThread, ...)
+│  ├─ store/                # Zustand stores (auth, tickets, notifications), persisted to AsyncStorage
+│  ├─ data/                 # Mock/seed data and complaint categories
+│  ├─ types/                 # Shared TypeScript types
+│  ├─ utils/                 # Date, id, mock-AI, and overdue helpers
+│  └─ constants/theme.ts     # Design tokens: colors, spacing, radius, type scale, shadows
+├─ app.json
+├─ metro.config.js
+└─ package.json
+```
 
-Join our community of developers creating universal apps.
+## Roles
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+| Role | Route group | Can do |
+|---|---|---|
+| Resident | `(resident)` | File complaints, track status, view history |
+| Facility Employee | `(employee)` | Triage complaints, assign to maintenance staff |
+| Maintenance Staff | `(maintenance)` | View and update assigned jobs |
+| Facility Manager | `(manager)` | Portfolio-wide history and performance view |
+
+## Tech stack
+
+- [Expo](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing)
+- React Native + TypeScript
+- [Zustand](https://zustand.docs.pmnd.rs/) for state, persisted via `AsyncStorage`
+
+## Scripts
+
+- `npm run start` — start the Metro dev server
+- `npm run ios` / `npm run android` / `npm run web` — start and open a specific platform
+- `npm run lint` — run ESLint
+
+## Notes
+
+- `metro.config.js` disables Metro's package-exports resolution. This is required because Zustand's ESM build otherwise crashes the web bundle with `Cannot use 'import.meta' outside a module` — Metro's web target doesn't support `import.meta`. See [expo/expo#36384](https://github.com/expo/expo/issues/36384) for background.
