@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
   { href: '/(manager)/(tabs)', label: 'Analytics', icon: 'stats-chart', match: (p) => p === '/' },
+  { href: '/(manager)/(tabs)/requests', label: 'Requests', icon: 'person-add', match: (p) => p === '/requests' },
   { href: '/(manager)/(tabs)/performance', label: 'Performance', icon: 'ribbon', match: (p) => p === '/performance' },
   {
     href: '/(manager)/(tabs)/history',

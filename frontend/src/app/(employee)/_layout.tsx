@@ -23,6 +23,7 @@ export default function EmployeeLayout() {
   const isDesktop = useIsDesktop();
 
   if (!user || user.role !== 'facility_employee') return <Redirect href="/(auth)/welcome" />;
+  if (user.accountStatus !== 'active') return <Redirect href="/(auth)/pending-approval" />;
 
   if (isDesktop) {
     return (

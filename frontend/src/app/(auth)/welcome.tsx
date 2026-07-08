@@ -3,9 +3,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import HouseLogo from '@/assets/images/house_logo-house-white.svg';
 import { Button } from '@/components/ui/Button';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -28,9 +29,7 @@ export default function WelcomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.hero}>
           <View style={styles.brandMark}>
-            {/* <Ionicons name="build" size={28} color={Colors.white} /> */}
-            <Image source={require('@/assets/images/house_logo-house-white.svg')} style={{ width: 40, height: 40 }} />
-
+            <HouseLogo width={40} height={40} />
           </View>
           <Text style={styles.brand}>Simplifix</Text>
           <Text style={styles.tagline}>AI-assisted complaint management for residential communities.</Text>
@@ -52,7 +51,7 @@ export default function WelcomeScreen() {
           <View style={styles.actions}>
             <Button label="Log In" onPress={() => router.push('/(auth)/login')} fullWidth size="lg" />
             <Button
-              label="Create a Resident Account"
+              label="Create an Account"
               onPress={() => router.push('/(auth)/register')}
               variant="outline"
               fullWidth

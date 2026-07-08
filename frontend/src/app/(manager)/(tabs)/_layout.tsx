@@ -27,6 +27,10 @@ export default function ManagerTabsLayout() {
         options={{ title: 'Analytics', tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} /> }}
       />
       <Tabs.Screen
+        name="requests"
+        options={{ title: 'Requests', tabBarIcon: ({ color, size }) => <Ionicons name="person-add" size={size} color={color} /> }}
+      />
+      <Tabs.Screen
         name="performance"
         options={{ title: 'Performance', tabBarIcon: ({ color, size }) => <Ionicons name="ribbon" size={size} color={color} /> }}
       />

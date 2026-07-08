@@ -96,7 +96,7 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>New resident?</Text>
+          <Text style={styles.footerText}>New here?</Text>
           <Text style={styles.footerLink} onPress={() => router.push('/(auth)/register')}>
             Create an account
           </Text>
