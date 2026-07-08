@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
@@ -23,7 +23,9 @@ export default function WelcomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.hero}>
           <View style={styles.brandMark}>
-            <Ionicons name="build" size={28} color={Colors.white} />
+            {/* <Ionicons name="build" size={28} color={Colors.white} /> */}
+            <Image source={require('@/assets/images/house_logo-house-white.svg')} style={{ width: 40, height: 40 }} />
+
           </View>
           <Text style={styles.brand}>Simplifix</Text>
           <Text style={styles.tagline}>AI-assisted complaint management for residential communities.</Text>
