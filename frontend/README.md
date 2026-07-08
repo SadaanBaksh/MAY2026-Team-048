@@ -1,19 +1,22 @@
-# Simplifix
+# Simplifix Frontend
 
-AI-assisted complaint management for residential communities — one app for residents, facility employees, maintenance staff, and facility managers.
+This README is only for the `frontend/` Expo React Native app of Simplifix. For the complete project overview, planned backend, AI integrations, and team details, see the root [`README.md`](../README.md).
 
-## What it does
+Simplifix is an AI-assisted complaint management app for residential communities, with role-based mobile experiences for residents, facility employees, maintenance staff, and facility managers.
 
-Simplifix streamlines the maintenance-complaint lifecycle for a residential community:
+## What This Frontend Does
+
+The current frontend streamlines the maintenance-complaint lifecycle for a residential community:
 
 - **Residents** file complaints (plumbing, electrical, etc.) with AI-assisted category/priority suggestions, attach photos or videos, and track status through to resolution.
 - **Facility employees** triage incoming complaints and assign them to maintenance staff.
 - **Maintenance staff** work through their assigned jobs and update progress.
 - **Facility managers** get a portfolio-wide view of history and team performance.
 
-## Getting started
+## Frontend Setup
 
 ```bash
+cd frontend
 npm install
 npx expo start
 ```
@@ -25,13 +28,13 @@ Then, in the terminal:
 - Press `w` — open in a web browser
 - Scan the QR code with the **Expo Go** app on your phone (same Wi-Fi network)
 
-No environment variables or API keys are needed — the app runs entirely on local mock data (`src/data`) and on-device storage (`AsyncStorage`).
+No environment variables or API keys are needed for the current frontend. The app runs entirely on local mock data (`src/data`) and on-device storage (`AsyncStorage`).
 
 ### Try it without creating an account
 
 On the login screen, tap any of the listed demo accounts to jump straight into the app as a Resident, Facility Employee, Maintenance Staff, or Facility Manager.
 
-## Project structure
+## Frontend Project Structure
 
 ```
 frontend/
@@ -64,13 +67,15 @@ frontend/
 | Maintenance Staff | `(maintenance)` | View and update assigned jobs |
 | Facility Manager | `(manager)` | Portfolio-wide history and performance view |
 
-## Tech stack
+## Frontend Tech Stack
 
 - [Expo](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing)
 - React Native + TypeScript
 - [Zustand](https://zustand.docs.pmnd.rs/) for state, persisted via `AsyncStorage`
 
-## Scripts
+## Frontend Scripts
+
+Run these commands from the `frontend/` directory.
 
 - `npm run start` — start the Metro dev server
 - `npm run ios` / `npm run android` / `npm run web` — start and open a specific platform
