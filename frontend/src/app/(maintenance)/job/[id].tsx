@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -18,12 +18,14 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { APARTMENTS } from '@/data/seed';
 import { getCategoryById } from '@/data/categories';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { formatFullDate } from '@/utils/date';
 
 export default function MaintenanceJobDetailScreen() {
+  const { Colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
@@ -38,6 +40,8 @@ export default function MaintenanceJobDetailScreen() {
   const [proofUri, setProofUri] = useState<string | null>(null);
 
   const ticket = tickets.find((t) => t.ticketId === id);
+
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   if (!ticket) {
     return (
@@ -207,96 +211,97 @@ export default function MaintenanceJobDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  titleBlock: {
-    gap: Spacing.xs,
-  },
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  sectionLabel: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 4,
-  },
-  body: {
-    ...Type.body,
-    color: Colors.ink,
-  },
-  personCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  personInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  personName: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  personMeta: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  resolveCard: {
-    gap: Spacing.sm,
-  },
-  remarksInput: {
-    backgroundColor: Colors.surfaceMuted,
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    minHeight: 80,
-    color: Colors.ink,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    textAlignVertical: 'top',
-  },
-  proofPlaceholder: {
-    height: 100,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-  },
-  mediaActions: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  flexButton: {
-    flex: 1,
-  },
-  proofWrap: {
-    marginTop: Spacing.sm,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionTitleLg: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  helper: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-    marginTop: -Spacing.xs,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    titleBlock: {
+      gap: Spacing.xs,
+    },
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    sectionLabel: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginBottom: 4,
+    },
+    body: {
+      ...Type.body,
+      color: Colors.ink,
+    },
+    personCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    personInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    personName: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    personMeta: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    resolveCard: {
+      gap: Spacing.sm,
+    },
+    remarksInput: {
+      backgroundColor: Colors.surfaceMuted,
+      borderRadius: Radius.md,
+      padding: Spacing.sm,
+      minHeight: 80,
+      color: Colors.ink,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: Colors.border,
+      textAlignVertical: 'top',
+    },
+    proofPlaceholder: {
+      height: 100,
+      borderRadius: Radius.md,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+      borderStyle: 'dashed',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    placeholderText: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+    },
+    mediaActions: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    flexButton: {
+      flex: 1,
+    },
+    proofWrap: {
+      marginTop: Spacing.sm,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionTitleLg: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    helper: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+      marginTop: -Spacing.xs,
+    },
+  });

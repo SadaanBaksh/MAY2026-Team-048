@@ -1,4 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -15,12 +16,15 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { APARTMENTS } from '@/data/seed';
 import { getCategoryById } from '@/data/categories';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { formatFullDate } from '@/utils/date';
 
 export default function ManagerComplaintAuditScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
@@ -125,60 +129,61 @@ export default function ManagerComplaintAuditScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  titleBlock: {
-    gap: Spacing.xs,
-  },
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  sectionLabel: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 4,
-  },
-  body: {
-    ...Type.body,
-    color: Colors.ink,
-  },
-  peopleRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  personCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  personInfo: {
-    flex: 1,
-    gap: 1,
-  },
-  personName: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  personMeta: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionTitleLg: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    titleBlock: {
+      gap: Spacing.xs,
+    },
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    sectionLabel: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginBottom: 4,
+    },
+    body: {
+      ...Type.body,
+      color: Colors.ink,
+    },
+    peopleRow: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    personCard: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    personInfo: {
+      flex: 1,
+      gap: 1,
+    },
+    personName: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    personMeta: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionTitleLg: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+  });

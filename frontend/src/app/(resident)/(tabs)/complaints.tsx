@@ -6,13 +6,16 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TicketCard } from '@/components/shared/TicketCard';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 
 type Segment = 'active' | 'history';
 
 export default function ResidentComplaintsScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser)!;
   const tickets = useTicketStore((s) => s.tickets);
   const [segment, setSegment] = useState<Segment>('active');
@@ -59,7 +62,7 @@ export default function ResidentComplaintsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   title: {
     ...Type.title,
     color: Colors.ink,

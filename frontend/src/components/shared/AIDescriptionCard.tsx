@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { PriorityBadge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { CategoryPicker } from '@/components/shared/CategoryPicker';
 import { PriorityPicker } from '@/components/shared/PriorityPicker';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
 import { getCategoryById } from '@/data/categories';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { Priority } from '@/types';
 
 export interface AIDescriptionCardProps {
@@ -30,6 +32,8 @@ export function AIDescriptionCard({
   onChangeCategory,
   onChangePriority,
 }: AIDescriptionCardProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const category = getCategoryById(categoryId);
 
   return (
@@ -85,80 +89,81 @@ export function AIDescriptionCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: Spacing.sm,
-    backgroundColor: Colors.primarySoft,
-    borderColor: Colors.primaryTint,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  sparkleWrap: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    ...Type.captionBold,
-    color: Colors.primaryDark,
-  },
-  confidence: {
-    ...Type.tiny,
-    color: Colors.primaryDark,
-  },
-  confidenceTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.primaryTint,
-    overflow: 'hidden',
-  },
-  confidenceFill: {
-    height: '100%',
-    backgroundColor: Colors.primary,
-    borderRadius: 2,
-  },
-  description: {
-    ...Type.body,
-    color: Colors.ink,
-  },
-  descriptionInput: {
-    ...Type.body,
-    color: Colors.ink,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    minHeight: 88,
-    textAlignVertical: 'top',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-  },
-  section: {
-    gap: 6,
-  },
-  sectionLabel: {
-    ...Type.tiny,
-    color: Colors.primaryDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  readonlyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  readonlyText: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      gap: Spacing.sm,
+      backgroundColor: Colors.primarySoft,
+      borderColor: Colors.primaryTint,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    sparkleWrap: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: Colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      ...Type.captionBold,
+      color: Colors.primaryDark,
+    },
+    confidence: {
+      ...Type.tiny,
+      color: Colors.primaryDark,
+    },
+    confidenceTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: Colors.primaryTint,
+      overflow: 'hidden',
+    },
+    confidenceFill: {
+      height: '100%',
+      backgroundColor: Colors.primary,
+      borderRadius: 2,
+    },
+    description: {
+      ...Type.body,
+      color: Colors.ink,
+    },
+    descriptionInput: {
+      ...Type.body,
+      color: Colors.ink,
+      backgroundColor: Colors.surface,
+      borderRadius: Radius.md,
+      padding: Spacing.sm,
+      minHeight: 88,
+      textAlignVertical: 'top',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: Colors.border,
+    },
+    section: {
+      gap: 6,
+    },
+    sectionLabel: {
+      ...Type.tiny,
+      color: Colors.primaryDark,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    readonlyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    readonlyText: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+  });

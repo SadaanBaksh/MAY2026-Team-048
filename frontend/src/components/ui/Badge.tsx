@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { PriorityColors, Radius, StatusColors, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import type { Priority, TicketStatus } from '@/types';
 
 export function Badge({ label, color, background }: { label: string; color: string; background: string }) {
@@ -22,6 +23,7 @@ const STATUS_LABELS: Record<TicketStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
+  const { StatusColors } = useTheme();
   const c = StatusColors[status];
   return (
     <View style={[styles.base, styles.withDot, { backgroundColor: c.soft }]}>
@@ -32,6 +34,7 @@ export function StatusBadge({ status }: { status: TicketStatus }) {
 }
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
+  const { PriorityColors } = useTheme();
   const c = PriorityColors[priority];
   return (
     <View style={[styles.base, styles.withDot, { backgroundColor: c.soft }]}>

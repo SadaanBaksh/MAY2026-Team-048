@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -17,12 +17,15 @@ import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { getCategoryById } from '@/data/categories';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { formatFullDate } from '@/utils/date';
 
 export default function ResidentComplaintDetailScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
@@ -180,7 +183,7 @@ export default function ResidentComplaintDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: Colors.surfaceMuted,

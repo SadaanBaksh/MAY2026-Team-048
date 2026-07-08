@@ -1,12 +1,13 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Chip } from '@/components/ui/Chip';
-import { PriorityColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import type { Priority } from '@/types';
 
 const PRIORITIES: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
 
 export function PriorityPicker({ value, onChange }: { value: Priority; onChange: (priority: Priority) => void }) {
+  const { PriorityColors } = useTheme();
   return (
     <View style={styles.row}>
       {PRIORITIES.map((p) => (

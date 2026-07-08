@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ComponentProps } from 'react';
+import { ComponentProps, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface EmptyStateProps {
   icon: ComponentProps<typeof Ionicons>['name'];
@@ -14,6 +15,8 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   return (
     <View style={styles.wrapper}>
       <View style={styles.iconWrap}>
@@ -30,7 +33,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     paddingVertical: Spacing.xxl,

@@ -7,18 +7,21 @@ import { Card } from '@/components/ui/Card';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
-import { Colors, Type } from '@/constants/theme';
+import { Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { MaintenanceStaff } from '@/types';
 
 export default function MaintenanceProfileScreen() {
+  const { Colors } = useTheme();
   const user = useAuthStore((s) => s.currentUser) as MaintenanceStaff;
   const logout = useAuthStore((s) => s.logout);
   const tickets = useTicketStore((s) => s.tickets);
 
   const jobs = useMemo(() => tickets.filter((t) => t.workerId === user.userId), [tickets, user.userId]);
   const completed = jobs.filter((t) => t.status === 'Resolved' || t.status === 'Closed');
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   const handleLogout = () => {
     logout();
@@ -52,31 +55,32 @@ export default function MaintenanceProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
-    backgroundColor: Colors.border,
-  },
-  statValue: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  statLabel: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    statsCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statItem: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 4,
+    },
+    statDivider: {
+      width: StyleSheet.hairlineWidth,
+      alignSelf: 'stretch',
+      backgroundColor: Colors.border,
+    },
+    statValue: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    statLabel: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+  });

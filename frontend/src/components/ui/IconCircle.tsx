@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export interface IconCircleProps {
   name: ComponentProps<typeof Ionicons>['name'];
@@ -11,7 +11,9 @@ export interface IconCircleProps {
   size?: number;
 }
 
-export function IconCircle({ name, color = Colors.primary, background, size = 40 }: IconCircleProps) {
+export function IconCircle({ name, color, background, size = 40 }: IconCircleProps) {
+  const { Colors } = useTheme();
+  color = color ?? Colors.primary;
   return (
     <View
       style={[

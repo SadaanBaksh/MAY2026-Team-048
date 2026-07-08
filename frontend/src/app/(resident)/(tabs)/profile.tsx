@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -6,12 +7,15 @@ import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
 import { APARTMENTS } from '@/data/seed';
-import { Colors, Type } from '@/constants/theme';
+import { Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Resident } from '@/types';
 
 export default function ResidentProfileScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser) as Resident;
   const logout = useAuthStore((s) => s.logout);
   const tickets = useTicketStore((s) => s.tickets).filter((t) => t.residentId === user.userId);
@@ -44,7 +48,7 @@ export default function ResidentProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   title: {
     ...Type.title,
     color: Colors.ink,

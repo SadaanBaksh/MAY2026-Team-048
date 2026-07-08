@@ -1,15 +1,17 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { APARTMENTS } from '@/data/seed';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { MaintenanceStaff } from '@/types';
@@ -17,6 +19,7 @@ import type { MaintenanceStaff } from '@/types';
 type Segment = 'active' | 'completed';
 
 export default function MaintenanceJobsScreen() {
+  const { Colors } = useTheme();
   const user = useAuthStore((s) => s.currentUser) as MaintenanceStaff;
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
@@ -41,15 +44,20 @@ export default function MaintenanceJobsScreen() {
     return `${resident.name} · ${apt ? apt.unitNumber : ''}`;
   };
 
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
+
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Avatar name={user.name} color={user.avatarColor} size={44} />
-          <View>
-            <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
-            <Text style={styles.role}>{user.specialization}</Text>
-          </View>
+          <BurgerMenu />
+          <Pressable style={styles.headerProfile} onPress={() => router.push('/(maintenance)/(tabs)/profile')}>
+            <Avatar name={user.name} color={user.avatarColor} size={44} />
+            <View>
+              <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
+              <Text style={styles.role}>{user.specialization}</Text>
+            </View>
+          </Pressable>
         </View>
         <NotificationBell userId={user.userId} onPress={() => router.push('/(maintenance)/notifications')} />
       </View>
@@ -85,26 +93,32 @@ export default function MaintenanceJobsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  greeting: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  role: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    headerProfile: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    greeting: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    role: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+  });

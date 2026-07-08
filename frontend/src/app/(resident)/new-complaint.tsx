@@ -12,7 +12,8 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { MediaThumb } from '@/components/shared/MediaThumb';
 import { getCategoryById } from '@/data/categories';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { MediaType, Priority } from '@/types';
@@ -28,6 +29,8 @@ function buildTitle(categoryName: string, note: string): string {
 }
 
 export default function NewComplaintScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser)!;
   const submitComplaint = useTicketStore((s) => s.submitComplaint);
 
@@ -247,7 +250,7 @@ export default function NewComplaintScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: Colors.surfaceMuted,

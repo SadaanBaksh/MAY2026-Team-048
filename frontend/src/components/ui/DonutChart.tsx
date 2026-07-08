@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface DonutDatum {
   label: string;
@@ -18,6 +20,8 @@ export interface DonutChartProps {
 }
 
 export function DonutChart({ data, size = 150, strokeWidth = 18, centerLabel, centerValue }: DonutChartProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
@@ -83,7 +87,7 @@ export function DonutChart({ data, size = 150, strokeWidth = 18, centerLabel, ce
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
     alignItems: 'center',

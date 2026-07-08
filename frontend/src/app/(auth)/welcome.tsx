@@ -2,11 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 const ROLE_HIGHLIGHTS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { icon: 'home-outline', label: 'Residents' },
@@ -16,6 +18,9 @@ const ROLE_HIGHLIGHTS: { icon: keyof typeof Ionicons.glyphMap; label: string }[]
 ];
 
 export default function WelcomeScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -58,7 +63,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },

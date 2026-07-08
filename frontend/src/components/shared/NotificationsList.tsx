@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { IconCircle } from '@/components/ui/IconCircle';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { AppNotification } from '@/types';
 import { timeAgo } from '@/utils/date';
 
@@ -13,6 +15,9 @@ export interface NotificationsListProps {
 }
 
 export function NotificationsList({ notifications, onPressItem }: NotificationsListProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
+
   if (notifications.length === 0) {
     return <EmptyState icon="notifications-outline" title="No notifications" message="You're all caught up." />;
   }
@@ -50,51 +55,52 @@ export function NotificationsList({ notifications, onPressItem }: NotificationsL
   );
 }
 
-const styles = StyleSheet.create({
-  list: {
-    gap: 2,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-    borderRadius: 12,
-  },
-  rowUnread: {
-    backgroundColor: Colors.primarySoft,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  body: {
-    flex: 1,
-    gap: 2,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  title: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-    flexShrink: 1,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-  },
-  message: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  time: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    marginTop: 2,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    list: {
+      gap: 2,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.xs,
+      borderRadius: 12,
+    },
+    rowUnread: {
+      backgroundColor: Colors.primarySoft,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    body: {
+      flex: 1,
+      gap: 2,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    title: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+      flexShrink: 1,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: Colors.primary,
+    },
+    message: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    time: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      marginTop: 2,
+    },
+  });

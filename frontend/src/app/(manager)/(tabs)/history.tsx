@@ -8,7 +8,8 @@ import { Screen } from '@/components/ui/Screen';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { APARTMENTS } from '@/data/seed';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { TicketStatus } from '@/types';
@@ -17,6 +18,8 @@ type StatusFilter = 'All' | TicketStatus;
 const STATUS_FILTERS: StatusFilter[] = ['All', 'Pending', 'Assigned', 'In_Progress', 'Resolved', 'Closed'];
 
 export default function ManagerHistoryScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
   const [query, setQuery] = useState('');
@@ -76,16 +79,17 @@ export default function ManagerHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+  });

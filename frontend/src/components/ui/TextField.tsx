@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ComponentProps, useState } from 'react';
+import { ComponentProps, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface TextFieldProps extends TextInputProps {
   label?: string;
@@ -12,6 +13,8 @@ export interface TextFieldProps extends TextInputProps {
 }
 
 export function TextField({ label, error, icon, secure, style, ...rest }: TextFieldProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(!!secure);
 
@@ -54,42 +57,43 @@ export function TextField({ label, error, icon, secure, style, ...rest }: TextFi
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    gap: 6,
-  },
-  label: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surfaceMuted,
-    paddingHorizontal: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  inputRowFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.surface,
-  },
-  inputRowError: {
-    borderColor: Colors.danger,
-  },
-  icon: {
-    marginRight: 2,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 13,
-    fontSize: 15,
-    color: Colors.ink,
-  },
-  error: {
-    ...Type.caption,
-    color: Colors.danger,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      gap: 6,
+    },
+    label: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: Colors.border,
+      borderRadius: Radius.md,
+      backgroundColor: Colors.surfaceMuted,
+      paddingHorizontal: Spacing.sm,
+      gap: Spacing.xs,
+    },
+    inputRowFocused: {
+      borderColor: Colors.primary,
+      backgroundColor: Colors.surface,
+    },
+    inputRowError: {
+      borderColor: Colors.danger,
+    },
+    icon: {
+      marginRight: 2,
+    },
+    input: {
+      flex: 1,
+      paddingVertical: 13,
+      fontSize: 15,
+      color: Colors.ink,
+    },
+    error: {
+      ...Type.caption,
+      color: Colors.danger,
+    },
+  });

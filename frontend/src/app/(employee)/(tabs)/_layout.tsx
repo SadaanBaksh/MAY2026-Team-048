@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function EmployeeTabsLayout() {
+  const { Colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.inkTertiary,
-        tabBarStyle: { borderTopColor: Colors.border },
+        tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
       }}>
       <Tabs.Screen
         name="index"
@@ -32,6 +33,7 @@ export default function EmployeeTabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          href: null,
         }}
       />
     </Tabs>

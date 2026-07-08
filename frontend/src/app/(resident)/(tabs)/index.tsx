@@ -8,15 +8,19 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
+import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { APARTMENTS } from '@/data/seed';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Resident } from '@/types';
 
 export default function ResidentHomeScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser) as Resident;
   const tickets = useTicketStore((s) => s.tickets);
 
@@ -38,11 +42,14 @@ export default function ResidentHomeScreen() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Avatar name={user.name} color={user.avatarColor} size={44} />
-          <View>
-            <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
-            <Text style={styles.unit}>{apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}</Text>
-          </View>
+          <BurgerMenu />
+          <Pressable style={styles.headerProfile} onPress={() => router.push('/(resident)/(tabs)/profile')}>
+            <Avatar name={user.name} color={user.avatarColor} size={44} />
+            <View>
+              <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
+              <Text style={styles.unit}>{apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}</Text>
+            </View>
+          </Pressable>
         </View>
         <NotificationBell userId={user.userId} onPress={() => router.push('/(resident)/notifications')} />
       </View>
@@ -111,13 +118,19 @@ export default function ResidentHomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerProfile: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
