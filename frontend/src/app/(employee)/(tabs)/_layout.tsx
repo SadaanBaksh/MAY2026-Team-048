@@ -1,10 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Slot, Tabs } from 'expo-router';
 
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function EmployeeTabsLayout() {
   const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
+
+  // On desktop, the parent (employee)/_layout.tsx renders the persistent sidebar;
+  // this layout just needs to hand off to whichever tab screen is active.
+  if (isDesktop) {
+    return <Slot />;
+  }
+
   return (
     <Tabs
       screenOptions={{
