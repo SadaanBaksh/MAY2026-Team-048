@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export interface RatingStarsProps {
   value: number;
@@ -12,6 +12,7 @@ export interface RatingStarsProps {
 }
 
 export function RatingStars({ value, onChange, size = 22, readOnly }: RatingStarsProps) {
+  const { Colors } = useTheme();
   const stars = [1, 2, 3, 4, 5];
   return (
     <View style={styles.row}>

@@ -8,7 +8,8 @@ import { Screen } from '@/components/ui/Screen';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { APARTMENTS } from '@/data/seed';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { TicketStatus } from '@/types';
@@ -19,6 +20,7 @@ type StatusFilter = 'All' | TicketStatus;
 const STATUS_FILTERS: StatusFilter[] = ['All', 'Pending', 'Assigned', 'In_Progress', 'Resolved', 'Closed'];
 
 export default function EmployeeComplaintsScreen() {
+  const { Colors } = useTheme();
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
 
@@ -50,6 +52,8 @@ export default function EmployeeComplaintsScreen() {
       .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickets, statusFilter, overdueOnly, query, users]);
+
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   return (
     <Screen edges={['top']}>
@@ -86,16 +90,17 @@ export default function EmployeeComplaintsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+  });

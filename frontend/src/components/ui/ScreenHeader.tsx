@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface ScreenHeaderProps {
   title: string;
@@ -15,6 +16,8 @@ export interface ScreenHeaderProps {
 }
 
 export function ScreenHeader({ title, subtitle, showBack, onBack, right }: ScreenHeaderProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.row}>
@@ -46,43 +49,44 @@ export function ScreenHeader({ title, subtitle, showBack, onBack, right }: Scree
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: Colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minHeight: 52,
-  },
-  left: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    flexShrink: 1,
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -Spacing.xs,
-  },
-  titleBlock: {
-    flexShrink: 1,
-  },
-  title: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  subtitle: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-    marginTop: 1,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      backgroundColor: Colors.surface,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: Colors.border,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      minHeight: 52,
+    },
+    left: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+      flexShrink: 1,
+    },
+    backButton: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: -Spacing.xs,
+    },
+    titleBlock: {
+      flexShrink: 1,
+    },
+    title: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    subtitle: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+      marginTop: 1,
+    },
+  });

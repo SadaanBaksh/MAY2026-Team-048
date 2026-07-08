@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { ComponentProps } from 'react';
+import { ComponentProps, useMemo } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -12,7 +12,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type Size = 'md' | 'lg' | 'sm';
@@ -30,13 +31,13 @@ export interface ButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const VARIANT_STYLES: Record<Variant, { bg: string; text: string; border?: string }> = {
+const getVariantStyles = (Colors: ThemeColors): Record<Variant, { bg: string; text: string; border?: string }> => ({
   primary: { bg: Colors.primary, text: Colors.white },
   secondary: { bg: Colors.primarySoft, text: Colors.primary },
   outline: { bg: 'transparent', text: Colors.ink, border: Colors.borderStrong },
   ghost: { bg: 'transparent', text: Colors.primary },
   danger: { bg: Colors.danger, text: Colors.white },
-};
+});
 
 const SIZE_STYLES: Record<Size, { paddingVertical: number; paddingHorizontal: number; fontSize: number }> = {
   sm: { paddingVertical: 8, paddingHorizontal: 14, fontSize: 13 },
@@ -56,6 +57,8 @@ export function Button({
   fullWidth,
   style,
 }: ButtonProps) {
+  const { Colors } = useTheme();
+  const VARIANT_STYLES = useMemo(() => getVariantStyles(Colors), [Colors]);
   const v = VARIANT_STYLES[variant];
   const s = SIZE_STYLES[size];
   const isDisabled = disabled || loading;

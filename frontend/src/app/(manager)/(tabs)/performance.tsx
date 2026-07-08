@@ -6,12 +6,15 @@ import { BarChart } from '@/components/ui/BarChart';
 import { Card } from '@/components/ui/Card';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { MaintenanceStaff } from '@/types';
 
 export default function ManagerPerformanceScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
 
@@ -77,58 +80,59 @@ export default function ManagerPerformanceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionTitle: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-  card: {
-    gap: Spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  info: {
-    flex: 1,
-    gap: 2,
-  },
-  name: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  spec: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.sm,
-  },
-  metric: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  metricValue: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  metricLabel: {
-    ...Type.tiny,
-    color: Colors.inkSecondary,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionTitle: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+    card: {
+      gap: Spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    info: {
+      flex: 1,
+      gap: 2,
+    },
+    name: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    spec: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    metricsRow: {
+      flexDirection: 'row',
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: Colors.border,
+      paddingTop: Spacing.sm,
+    },
+    metric: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 2,
+    },
+    metricValue: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    metricLabel: {
+      ...Type.tiny,
+      color: Colors.inkSecondary,
+    },
+  });

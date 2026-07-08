@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
-import { Colors, RoleColors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { AppUser } from '@/types';
 
 const ROLE_LABELS: Record<AppUser['role'], string> = {
@@ -13,6 +15,8 @@ const ROLE_LABELS: Record<AppUser['role'], string> = {
 };
 
 export function ProfileHeader({ user, meta }: { user: AppUser; meta?: string }) {
+  const { Colors, RoleColors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const roleColor = RoleColors[user.role];
 
   return (
@@ -38,46 +42,47 @@ export function ProfileHeader({ user, meta }: { user: AppUser; meta?: string }) 
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: Spacing.xl,
-  },
-  name: {
-    ...Type.title,
-    marginTop: Spacing.xs,
-  },
-  roleBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  roleText: {
-    ...Type.tiny,
-  },
-  meta: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  contactBlock: {
-    alignSelf: 'stretch',
-    marginTop: Spacing.md,
-    gap: Spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.md,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  contactLabel: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-  },
-  contactValue: {
-    ...Type.captionBold,
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: Spacing.xl,
+    },
+    name: {
+      ...Type.title,
+      marginTop: Spacing.xs,
+    },
+    roleBadge: {
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    roleText: {
+      ...Type.tiny,
+    },
+    meta: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    contactBlock: {
+      alignSelf: 'stretch',
+      marginTop: Spacing.md,
+      gap: Spacing.xs,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: Colors.border,
+      paddingTop: Spacing.md,
+    },
+    contactRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    contactLabel: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+    },
+    contactValue: {
+      ...Type.captionBold,
+      color: Colors.ink,
+    },
+  });

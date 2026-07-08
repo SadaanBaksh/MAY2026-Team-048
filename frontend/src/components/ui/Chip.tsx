@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { Colors, Radius, Type } from '@/constants/theme';
+import { Radius, Type } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export interface ChipProps {
   label: string;
@@ -12,7 +13,9 @@ export interface ChipProps {
   color?: string;
 }
 
-export function Chip({ label, active, onPress, icon, color = Colors.primary }: ChipProps) {
+export function Chip({ label, active, onPress, icon, color }: ChipProps) {
+  const { Colors } = useTheme();
+  color = color ?? Colors.primary;
   return (
     <Pressable
       onPress={onPress}

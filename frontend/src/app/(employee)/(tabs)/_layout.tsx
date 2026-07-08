@@ -1,16 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Slot, Tabs } from 'expo-router';
 
-import { Colors } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function EmployeeTabsLayout() {
+  const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
+
+  // On desktop, the parent (employee)/_layout.tsx renders the persistent sidebar;
+  // this layout just needs to hand off to whichever tab screen is active.
+  if (isDesktop) {
+    return <Slot />;
+  }
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.inkTertiary,
-        tabBarStyle: { borderTopColor: Colors.border },
+        tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
       }}>
       <Tabs.Screen
         name="index"
@@ -32,6 +42,7 @@ export default function EmployeeTabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          href: null,
         }}
       />
     </Tabs>

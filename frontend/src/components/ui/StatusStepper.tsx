@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Type } from '@/constants/theme';
+import { Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { TicketStatus } from '@/types';
 
 const STEPS: { status: TicketStatus; label: string }[] = [
@@ -13,6 +15,8 @@ const STEPS: { status: TicketStatus; label: string }[] = [
 ];
 
 export function StatusStepper({ status }: { status: TicketStatus }) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const currentIndex = STEPS.findIndex((s) => s.status === status);
 
   return (
@@ -50,61 +54,62 @@ export function StatusStepper({ status }: { status: TicketStatus }) {
 
 const DOT_SIZE = 22;
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  stepGroup: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  stepGroupLast: {
-    flex: 0.4,
-  },
-  stepColumn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  dot: {
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: DOT_SIZE / 2,
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dotDone: {
-    backgroundColor: Colors.success,
-    borderColor: Colors.success,
-  },
-  dotActive: {
-    borderColor: Colors.primary,
-  },
-  activeInner: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: Colors.primary,
-  },
-  line: {
-    flex: 1,
-    height: 2,
-    backgroundColor: Colors.borderStrong,
-  },
-  lineDone: {
-    backgroundColor: Colors.success,
-  },
-  label: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  labelActive: {
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    stepGroup: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    stepGroupLast: {
+      flex: 0.4,
+    },
+    stepColumn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+    },
+    dot: {
+      width: DOT_SIZE,
+      height: DOT_SIZE,
+      borderRadius: DOT_SIZE / 2,
+      backgroundColor: Colors.surface,
+      borderWidth: 2,
+      borderColor: Colors.borderStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dotDone: {
+      backgroundColor: Colors.success,
+      borderColor: Colors.success,
+    },
+    dotActive: {
+      borderColor: Colors.primary,
+    },
+    activeInner: {
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      backgroundColor: Colors.primary,
+    },
+    line: {
+      flex: 1,
+      height: 2,
+      backgroundColor: Colors.borderStrong,
+    },
+    lineDone: {
+      backgroundColor: Colors.success,
+    },
+    label: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      marginTop: 6,
+      textAlign: 'center',
+    },
+    labelActive: {
+      color: Colors.ink,
+    },
+  });

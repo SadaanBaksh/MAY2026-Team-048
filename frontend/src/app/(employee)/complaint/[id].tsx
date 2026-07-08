@@ -19,7 +19,8 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { APARTMENTS } from '@/data/seed';
 import { getCategoryById } from '@/data/categories';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { CostResponsibility, MaintenanceStaff, Priority } from '@/types';
@@ -28,6 +29,7 @@ import { formatFullDate } from '@/utils/date';
 const COST_OPTIONS: CostResponsibility[] = ['Owner', 'Resident', 'Society', 'Pending Review'];
 
 export default function EmployeeComplaintDetailScreen() {
+  const { Colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
@@ -63,6 +65,8 @@ export default function EmployeeComplaintDetailScreen() {
       }))
       .sort((a, b) => a.relevance - b.relevance || a.activeJobs - b.activeJobs);
   }, [users, tickets, categoryId, ticket]);
+
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   if (!ticket) {
     return (
@@ -225,73 +229,74 @@ export default function EmployeeComplaintDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  titleBlock: {
-    gap: Spacing.xs,
-  },
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  sectionLabel: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 4,
-  },
-  body: {
-    ...Type.body,
-    color: Colors.ink,
-  },
-  personCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  personInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  personName: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  personMeta: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionTitleLg: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  workerList: {
-    gap: Spacing.xs,
-  },
-  workerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    borderWidth: 1.5,
-  },
-  workerCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primarySoft,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    titleBlock: {
+      gap: Spacing.xs,
+    },
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    sectionLabel: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginBottom: 4,
+    },
+    body: {
+      ...Type.body,
+      color: Colors.ink,
+    },
+    personCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    personInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    personName: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    personMeta: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionTitleLg: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    workerList: {
+      gap: Spacing.xs,
+    },
+    workerCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      borderWidth: 1.5,
+    },
+    workerCardSelected: {
+      borderColor: Colors.primary,
+      backgroundColor: Colors.primarySoft,
+    },
+  });

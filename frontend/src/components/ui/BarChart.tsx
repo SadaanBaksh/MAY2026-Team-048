@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface BarDatum {
   label: string;
@@ -14,6 +16,8 @@ export interface BarChartProps {
 }
 
 export function BarChart({ data, valueSuffix = '' }: BarChartProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const max = Math.max(...data.map((d) => d.value), 1);
 
   return (
@@ -41,7 +45,7 @@ export function BarChart({ data, valueSuffix = '' }: BarChartProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   wrapper: {
     gap: Spacing.sm,
   },

@@ -6,8 +6,10 @@ import { DonutChart } from '@/components/ui/DonutChart';
 import { BarChart } from '@/components/ui/BarChart';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
+import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { CATEGORIES } from '@/data/categories';
-import { Colors, Spacing, Type } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
@@ -25,6 +27,8 @@ const CHART_PALETTE = [
 ];
 
 export default function ManagerAnalyticsScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser)!;
   const tickets = useTicketStore((s) => s.tickets);
 
@@ -65,14 +69,17 @@ export default function ManagerAnalyticsScreen() {
       { label: 'Resolved', value: tickets.filter((t) => t.status === 'Resolved').length, color: Colors.success },
       { label: 'Closed', value: tickets.filter((t) => t.status === 'Closed').length, color: Colors.inkTertiary },
     ],
-    [tickets]
+    [tickets, Colors]
   );
 
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Analytics</Text>
-        <Text style={styles.subtitle}>Hi {user.name.split(' ')[0]}, here&rsquo;s the community overview</Text>
+        <BurgerMenu />
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Analytics</Text>
+          <Text style={styles.subtitle}>Hi {user.name.split(' ')[0]}, here&rsquo;s the community overview</Text>
+        </View>
       </View>
 
       <View style={styles.statsGrid}>
@@ -115,50 +122,56 @@ export default function ManagerAnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    gap: 2,
-  },
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  subtitle: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionTitle: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  empty: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-  },
-  satisfactionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  satisfactionValue: {
-    ...Type.display,
-    fontSize: 40,
-    color: Colors.accent,
-  },
-  satisfactionLabel: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  satisfactionMeta: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    headerText: {
+      gap: 2,
+    },
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    subtitle: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionTitle: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    empty: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+    },
+    satisfactionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+    },
+    satisfactionValue: {
+      ...Type.display,
+      fontSize: 40,
+      color: Colors.accent,
+    },
+    satisfactionLabel: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    satisfactionMeta: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+  });

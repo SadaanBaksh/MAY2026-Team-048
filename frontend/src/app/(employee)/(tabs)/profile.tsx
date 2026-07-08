@@ -1,14 +1,18 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
-import { Colors, Type } from '@/constants/theme';
+import { Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import type { FacilityEmployee } from '@/types';
 
 export default function EmployeeProfileScreen() {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser) as FacilityEmployee;
   const logout = useAuthStore((s) => s.logout);
 
@@ -26,9 +30,10 @@ export default function EmployeeProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+  });

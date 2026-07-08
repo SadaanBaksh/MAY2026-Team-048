@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
-import { Colors, Radius, Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { Comment } from '@/types';
 import { timeAgo } from '@/utils/date';
 
@@ -15,6 +16,8 @@ export interface CommentsThreadProps {
 }
 
 export function CommentsThread({ comments, currentUserId, onSend, readOnly }: CommentsThreadProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const [draft, setDraft] = useState('');
 
   const handleSend = () => {
@@ -60,80 +63,81 @@ export function CommentsThread({ comments, currentUserId, onSend, readOnly }: Co
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    gap: Spacing.sm,
-  },
-  empty: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-    textAlign: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-    alignItems: 'flex-end',
-  },
-  rowMine: {
-    justifyContent: 'flex-end',
-  },
-  bubble: {
-    maxWidth: '78%',
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 8,
-    gap: 2,
-  },
-  bubbleOther: {
-    backgroundColor: Colors.surfaceSunken,
-    borderBottomLeftRadius: 4,
-  },
-  bubbleMine: {
-    backgroundColor: Colors.primary,
-    borderBottomRightRadius: 4,
-  },
-  author: {
-    ...Type.tiny,
-    color: Colors.inkSecondary,
-  },
-  message: {
-    ...Type.body,
-    color: Colors.ink,
-  },
-  messageMine: {
-    color: Colors.white,
-  },
-  time: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    alignSelf: 'flex-end',
-  },
-  timeMine: {
-    color: 'rgba(255,255,255,0.75)',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: Colors.surfaceSunken,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 10,
-    maxHeight: 100,
-    color: Colors.ink,
-    fontSize: 14,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      gap: Spacing.sm,
+    },
+    empty: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+      textAlign: 'center',
+      paddingVertical: Spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      gap: Spacing.xs,
+      alignItems: 'flex-end',
+    },
+    rowMine: {
+      justifyContent: 'flex-end',
+    },
+    bubble: {
+      maxWidth: '78%',
+      borderRadius: Radius.lg,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 8,
+      gap: 2,
+    },
+    bubbleOther: {
+      backgroundColor: Colors.surfaceSunken,
+      borderBottomLeftRadius: 4,
+    },
+    bubbleMine: {
+      backgroundColor: Colors.primary,
+      borderBottomRightRadius: 4,
+    },
+    author: {
+      ...Type.tiny,
+      color: Colors.inkSecondary,
+    },
+    message: {
+      ...Type.body,
+      color: Colors.ink,
+    },
+    messageMine: {
+      color: Colors.white,
+    },
+    time: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      alignSelf: 'flex-end',
+    },
+    timeMine: {
+      color: 'rgba(255,255,255,0.75)',
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: Spacing.xs,
+      marginTop: Spacing.xs,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: Colors.surfaceSunken,
+      borderRadius: Radius.lg,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 10,
+      maxHeight: 100,
+      color: Colors.ink,
+      fontSize: 14,
+    },
+    sendButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: Colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

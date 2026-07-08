@@ -1,8 +1,9 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface ScreenProps {
   children: ReactNode;
@@ -25,6 +26,8 @@ export function Screen({
   onRefresh,
   edges = ['top'],
 }: ScreenProps) {
+  const { Colors } = useTheme();
+  const styles = useMemo(() => getStyles(Colors), [Colors]);
   const inner = padded ? styles.padded : undefined;
 
   return (
@@ -49,17 +52,18 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  scroll: {
-    flex: 1,
-  },
-  padded: {
-    padding: Spacing.md,
-    paddingBottom: Spacing.xxxl,
-    gap: Spacing.md,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    scroll: {
+      flex: 1,
+    },
+    padded: {
+      padding: Spacing.md,
+      paddingBottom: Spacing.xxxl,
+      gap: Spacing.md,
+    },
+  });

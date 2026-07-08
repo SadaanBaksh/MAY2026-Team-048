@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 export interface AvatarProps {
   name: string;
@@ -14,7 +14,9 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function Avatar({ name, color = Colors.primary, size = 40 }: AvatarProps) {
+export function Avatar({ name, color, size = 40 }: AvatarProps) {
+  const { Colors } = useTheme();
+  color = color ?? Colors.primary;
   return (
     <View
       style={[
