@@ -14,5 +14,6 @@ export default function Index() {
   const currentUser = useAuthStore((s) => s.currentUser);
 
   if (!currentUser) return <Redirect href="/(auth)/welcome" />;
+  if (currentUser.accountStatus !== 'active') return <Redirect href="/(auth)/pending-approval" />;
   return <Redirect href={ROLE_HOME[currentUser.role] as never} />;
 }

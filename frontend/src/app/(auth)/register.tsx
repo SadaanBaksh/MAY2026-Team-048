@@ -4,35 +4,78 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 
 import { Button } from '@/components/ui/Button';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import type { UserRole } from '@/types';
+
+const ROLE_OPTIONS: { label: string; value: UserRole }[] = [
+  { label: 'Resident', value: 'resident' },
+  { label: 'Employee', value: 'facility_employee' },
+  { label: 'Staff', value: 'maintenance_staff' },
+  { label: 'Manager', value: 'facility_manager' },
+];
+
+const ROLE_COPY: Record<UserRole, { title: string; subtitle: string }> = {
+  resident: {
+    title: 'Resident sign up',
+    subtitle: 'Register with your apartment details so complaints route to the right building.',
+  },
+  facility_employee: {
+    title: 'Facility employee sign up',
+    subtitle: 'Your request will be sent to your facility manager for approval before you can log in.',
+  },
+  maintenance_staff: {
+    title: 'Maintenance staff sign up',
+    subtitle: 'Your request will be sent to your facility manager for approval before you can log in.',
+  },
+  facility_manager: {
+    title: 'Facility manager sign up',
+    subtitle: 'Managers get full access right away, including approving employee and staff requests.',
+  },
+};
 
 export default function RegisterScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const register = useAuthStore((s) => s.register);
 
+  const [role, setRole] = useState<UserRole>('resident');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [building, setBuilding] = useState('');
   const [unitNumber, setUnitNumber] = useState('');
+  const [title, setTitle] = useState('');
+  const [specialization, setSpecialization] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = () => {
-    if (!name.trim() || !email.trim() || !phone.trim() || !building.trim() || !unitNumber.trim() || !password) {
+    if (!name.trim() || !email.trim() || !phone.trim() || !password) {
       setError('Please fill in every field to continue.');
+      return;
+    }
+    if (role === 'resident' && (!building.trim() || !unitNumber.trim())) {
+      setError('Please fill in every field to continue.');
+      return;
+    }
+    if (role === 'facility_employee' && !title.trim()) {
+      setError('Please enter your job title.');
+      return;
+    }
+    if (role === 'maintenance_staff' && !specialization.trim()) {
+      setError('Please enter your specialization.');
       return;
     }
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
-    const result = register({ name, email, phone, building, unitNumber });
+    const result = register({ name, email, phone, role, building, unitNumber, title, specialization });
     if (!result.success) {
       setError(result.error ?? 'Unable to create account.');
       return;
@@ -40,15 +83,17 @@ export default function RegisterScreen() {
     router.replace('/');
   };
 
+  const copy = ROLE_COPY[role];
+
   return (
     <View style={styles.wrapper}>
       <ScreenHeader title="Create Account" showBack onBack={() => router.back()} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Resident sign up</Text>
-          <Text style={styles.subtitle}>
-            Register with your apartment details so complaints route to the right building.
-          </Text>
+          <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
+
+          <Text style={styles.title}>{copy.title}</Text>
+          <Text style={styles.subtitle}>{copy.subtitle}</Text>
 
           <View style={styles.form}>
             <TextField label="Full Name" icon="person-outline" placeholder="Jane Doe" value={name} onChangeText={setName} />
@@ -69,14 +114,48 @@ export default function RegisterScreen() {
               value={phone}
               onChangeText={setPhone}
             />
-            <View style={styles.row}>
-              <View style={styles.rowItem}>
-                <TextField label="Building / Wing" placeholder="Wing A" value={building} onChangeText={setBuilding} />
+
+            {role === 'resident' && (
+              <View style={styles.row}>
+                <View style={styles.rowItem}>
+                  <TextField label="Building / Wing" placeholder="Wing A" value={building} onChangeText={setBuilding} />
+                </View>
+                <View style={styles.rowItem}>
+                  <TextField label="Unit Number" placeholder="A-305" value={unitNumber} onChangeText={setUnitNumber} />
+                </View>
               </View>
-              <View style={styles.rowItem}>
-                <TextField label="Unit Number" placeholder="A-305" value={unitNumber} onChangeText={setUnitNumber} />
-              </View>
-            </View>
+            )}
+
+            {role === 'facility_employee' && (
+              <TextField
+                label="Job Title"
+                icon="briefcase-outline"
+                placeholder="Facility Coordinator"
+                value={title}
+                onChangeText={setTitle}
+              />
+            )}
+
+            {role === 'maintenance_staff' && (
+              <TextField
+                label="Specialization"
+                icon="construct-outline"
+                placeholder="Plumbing, Electrical, ..."
+                value={specialization}
+                onChangeText={setSpecialization}
+              />
+            )}
+
+            {role === 'facility_manager' && (
+              <TextField
+                label="Job Title (optional)"
+                icon="briefcase-outline"
+                placeholder="Facility Manager"
+                value={title}
+                onChangeText={setTitle}
+              />
+            )}
+
             <TextField label="Password" icon="lock-closed-outline" placeholder="••••••••" secure value={password} onChangeText={setPassword} />
             <TextField
               label="Confirm Password"

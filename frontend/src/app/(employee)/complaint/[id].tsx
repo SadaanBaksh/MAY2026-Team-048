@@ -54,7 +54,7 @@ export default function EmployeeComplaintDetailScreen() {
   const workers = useMemo(() => {
     if (!ticket) return [];
     const category = getCategoryById(categoryId);
-    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff');
+    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active');
     return staff
       .map((w) => ({
         worker: w,

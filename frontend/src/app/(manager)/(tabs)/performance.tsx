@@ -19,7 +19,7 @@ export default function ManagerPerformanceScreen() {
   const tickets = useTicketStore((s) => s.tickets);
 
   const rows = useMemo(() => {
-    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff');
+    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active');
     return staff
       .map((w) => {
         const jobs = tickets.filter((t) => t.workerId === w.userId);

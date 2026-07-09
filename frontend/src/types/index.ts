@@ -4,6 +4,8 @@ export type UserRole =
   | 'maintenance_staff'
   | 'facility_manager';
 
+export type AccountStatus = 'active' | 'pending' | 'rejected';
+
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 
 export type TicketStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed';
@@ -26,6 +28,7 @@ export interface BaseUser {
   role: UserRole;
   avatarColor: string;
   createdAt: string;
+  accountStatus: AccountStatus;
 }
 
 export interface Resident extends BaseUser {
