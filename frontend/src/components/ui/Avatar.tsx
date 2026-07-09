@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { FontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 export interface AvatarProps {
@@ -23,7 +24,7 @@ export function Avatar({ name, color, size = 40 }: AvatarProps) {
         styles.base,
         { width: size, height: size, borderRadius: size / 2, backgroundColor: `${color}1F` },
       ]}>
-      <Text style={{ color, fontSize: size * 0.38, fontWeight: '700' }}>{getInitials(name)}</Text>
+      <Text style={{ color, fontSize: size * 0.38, fontFamily: FontFamily.bold }}>{getInitials(name)}</Text>
     </View>
   );
 }

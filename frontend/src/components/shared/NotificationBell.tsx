@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { FontFamily } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useNotificationStore } from '@/store/notificationStore';
 
@@ -46,7 +47,7 @@ const getStyles = (Colors: ThemeColors) =>
     },
     badgeText: {
       fontSize: 9,
-      fontWeight: '700',
+      fontFamily: FontFamily.bold,
       color: Colors.white,
     },
   });

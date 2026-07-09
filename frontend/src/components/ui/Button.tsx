@@ -32,9 +32,9 @@ export interface ButtonProps {
 }
 
 const getVariantStyles = (Colors: ThemeColors): Record<Variant, { bg: string; text: string; border?: string }> => ({
-  primary: { bg: Colors.primary, text: Colors.white },
-  secondary: { bg: Colors.primarySoft, text: Colors.primary },
-  outline: { bg: 'transparent', text: Colors.ink, border: Colors.borderStrong },
+  primary: { bg: Colors.accent, text: Colors.primaryDark }, // Yellow bg, Dark teal text
+  secondary: { bg: Colors.primary, text: Colors.white }, // Dark teal bg, White text
+  outline: { bg: 'transparent', text: Colors.primary, border: Colors.borderStrong },
   ghost: { bg: 'transparent', text: Colors.primary },
   danger: { bg: Colors.danger, text: Colors.white },
 });
@@ -105,7 +105,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: Radius.md,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
