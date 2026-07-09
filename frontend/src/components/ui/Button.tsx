@@ -34,10 +34,10 @@ export interface ButtonProps {
 const getVariantStyles = (
   Colors: ThemeColors,
 ): Record<Variant, { bg: string; text: string; border?: string }> => ({
-  primary: { bg: Colors.primary, text: Colors.white },
-  secondary: { bg: Colors.primarySoft, text: Colors.primary },
+  primary: { bg: Colors.primary, text: Colors.accent },
+  secondary: { bg: Colors.primarySoft, text: Colors.accent },
   outline: { bg: 'transparent', text: Colors.ink, border: Colors.borderStrong },
-  ghost: { bg: 'transparent', text: Colors.primary },
+  ghost: { bg: 'transparent', text: Colors.accent },
   danger: { bg: Colors.danger, text: Colors.white },
 });
 

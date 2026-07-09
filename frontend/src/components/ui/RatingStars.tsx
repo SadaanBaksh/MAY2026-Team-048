@@ -24,7 +24,7 @@ export function RatingStars({ value, onChange, size = 22, readOnly }: RatingStar
               key={star}
               name={filled ? 'star' : 'star-outline'}
               size={size}
-              color={filled ? Colors.accent : Colors.borderStrong}
+              color={filled ? Colors.primary : Colors.borderStrong}
             />
           );
         }
@@ -40,7 +40,7 @@ export function RatingStars({ value, onChange, size = 22, readOnly }: RatingStar
             <Ionicons
               name={filled ? 'star' : 'star-outline'}
               size={size}
-              color={filled ? Colors.accent : Colors.borderStrong}
+              color={filled ? Colors.primary : Colors.borderStrong}
             />
           </Pressable>
         );
