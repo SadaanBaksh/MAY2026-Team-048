@@ -13,7 +13,7 @@ export interface IconCircleProps {
 
 export function IconCircle({ name, color, background, size = 40 }: IconCircleProps) {
   const { Colors } = useTheme();
-  color = color ?? Colors.accent;
+  color = color ?? Colors.primary;
   return (
     <View
       style={[

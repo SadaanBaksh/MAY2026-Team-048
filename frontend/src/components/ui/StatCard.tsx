@@ -17,7 +17,7 @@ export interface StatCardProps {
 export function StatCard({ label, value, icon, color, trend }: StatCardProps) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
-  const resolvedColor = color ?? Colors.accent;
+  const resolvedColor = color ?? Colors.primary;
   return (
     <Card style={styles.card} padded>
       <View style={[styles.iconWrap, { backgroundColor: `${resolvedColor}17` }]}>
