@@ -176,10 +176,10 @@ export default function LandingPage() {
               <HouseLogo width={28} height={28} />
               <Text style={s.logoText}>Simplifix</Text>
             </View>
-            <Text style={[s.heroTitle, isDesktop && { fontSize: 52 }]}>
+            <Text style={[s.heroTitle, isDesktop && { fontSize: 52, lineHeight: 56 }]}>
               Smarter maintenance for modern communities
             </Text>
-            <Text style={s.heroSub}>
+            <Text style={[s.heroSub, isDesktop && { fontSize: 18, lineHeight: 28 }]}>
               An AI-powered platform that takes apartment maintenance complaints from chaos to resolution — automatically.
             </Text>
             <View style={[s.heroButtons, !isWide && { flexDirection: 'column' }]}>
@@ -221,10 +221,10 @@ export default function LandingPage() {
             <View style={[s.card, isWide && { flexDirection: 'row' }]}>
               <Image
                 source={residentImg}
-                style={[s.cardImg, isWide && { width: '55%', height: 320 }]}
+                style={[s.cardImg, isWide && { width: '55%' }]}
                 contentFit="cover"
               />
-              <View style={s.cardBody}>
+              <View style={[s.cardBody, isWide && { flex: 1, justifyContent: 'center' }]}>
                 <Text style={s.cardTitle}>AI-Powered Complaint Intake</Text>
                 <Text style={s.cardDesc}>
                   Residents upload a photo or video. Our multimodal AI instantly generates a detailed description, determines the category, and assigns a priority level — no forms to fill.
@@ -521,7 +521,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 24,
   },
   logoText: {
     fontSize: 22,
@@ -534,14 +534,14 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.extraBold,
     color: P.white,
     lineHeight: 38,
-    marginBottom: 16,
+    marginBottom: 24,
     ...(Platform.OS === 'web' ? { letterSpacing: -1 } : {}),
   },
   heroSub: {
     fontSize: 16,
     color: 'rgba(255,255,255,0.85)',
     lineHeight: 26,
-    marginBottom: 28,
+    marginBottom: 36,
   },
   heroButtons: {
     flexDirection: 'row',
@@ -639,7 +639,7 @@ const s = StyleSheet.create({
   },
   cardImg: {
     width: '100%',
-    height: 200,
+    aspectRatio: 16 / 9,
   },
   cardBody: {
     padding: 24,
