@@ -41,8 +41,9 @@ export default function ResidentHomeScreen() {
   const closed = myTickets.filter((t) => t.status === 'Closed');
 
   return (
-    <Screen edges={['top']}>
-      <View style={styles.header}>
+    <View style={styles.root}>
+      <Screen edges={['top']}>
+        <View style={styles.header}>
         <View style={styles.headerLeft}>
           <BurgerMenu />
           <Pressable
@@ -148,83 +149,116 @@ export default function ResidentHomeScreen() {
           </View>
         )}
       </View>
-    </Screen>
+      </Screen>
+
+      <Pressable 
+        style={({ pressed }) => [styles.chatFab, pressed && styles.chatFabPressed]}
+        onPress={() => router.push('/(resident)/chat')}
+      >
+        <Ionicons name="sparkles" size={24} color={Colors.white} />
+      </Pressable>
+    </View>
   );
 }
 
 const getStyles = (Colors: ThemeColors) =>
   StyleSheet.create({
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-    },
-    headerProfile: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-    },
-    greeting: {
-      ...Type.title,
-      color: Colors.ink,
-    },
-    unit: {
-      ...Type.caption,
-      color: Colors.inkSecondary,
-    },
-    reportCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-      backgroundColor: Colors.primary,
-      borderWidth: 0,
-    },
-    reportIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: Radius.md,
-      backgroundColor: 'rgba(255,255,255,0.18)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    reportText: {
-      flex: 1,
-    },
-    reportTitle: {
-      ...Type.bodyMedium,
-      color: Colors.white,
-    },
-    reportSubtitle: {
-      ...Type.caption,
-      color: 'rgba(255,255,255,0.85)',
-      marginTop: 2,
-    },
-    statsRow: {
-      flexDirection: 'row',
-      gap: Spacing.sm,
-    },
-    section: {
-      gap: Spacing.sm,
-    },
-    sectionHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    sectionTitle: {
-      ...Type.subtitle,
-      color: Colors.ink,
-    },
-    viewAll: {
-      ...Type.captionBold,
-      color: Colors.primary,
-    },
-    list: {
-      gap: Spacing.sm,
-    },
-  });
+  root: {
+    flex: 1,
+    backgroundColor: Colors.surfaceMuted,
+  },
+  chatFab: {
+    position: 'absolute',
+    bottom: Spacing.xl,
+    right: Spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+    zIndex: 10,
+  },
+  chatFabPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  greeting: {
+    ...Type.title,
+    color: Colors.ink,
+  },
+  unit: {
+    ...Type.caption,
+    color: Colors.inkSecondary,
+  },
+  reportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderWidth: 0,
+  },
+  reportIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportText: {
+    flex: 1,
+  },
+  reportTitle: {
+    ...Type.bodyMedium,
+    color: Colors.white,
+  },
+  reportSubtitle: {
+    ...Type.caption,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  section: {
+    gap: Spacing.sm,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    ...Type.subtitle,
+    color: Colors.ink,
+  },
+  viewAll: {
+    ...Type.captionBold,
+    color: Colors.primary,
+  },
+  list: {
+    gap: Spacing.sm,
+  },
+});

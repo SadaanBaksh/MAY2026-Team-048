@@ -93,30 +93,29 @@ On the login screen, select any demo account to enter the app as:
 MAY2026-Team-048/
 ├─ README.md                 # Root project overview
 ├─ LICENSE
-├─ AGENTS.md                 # Repository-specific agent instructions
-├─ frontend/                 # Current Expo React Native application
-│  ├─ src/
-│  │  ├─ app/                # Expo Router screens and route groups
-│  │  │  ├─ (auth)/          # Welcome, login, and registration screens
-│  │  │  ├─ (resident)/      # Resident dashboard, complaints, details, notifications
-│  │  │  ├─ (employee)/      # Employee dashboard, queue, workers, assignment
-│  │  │  ├─ (maintenance)/   # Maintenance staff job list and job detail flows
-│  │  │  └─ (manager)/       # Manager analytics, performance, history, details
-│  │  ├─ components/
-│  │  │  ├─ ui/              # Reusable UI primitives
-│  │  │  └─ shared/          # Domain-specific shared components
-│  │  ├─ constants/          # Theme and design tokens
-│  │  ├─ data/               # Mock data and categories
-│  │  ├─ store/              # Zustand stores
-│  │  ├─ types/              # Shared TypeScript types
-│  │  └─ utils/              # Date, ID, overdue, and mock AI helpers
-│  ├─ assets/                # App icons, splash assets, and images
-│  ├─ scripts/               # Utility scripts
-│  ├─ app.json               # Expo app configuration
-│  ├─ metro.config.js        # Metro bundler configuration
-│  ├─ package.json           # Frontend dependencies and scripts
-│  └─ tsconfig.json          # TypeScript configuration
-└─ node_modules/             # Installed root dependencies, if present locally
+└─ frontend/                 # Current Expo React Native application
+   ├─ src/
+   │  ├─ app/                # Expo Router screens and route groups
+   │  │  ├─ (auth)/          # Welcome, login, and registration screens
+   │  │  ├─ (resident)/      # Resident dashboard, complaints, details, notifications
+   │  │  ├─ (employee)/      # Employee dashboard, queue, workers, assignment
+   │  │  ├─ (maintenance)/   # Maintenance staff job list and job detail flows
+   │  │  └─ (manager)/       # Manager analytics, performance, history, details
+   │  ├─ components/
+   │  │  ├─ ui/              # Reusable UI primitives
+   │  │  └─ shared/          # Domain-specific shared components
+   │  ├─ constants/          # Theme and design tokens
+   │  ├─ data/               # Mock data and categories
+   │  ├─ store/              # Zustand stores
+   │  ├─ types/              # Shared TypeScript types
+   │  └─ utils/              # Date, ID, overdue, and mock AI helpers
+   ├─ assets/                # App icons, splash assets, and images
+   ├─ scripts/               # Utility scripts
+   ├─ app.json               # Expo app configuration
+   ├─ metro.config.js        # Metro bundler configuration
+   ├─ package.json           # Frontend dependencies and scripts
+   └─ tsconfig.json          # TypeScript configuration
+
 ```
 
 ## Roles
@@ -170,8 +169,8 @@ Run these from [`frontend/`](./frontend):
 
 ## Contributors
 
-- Anusha Saha - @anusha-saha-3007
 - Abhay Sharma - @asabhaysharma
+- Anusha Saha - @anusha-saha-3007
 - Mursleen Khan - @MursleenK
 - Namit Gutpa - @NamitCodes
 - Sadaan Baksh - @SadaanBaksh
