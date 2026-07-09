@@ -15,7 +15,7 @@ export interface ChipProps {
 
 export function Chip({ label, active, onPress, icon, color }: ChipProps) {
   const { Colors } = useTheme();
-  color = color ?? Colors.primary;
+  color = color ?? Colors.accent;
   return (
     <Pressable
       onPress={onPress}
