@@ -26,7 +26,8 @@ export function TextField({ label, error, icon, secure, style, ...rest }: TextFi
           styles.inputRow,
           focused && styles.inputRowFocused,
           !!error && styles.inputRowError,
-        ]}>
+        ]}
+      >
         {icon && <Ionicons name={icon} size={18} color={Colors.inkTertiary} style={styles.icon} />}
         <TextInput
           placeholderTextColor={Colors.inkTertiary}

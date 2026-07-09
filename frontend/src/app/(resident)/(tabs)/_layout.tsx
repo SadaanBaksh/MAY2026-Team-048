@@ -13,7 +13,8 @@ export default function ResidentTabsLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.inkTertiary,
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -25,14 +26,18 @@ export default function ResidentTabsLayout() {
         name="complaints"
         options={{
           title: 'Complaints',
-          tabBarIcon: ({ color, size }) => <Ionicons name="document-text" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="document-text" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

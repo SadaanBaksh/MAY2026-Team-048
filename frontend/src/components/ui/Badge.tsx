@@ -4,7 +4,15 @@ import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import type { Priority, TicketStatus } from '@/types';
 
-export function Badge({ label, color, background }: { label: string; color: string; background: string }) {
+export function Badge({
+  label,
+  color,
+  background,
+}: {
+  label: string;
+  color: string;
+  background: string;
+}) {
   return (
     <View style={[styles.base, { backgroundColor: background }]}>
       <Text style={[styles.label, { color }]} numberOfLines={1}>

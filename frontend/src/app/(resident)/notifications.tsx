@@ -9,7 +9,9 @@ import { useNotificationStore } from '@/store/notificationStore';
 
 export default function ResidentNotificationsScreen() {
   const user = useAuthStore((s) => s.currentUser)!;
-  const notifications = useNotificationStore((s) => s.notifications).filter((n) => n.userId === user.userId);
+  const notifications = useNotificationStore((s) => s.notifications).filter(
+    (n) => n.userId === user.userId,
+  );
   const markRead = useNotificationStore((s) => s.markRead);
 
   return (

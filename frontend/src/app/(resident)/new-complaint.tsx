@@ -52,9 +52,19 @@ export default function NewComplaintScreen() {
     if (step !== 'analyzing') return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.4,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
     );
     loop.start();
     return () => loop.stop();
@@ -133,10 +143,16 @@ export default function NewComplaintScreen() {
     return (
       <Screen scroll={false} edges={['top', 'bottom']}>
         <View style={styles.centerFill}>
-          <IconCircle name="checkmark" color={Colors.success} background={Colors.successSoft} size={72} />
+          <IconCircle
+            name="checkmark"
+            color={Colors.success}
+            background={Colors.successSoft}
+            size={72}
+          />
           <Text style={styles.doneTitle}>Complaint Submitted!</Text>
           <Text style={styles.doneMessage}>
-            Your complaint has been logged. The facility team has been notified and will assign a technician shortly.
+            Your complaint has been logged. The facility team has been notified and will assign a
+            technician shortly.
           </Text>
           <View style={styles.doneActions}>
             <Button
@@ -162,7 +178,12 @@ export default function NewComplaintScreen() {
       <Screen scroll={false} edges={['top', 'bottom']}>
         <View style={styles.centerFill}>
           <Animated.View style={{ opacity: pulse, transform: [{ scale: pulse }] }}>
-            <IconCircle name="sparkles" color={Colors.primary} background={Colors.primarySoft} size={72} />
+            <IconCircle
+              name="sparkles"
+              color={Colors.primary}
+              background={Colors.primarySoft}
+              size={72}
+            />
           </Animated.View>
           <Text style={styles.doneTitle}>Analyzing your complaint…</Text>
           <Text style={styles.doneMessage}>
@@ -175,7 +196,11 @@ export default function NewComplaintScreen() {
 
   return (
     <View style={styles.wrapper}>
-      <ScreenHeader title={step === 'review' ? 'Review & Submit' : 'Report an Issue'} showBack onBack={handleBack} />
+      <ScreenHeader
+        title={step === 'review' ? 'Review & Submit' : 'Report an Issue'}
+        showBack
+        onBack={handleBack}
+      />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {step === 'capture' && (
           <>
@@ -190,7 +215,13 @@ export default function NewComplaintScreen() {
             )}
 
             <View style={styles.mediaActions}>
-              <Button label="Take Photo" icon="camera-outline" variant="secondary" onPress={takePhoto} style={styles.flexButton} />
+              <Button
+                label="Take Photo"
+                icon="camera-outline"
+                variant="secondary"
+                onPress={takePhoto}
+                style={styles.flexButton}
+              />
               <Button
                 label="Choose File"
                 icon="images-outline"
@@ -239,10 +270,16 @@ export default function NewComplaintScreen() {
               editable
             />
             <Text style={styles.helper}>
-              Review the AI-generated details above. You can edit the description, category, or priority before
-              sending it to the facility team.
+              Review the AI-generated details above. You can edit the description, category, or
+              priority before sending it to the facility team.
             </Text>
-            <Button label="Submit Complaint" icon="send" fullWidth size="lg" onPress={handleSubmit} />
+            <Button
+              label="Submit Complaint"
+              icon="send"
+              fullWidth
+              size="lg"
+              onPress={handleSubmit}
+            />
           </>
         )}
       </ScrollView>
@@ -250,87 +287,88 @@ export default function NewComplaintScreen() {
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  content: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xxxl,
-    gap: Spacing.sm,
-  },
-  label: {
-    ...Type.captionBold,
-    color: Colors.inkSecondary,
-    marginTop: Spacing.xs,
-  },
-  placeholder: {
-    height: 180,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.surface,
-  },
-  placeholderText: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-  },
-  mediaActions: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  flexButton: {
-    flex: 1,
-  },
-  error: {
-    ...Type.caption,
-    color: Colors.danger,
-  },
-  noteCard: {
-    padding: 0,
-  },
-  noteInput: {
-    minHeight: 90,
-    padding: Spacing.sm,
-    fontSize: 15,
-    color: Colors.ink,
-    textAlignVertical: 'top',
-  },
-  noteEcho: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-    fontStyle: 'italic',
-  },
-  helper: {
-    ...Type.caption,
-    color: Colors.inkTertiary,
-  },
-  centerFill: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  doneTitle: {
-    ...Type.title,
-    color: Colors.ink,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  doneMessage: {
-    ...Type.body,
-    color: Colors.inkSecondary,
-    textAlign: 'center',
-  },
-  doneActions: {
-    width: '100%',
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    content: {
+      padding: Spacing.lg,
+      paddingBottom: Spacing.xxxl,
+      gap: Spacing.sm,
+    },
+    label: {
+      ...Type.captionBold,
+      color: Colors.inkSecondary,
+      marginTop: Spacing.xs,
+    },
+    placeholder: {
+      height: 180,
+      borderRadius: Radius.lg,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+      borderStyle: 'dashed',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: Colors.surface,
+    },
+    placeholderText: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+    },
+    mediaActions: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    flexButton: {
+      flex: 1,
+    },
+    error: {
+      ...Type.caption,
+      color: Colors.danger,
+    },
+    noteCard: {
+      padding: 0,
+    },
+    noteInput: {
+      minHeight: 90,
+      padding: Spacing.sm,
+      fontSize: 15,
+      color: Colors.ink,
+      textAlignVertical: 'top',
+    },
+    noteEcho: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+      fontStyle: 'italic',
+    },
+    helper: {
+      ...Type.caption,
+      color: Colors.inkTertiary,
+    },
+    centerFill: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.xl,
+      gap: Spacing.sm,
+    },
+    doneTitle: {
+      ...Type.title,
+      color: Colors.ink,
+      textAlign: 'center',
+      marginTop: Spacing.sm,
+    },
+    doneMessage: {
+      ...Type.body,
+      color: Colors.inkSecondary,
+      textAlign: 'center',
+    },
+    doneActions: {
+      width: '100%',
+      gap: Spacing.sm,
+      marginTop: Spacing.lg,
+    },
+  });

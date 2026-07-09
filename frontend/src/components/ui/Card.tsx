@@ -16,13 +16,7 @@ export function Card({ children, onPress, style, padded = true, elevated = true 
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const content = (
-    <View
-      style={[
-        styles.base,
-        padded && styles.padded,
-        elevated && ShadowSmall,
-        style,
-      ]}>
+    <View style={[styles.base, padded && styles.padded, elevated && ShadowSmall, style]}>
       {children}
     </View>
   );
@@ -36,14 +30,15 @@ export function Card({ children, onPress, style, padded = true, elevated = true 
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  base: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-  },
-  padded: {
-    padding: Spacing.md,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    base: {
+      backgroundColor: Colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: Colors.border,
+    },
+    padded: {
+      padding: Spacing.md,
+    },
+  });

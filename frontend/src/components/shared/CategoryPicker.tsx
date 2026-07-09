@@ -3,9 +3,19 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { Chip } from '@/components/ui/Chip';
 import { CATEGORIES } from '@/data/categories';
 
-export function CategoryPicker({ value, onChange }: { value: string; onChange: (categoryId: string) => void }) {
+export function CategoryPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (categoryId: string) => void;
+}) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.row}
+    >
       {CATEGORIES.map((cat) => (
         <Chip
           key={cat.categoryId}

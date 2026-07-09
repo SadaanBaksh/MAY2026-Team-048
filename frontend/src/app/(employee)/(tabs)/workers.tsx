@@ -17,12 +17,18 @@ export default function EmployeeWorkersScreen() {
   const tickets = useTicketStore((s) => s.tickets);
 
   const workers = useMemo(() => {
-    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active');
+    const staff = users.filter(
+      (u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active',
+    );
     return staff
       .map((w) => ({
         worker: w,
-        activeJobs: tickets.filter((t) => t.workerId === w.userId && (t.status === 'Assigned' || t.status === 'In_Progress')).length,
-        completedJobs: tickets.filter((t) => t.workerId === w.userId && (t.status === 'Resolved' || t.status === 'Closed')).length,
+        activeJobs: tickets.filter(
+          (t) => t.workerId === w.userId && (t.status === 'Assigned' || t.status === 'In_Progress'),
+        ).length,
+        completedJobs: tickets.filter(
+          (t) => t.workerId === w.userId && (t.status === 'Resolved' || t.status === 'Closed'),
+        ).length,
       }))
       .sort((a, b) => a.activeJobs - b.activeJobs);
   }, [users, tickets]);

@@ -21,28 +21,45 @@ export default function ManagerTabsLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.inkTertiary,
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Analytics', tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} /> }}
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart" size={size} color={color} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="requests"
-        options={{ title: 'Requests', tabBarIcon: ({ color, size }) => <Ionicons name="person-add" size={size} color={color} /> }}
+        options={{
+          title: 'Requests',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-add" size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="performance"
-        options={{ title: 'Performance', tabBarIcon: ({ color, size }) => <Ionicons name="ribbon" size={size} color={color} /> }}
+        options={{
+          title: 'Performance',
+          tabBarIcon: ({ color, size }) => <Ionicons name="ribbon" size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="history"
-        options={{ title: 'History', tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} /> }}
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
+        }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

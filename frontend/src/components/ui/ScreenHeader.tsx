@@ -28,7 +28,8 @@ export function ScreenHeader({ title, subtitle, showBack, onBack, right }: Scree
               hitSlop={10}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel="Go back">
+              accessibilityLabel="Go back"
+            >
               <Ionicons name="chevron-back" size={22} color={Colors.ink} />
             </Pressable>
           )}

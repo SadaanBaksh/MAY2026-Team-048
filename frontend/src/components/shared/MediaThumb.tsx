@@ -15,7 +15,13 @@ export interface MediaThumbProps {
   radius?: number;
 }
 
-export function MediaThumb({ uri, mediaType, height = 200, onPress, radius = Radius.lg }: MediaThumbProps) {
+export function MediaThumb({
+  uri,
+  mediaType,
+  height = 200,
+  onPress,
+  radius = Radius.lg,
+}: MediaThumbProps) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const content = (

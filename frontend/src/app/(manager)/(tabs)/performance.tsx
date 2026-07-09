@@ -19,18 +19,31 @@ export default function ManagerPerformanceScreen() {
   const tickets = useTicketStore((s) => s.tickets);
 
   const rows = useMemo(() => {
-    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active');
+    const staff = users.filter(
+      (u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active',
+    );
     return staff
       .map((w) => {
         const jobs = tickets.filter((t) => t.workerId === w.userId);
-        const active = jobs.filter((t) => t.status === 'Assigned' || t.status === 'In_Progress').length;
-        const completed = jobs.filter((t) => t.status === 'Resolved' || t.status === 'Closed').length;
+        const active = jobs.filter(
+          (t) => t.status === 'Assigned' || t.status === 'In_Progress',
+        ).length;
+        const completed = jobs.filter(
+          (t) => t.status === 'Resolved' || t.status === 'Closed',
+        ).length;
         const rated = jobs.filter((t) => t.residentRating != null);
-        const avgRating = rated.length ? rated.reduce((s, t) => s + (t.residentRating ?? 0), 0) / rated.length : w.rating;
+        const avgRating = rated.length
+          ? rated.reduce((s, t) => s + (t.residentRating ?? 0), 0) / rated.length
+          : w.rating;
         const resolved = jobs.filter((t) => t.dateOfResolution);
         const avgHours = resolved.length
-          ? resolved.reduce((s, t) => s + (new Date(t.dateOfResolution!).getTime() - new Date(t.dateOfRequest).getTime()) / 36e5, 0) /
-            resolved.length
+          ? resolved.reduce(
+              (s, t) =>
+                s +
+                (new Date(t.dateOfResolution!).getTime() - new Date(t.dateOfRequest).getTime()) /
+                  36e5,
+              0,
+            ) / resolved.length
           : null;
         return { worker: w, active, completed, avgRating, avgHours };
       })
@@ -69,7 +82,9 @@ export default function ManagerPerformanceScreen() {
                 <Text style={styles.metricLabel}>Completed</Text>
               </View>
               <View style={styles.metric}>
-                <Text style={styles.metricValue}>{avgHours != null ? `${avgHours.toFixed(1)}h` : '—'}</Text>
+                <Text style={styles.metricValue}>
+                  {avgHours != null ? `${avgHours.toFixed(1)}h` : '—'}
+                </Text>
                 <Text style={styles.metricLabel}>Avg Time</Text>
               </View>
             </View>

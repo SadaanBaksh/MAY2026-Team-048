@@ -39,7 +39,8 @@ export default function ManagerAnalyticsScreen() {
     const resolvedTickets = tickets.filter((t) => t.dateOfResolution);
     const avgResolutionHours = resolvedTickets.length
       ? resolvedTickets.reduce((sum, t) => {
-          const diff = new Date(t.dateOfResolution!).getTime() - new Date(t.dateOfRequest).getTime();
+          const diff =
+            new Date(t.dateOfResolution!).getTime() - new Date(t.dateOfRequest).getTime();
           return sum + diff / (1000 * 60 * 60);
         }, 0) / resolvedTickets.length
       : 0;
@@ -48,7 +49,14 @@ export default function ManagerAnalyticsScreen() {
       ? ratedTickets.reduce((sum, t) => sum + (t.residentRating ?? 0), 0) / ratedTickets.length
       : 0;
 
-    return { total, pending, overdue, avgResolutionHours, avgRating, ratedCount: ratedTickets.length };
+    return {
+      total,
+      pending,
+      overdue,
+      avgResolutionHours,
+      avgRating,
+      ratedCount: ratedTickets.length,
+    };
   }, [tickets]);
 
   const categoryData = useMemo(
@@ -58,18 +66,38 @@ export default function ManagerAnalyticsScreen() {
         value: tickets.filter((t) => t.categoryId === cat.categoryId).length,
         color: CHART_PALETTE[i % CHART_PALETTE.length],
       })).filter((d) => d.value > 0),
-    [tickets]
+    [tickets],
   );
 
   const statusData = useMemo(
     () => [
-      { label: 'Pending', value: tickets.filter((t) => t.status === 'Pending').length, color: Colors.warning },
-      { label: 'Assigned', value: tickets.filter((t) => t.status === 'Assigned').length, color: Colors.info },
-      { label: 'In Progress', value: tickets.filter((t) => t.status === 'In_Progress').length, color: '#7A3FC2' },
-      { label: 'Resolved', value: tickets.filter((t) => t.status === 'Resolved').length, color: Colors.success },
-      { label: 'Closed', value: tickets.filter((t) => t.status === 'Closed').length, color: Colors.inkTertiary },
+      {
+        label: 'Pending',
+        value: tickets.filter((t) => t.status === 'Pending').length,
+        color: Colors.warning,
+      },
+      {
+        label: 'Assigned',
+        value: tickets.filter((t) => t.status === 'Assigned').length,
+        color: Colors.info,
+      },
+      {
+        label: 'In Progress',
+        value: tickets.filter((t) => t.status === 'In_Progress').length,
+        color: '#7A3FC2',
+      },
+      {
+        label: 'Resolved',
+        value: tickets.filter((t) => t.status === 'Resolved').length,
+        color: Colors.success,
+      },
+      {
+        label: 'Closed',
+        value: tickets.filter((t) => t.status === 'Closed').length,
+        color: Colors.inkTertiary,
+      },
     ],
-    [tickets, Colors]
+    [tickets, Colors],
   );
 
   return (
@@ -78,14 +106,31 @@ export default function ManagerAnalyticsScreen() {
         <BurgerMenu />
         <View style={styles.headerText}>
           <Text style={styles.title}>Analytics</Text>
-          <Text style={styles.subtitle}>Hi {user.name.split(' ')[0]}, here&rsquo;s the community overview</Text>
+          <Text style={styles.subtitle}>
+            Hi {user.name.split(' ')[0]}, here&rsquo;s the community overview
+          </Text>
         </View>
       </View>
 
       <View style={styles.statsGrid}>
-        <StatCard label="Total Complaints" value={stats.total} icon="document-text-outline" color={Colors.primary} />
-        <StatCard label="Pending" value={stats.pending} icon="hourglass-outline" color={Colors.warning} />
-        <StatCard label="Overdue" value={stats.overdue} icon="alert-circle-outline" color={Colors.danger} />
+        <StatCard
+          label="Total Complaints"
+          value={stats.total}
+          icon="document-text-outline"
+          color={Colors.primary}
+        />
+        <StatCard
+          label="Pending"
+          value={stats.pending}
+          icon="hourglass-outline"
+          color={Colors.warning}
+        />
+        <StatCard
+          label="Overdue"
+          value={stats.overdue}
+          icon="alert-circle-outline"
+          color={Colors.danger}
+        />
         <StatCard
           label="Avg Resolution"
           value={`${stats.avgResolutionHours.toFixed(1)}h`}

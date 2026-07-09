@@ -22,7 +22,9 @@ const DEFAULT_SUGGESTIONS = [
 ];
 
 function sortedTickets(tickets: Ticket[]): Ticket[] {
-  return [...tickets].sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime());
+  return [...tickets].sort(
+    (a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime(),
+  );
 }
 
 function workerName(ticket: Ticket): string {
@@ -63,7 +65,10 @@ function findLikelyTicket(message: string, tickets: Ticket[]): Ticket | undefine
   if (direct) return direct;
 
   return tickets.find((ticket) => {
-    const titleWords = ticket.title.toLowerCase().split(/\W+/).filter((word) => word.length > 3);
+    const titleWords = ticket.title
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((word) => word.length > 3);
     return titleWords.some((word) => lower.includes(word));
   });
 }
@@ -75,7 +80,10 @@ function emptyStateReply(firstName: string): ResidentAssistantReply {
   };
 }
 
-export function answerResidentMessage(message: string, context: ResidentAssistantContext): ResidentAssistantReply {
+export function answerResidentMessage(
+  message: string,
+  context: ResidentAssistantContext,
+): ResidentAssistantReply {
   const clean = message.trim();
   const lower = clean.toLowerCase();
   const firstName = context.resident.name.split(' ')[0];
@@ -94,7 +102,9 @@ export function answerResidentMessage(message: string, context: ResidentAssistan
   }
 
   if (/\b(review|rate|rating|verify|resolved|attention)\b/.test(lower)) {
-    const pendingReview = tickets.filter((ticket) => ticket.status === 'Resolved' && ticket.residentRating == null);
+    const pendingReview = tickets.filter(
+      (ticket) => ticket.status === 'Resolved' && ticket.residentRating == null,
+    );
     if (pendingReview.length === 0) {
       return {
         text: 'Nothing needs your review right now. When a technician marks a complaint as resolved, I will point you to it so you can verify the fix and rate the work.',
@@ -198,7 +208,9 @@ export function answerResidentMessage(message: string, context: ResidentAssistan
     const latestClosed = closed[0];
     return {
       text: `Your latest closed complaint was ${latestClosed.title}, resolved on ${
-        latestClosed.dateOfResolution ? formatFullDate(latestClosed.dateOfResolution) : 'the recorded resolution date'
+        latestClosed.dateOfResolution
+          ? formatFullDate(latestClosed.dateOfResolution)
+          : 'the recorded resolution date'
       }. Your rating: ${latestClosed.residentRating ?? 'not rated'}.`,
       relatedTicketId: latestClosed.ticketId,
       suggestions: ['Show active complaints', 'What can you help with?'],

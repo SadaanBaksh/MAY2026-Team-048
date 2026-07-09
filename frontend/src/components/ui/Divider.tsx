@@ -9,9 +9,10 @@ export function Divider({ inset = 0 }: { inset?: number }) {
   return <View style={[styles.line, { marginLeft: inset }]} />;
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  line: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    line: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: Colors.border,
+    },
+  });

@@ -9,7 +9,9 @@ import { formatFullDate } from '@/utils/date';
 export function HistoryTimeline({ entries }: { entries: ComplaintHistoryEntry[] }) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
-  const sorted = [...entries].sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime());
+  const sorted = [...entries].sort(
+    (a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime(),
+  );
 
   return (
     <View>

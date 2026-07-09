@@ -15,7 +15,14 @@ import { useTicketStore } from '@/store/ticketStore';
 import type { TicketStatus } from '@/types';
 
 type StatusFilter = 'All' | TicketStatus;
-const STATUS_FILTERS: StatusFilter[] = ['All', 'Pending', 'Assigned', 'In_Progress', 'Resolved', 'Closed'];
+const STATUS_FILTERS: StatusFilter[] = [
+  'All',
+  'Pending',
+  'Assigned',
+  'In_Progress',
+  'Resolved',
+  'Closed',
+];
 
 export default function ManagerHistoryScreen() {
   const { Colors } = useTheme();
@@ -25,7 +32,8 @@ export default function ManagerHistoryScreen() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
 
-  const residentName = (residentId: string) => users.find((u) => u.userId === residentId)?.name ?? 'Resident';
+  const residentName = (residentId: string) =>
+    users.find((u) => u.userId === residentId)?.name ?? 'Resident';
   const apartmentFor = (residentId: string) => {
     const resident = users.find((u) => u.userId === residentId);
     if (!resident || resident.role !== 'resident') return '';
@@ -39,7 +47,9 @@ export default function ManagerHistoryScreen() {
       .filter((t) => {
         if (!query.trim()) return true;
         const q = query.toLowerCase();
-        return t.title.toLowerCase().includes(q) || residentName(t.residentId).toLowerCase().includes(q);
+        return (
+          t.title.toLowerCase().includes(q) || residentName(t.residentId).toLowerCase().includes(q)
+        );
       })
       .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime());
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,9 +58,17 @@ export default function ManagerHistoryScreen() {
   return (
     <Screen edges={['top']}>
       <Text style={styles.title}>Complaint History</Text>
-      <SearchBar value={query} onChangeText={setQuery} placeholder="Search complaints or residents" />
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search complaints or residents"
+      />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+      >
         {STATUS_FILTERS.map((s) => (
           <Chip
             key={s}
@@ -63,7 +81,11 @@ export default function ManagerHistoryScreen() {
 
       <View style={styles.list}>
         {filtered.length === 0 ? (
-          <EmptyState icon="archive-outline" title="No records found" message="Try a different search or filter." />
+          <EmptyState
+            icon="archive-outline"
+            title="No records found"
+            message="Try a different search or filter."
+          />
         ) : (
           filtered.map((t) => (
             <TicketCard

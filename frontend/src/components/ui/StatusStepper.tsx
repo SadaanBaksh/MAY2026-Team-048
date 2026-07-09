@@ -29,20 +29,13 @@ export function StatusStepper({ status }: { status: TicketStatus }) {
         return (
           <View key={step.status} style={[styles.stepGroup, isLast && styles.stepGroupLast]}>
             <View style={styles.stepColumn}>
-              <View
-                style={[
-                  styles.dot,
-                  done && styles.dotDone,
-                  active && styles.dotActive,
-                ]}>
+              <View style={[styles.dot, done && styles.dotDone, active && styles.dotActive]}>
                 {done && <Ionicons name="checkmark" size={12} color={Colors.white} />}
                 {active && <View style={styles.activeInner} />}
               </View>
               {!isLast && <View style={[styles.line, (done || active) && styles.lineDone]} />}
             </View>
-            <Text
-              style={[styles.label, (done || active) && styles.labelActive]}
-              numberOfLines={1}>
+            <Text style={[styles.label, (done || active) && styles.labelActive]} numberOfLines={1}>
               {step.label}
             </Text>
           </View>

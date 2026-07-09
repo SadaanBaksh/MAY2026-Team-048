@@ -31,16 +31,24 @@ export default function ManagerRequestsScreen() {
   const rejectUser = useAuthStore((s) => s.rejectUser);
 
   const pending = users.filter(
-    (u): u is PendingUser => (u.role === 'facility_employee' || u.role === 'maintenance_staff') && u.accountStatus === 'pending'
+    (u): u is PendingUser =>
+      (u.role === 'facility_employee' || u.role === 'maintenance_staff') &&
+      u.accountStatus === 'pending',
   );
 
   return (
     <Screen edges={['top']}>
       <Text style={styles.title}>Requests</Text>
-      <Text style={styles.subtitle}>Approve or decline employee and staff registration requests.</Text>
+      <Text style={styles.subtitle}>
+        Approve or decline employee and staff registration requests.
+      </Text>
 
       {pending.length === 0 ? (
-        <EmptyState icon="checkmark-done-outline" title="No pending requests" message="New employee and staff sign-ups will show up here." />
+        <EmptyState
+          icon="checkmark-done-outline"
+          title="No pending requests"
+          message="New employee and staff sign-ups will show up here."
+        />
       ) : (
         pending.map((user) => (
           <Card key={user.userId} style={styles.card}>
@@ -57,8 +65,19 @@ export default function ManagerRequestsScreen() {
             </View>
             <Text style={styles.requested}>Requested {timeAgo(user.createdAt)}</Text>
             <View style={styles.actions}>
-              <Button label="Decline" variant="outline" size="sm" onPress={() => rejectUser(user.userId)} style={styles.actionButton} />
-              <Button label="Approve" size="sm" onPress={() => approveUser(user.userId)} style={styles.actionButton} />
+              <Button
+                label="Decline"
+                variant="outline"
+                size="sm"
+                onPress={() => rejectUser(user.userId)}
+                style={styles.actionButton}
+              />
+              <Button
+                label="Approve"
+                size="sm"
+                onPress={() => approveUser(user.userId)}
+                style={styles.actionButton}
+              />
             </View>
           </Card>
         ))

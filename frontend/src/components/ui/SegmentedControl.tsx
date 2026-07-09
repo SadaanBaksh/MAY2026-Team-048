@@ -10,7 +10,11 @@ export interface SegmentedControlProps<T extends string> {
   onChange: (value: T) => void;
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: SegmentedControlProps<T>) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   return (
@@ -21,7 +25,8 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
           <Pressable
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            style={[styles.segment, active && styles.segmentActive]}>
+            style={[styles.segment, active && styles.segmentActive]}
+          >
             <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
               {opt.label}
             </Text>

@@ -33,33 +33,34 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl,
-    paddingHorizontal: Spacing.lg,
-    gap: 6,
-  },
-  iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.surfaceSunken,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  title: {
-    ...Type.subtitle,
-    color: Colors.ink,
-    textAlign: 'center',
-  },
-  message: {
-    ...Type.body,
-    color: Colors.inkSecondary,
-    textAlign: 'center',
-  },
-  action: {
-    marginTop: Spacing.sm,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      alignItems: 'center',
+      paddingVertical: Spacing.xxl,
+      paddingHorizontal: Spacing.lg,
+      gap: 6,
+    },
+    iconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: Colors.surfaceSunken,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Spacing.xs,
+    },
+    title: {
+      ...Type.subtitle,
+      color: Colors.ink,
+      textAlign: 'center',
+    },
+    message: {
+      ...Type.body,
+      color: Colors.inkSecondary,
+      textAlign: 'center',
+    },
+    action: {
+      marginTop: Spacing.sm,
+    },
+  });

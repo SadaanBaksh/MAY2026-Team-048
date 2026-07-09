@@ -35,7 +35,8 @@ export function RatingStars({ value, onChange, size = 22, readOnly }: RatingStar
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync();
               onChange?.(star);
-            }}>
+            }}
+          >
             <Ionicons
               name={filled ? 'star' : 'star-outline'}
               size={size}

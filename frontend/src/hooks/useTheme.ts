@@ -30,6 +30,6 @@ export function useTheme() {
       PriorityColors: isDark ? DarkPriorityColors : LightPriorityColors,
       StatusColors: isDark ? DarkStatusColors : LightStatusColors,
     }),
-    [isDark, mode]
+    [isDark, mode],
   );
 }

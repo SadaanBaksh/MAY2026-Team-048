@@ -61,9 +61,15 @@ export default function ResidentComplaintDetailScreen() {
 
   return (
     <View style={styles.wrapper}>
-      <ScreenHeader title={category.categoryName} subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`} showBack />
+      <ScreenHeader
+        title={category.categoryName}
+        subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`}
+        showBack
+      />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={220} />}
+        {ticket.imageUrl && (
+          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={220} />
+        )}
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -97,7 +103,9 @@ export default function ResidentComplaintDetailScreen() {
             <View style={styles.workerInfo}>
               <Text style={styles.sectionLabel}>Assigned Technician</Text>
               <Text style={styles.workerName}>{worker.name}</Text>
-              {'specialization' in worker && <Text style={styles.workerSpec}>{worker.specialization}</Text>}
+              {'specialization' in worker && (
+                <Text style={styles.workerSpec}>{worker.specialization}</Text>
+              )}
             </View>
             <View style={styles.callIcon}>
               <Ionicons name="call-outline" size={16} color={Colors.primary} />
@@ -131,7 +139,9 @@ export default function ResidentComplaintDetailScreen() {
 
             <Card style={styles.verifyCard}>
               <Text style={styles.verifyTitle}>Verify & Rate the Work</Text>
-              <Text style={styles.body}>Confirm the issue is fixed before this complaint is closed.</Text>
+              <Text style={styles.body}>
+                Confirm the issue is fixed before this complaint is closed.
+              </Text>
               <RatingStars value={rating} onChange={setRating} size={30} />
               <TextInput
                 value={feedback}
@@ -141,7 +151,12 @@ export default function ResidentComplaintDetailScreen() {
                 style={styles.feedbackInput}
                 multiline
               />
-              <Button label="Verify & Close Complaint" fullWidth disabled={rating === 0} onPress={handleVerify} />
+              <Button
+                label="Verify & Close Complaint"
+                fullWidth
+                disabled={rating === 0}
+                onPress={handleVerify}
+              />
             </Card>
           </>
         )}
@@ -150,7 +165,9 @@ export default function ResidentComplaintDetailScreen() {
           <Card>
             <Text style={styles.sectionLabel}>Your Feedback</Text>
             <RatingStars value={ticket.residentRating ?? 0} readOnly size={22} />
-            {!!ticket.residentFeedback && <Text style={styles.body}>{ticket.residentFeedback}</Text>}
+            {!!ticket.residentFeedback && (
+              <Text style={styles.body}>{ticket.residentFeedback}</Text>
+            )}
           </Card>
         )}
 
@@ -183,91 +200,92 @@ export default function ResidentComplaintDetailScreen() {
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  titleBlock: {
-    gap: Spacing.xs,
-  },
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  sectionLabel: {
-    ...Type.tiny,
-    color: Colors.inkTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 4,
-  },
-  body: {
-    ...Type.body,
-    color: Colors.ink,
-  },
-  workerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  workerInfo: {
-    flex: 1,
-  },
-  workerName: {
-    ...Type.bodyMedium,
-    color: Colors.ink,
-  },
-  workerSpec: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  callIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  costCard: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  costText: {
-    flex: 1,
-  },
-  proofWrap: {
-    marginTop: Spacing.sm,
-  },
-  verifyCard: {
-    gap: Spacing.sm,
-    backgroundColor: Colors.accentSoft,
-    borderColor: 'rgba(255,223,0,0.35)',
-  },
-  verifyTitle: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  feedbackInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    minHeight: 70,
-    color: Colors.ink,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    textAlignVertical: 'top',
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionTitleLg: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    titleBlock: {
+      gap: Spacing.xs,
+    },
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    sectionLabel: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginBottom: 4,
+    },
+    body: {
+      ...Type.body,
+      color: Colors.ink,
+    },
+    workerCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    workerInfo: {
+      flex: 1,
+    },
+    workerName: {
+      ...Type.bodyMedium,
+      color: Colors.ink,
+    },
+    workerSpec: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    callIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: Colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    costCard: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    costText: {
+      flex: 1,
+    },
+    proofWrap: {
+      marginTop: Spacing.sm,
+    },
+    verifyCard: {
+      gap: Spacing.sm,
+      backgroundColor: Colors.accentSoft,
+      borderColor: '#F1D9AE',
+    },
+    verifyTitle: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    feedbackInput: {
+      backgroundColor: Colors.surface,
+      borderRadius: Radius.md,
+      padding: Spacing.sm,
+      minHeight: 70,
+      color: Colors.ink,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: Colors.border,
+      textAlignVertical: 'top',
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionTitleLg: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+  });

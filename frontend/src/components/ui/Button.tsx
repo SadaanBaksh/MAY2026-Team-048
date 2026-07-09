@@ -31,15 +31,20 @@ export interface ButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const getVariantStyles = (Colors: ThemeColors): Record<Variant, { bg: string; text: string; border?: string }> => ({
-  primary: { bg: Colors.accent, text: Colors.primaryDark }, // Yellow bg, Dark teal text
-  secondary: { bg: Colors.primary, text: Colors.white }, // Dark teal bg, White text
-  outline: { bg: 'transparent', text: Colors.primary, border: Colors.borderStrong },
+const getVariantStyles = (
+  Colors: ThemeColors,
+): Record<Variant, { bg: string; text: string; border?: string }> => ({
+  primary: { bg: Colors.primary, text: Colors.white },
+  secondary: { bg: Colors.primarySoft, text: Colors.primary },
+  outline: { bg: 'transparent', text: Colors.ink, border: Colors.borderStrong },
   ghost: { bg: 'transparent', text: Colors.primary },
   danger: { bg: Colors.danger, text: Colors.white },
 });
 
-const SIZE_STYLES: Record<Size, { paddingVertical: number; paddingHorizontal: number; fontSize: number }> = {
+const SIZE_STYLES: Record<
+  Size,
+  { paddingVertical: number; paddingHorizontal: number; fontSize: number }
+> = {
   sm: { paddingVertical: 8, paddingHorizontal: 14, fontSize: 13 },
   md: { paddingVertical: 13, paddingHorizontal: 18, fontSize: 15 },
   lg: { paddingVertical: 16, paddingHorizontal: 22, fontSize: 16 },
@@ -85,17 +90,22 @@ export function Button({
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
         style,
-      ]}>
+      ]}
+    >
       <View style={styles.content}>
         {loading ? (
           <ActivityIndicator size="small" color={v.text} />
         ) : (
           <>
-            {icon && iconPosition === 'left' && <Ionicons name={icon} size={s.fontSize + 4} color={v.text} />}
+            {icon && iconPosition === 'left' && (
+              <Ionicons name={icon} size={s.fontSize + 4} color={v.text} />
+            )}
             <Text style={[styles.label, { color: v.text, fontSize: s.fontSize }]} numberOfLines={1}>
               {label}
             </Text>
-            {icon && iconPosition === 'right' && <Ionicons name={icon} size={s.fontSize + 4} color={v.text} />}
+            {icon && iconPosition === 'right' && (
+              <Ionicons name={icon} size={s.fontSize + 4} color={v.text} />
+            )}
           </>
         )}
       </View>

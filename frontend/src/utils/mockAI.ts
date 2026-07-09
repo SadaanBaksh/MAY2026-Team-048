@@ -1,9 +1,25 @@
 import { CATEGORIES, CategoryMeta } from '@/data/categories';
 import type { Priority } from '@/types';
 
-const AREA_WORDS = ['kitchen', 'bathroom', 'balcony', 'living room', 'bedroom', 'entrance', 'corridor'];
+const AREA_WORDS = [
+  'kitchen',
+  'bathroom',
+  'balcony',
+  'living room',
+  'bedroom',
+  'entrance',
+  'corridor',
+];
 
-const CRITICAL_WORDS = ['fire', 'gas smell', 'sparking', 'flooding', 'burst', 'stuck inside', 'smoke'];
+const CRITICAL_WORDS = [
+  'fire',
+  'gas smell',
+  'sparking',
+  'flooding',
+  'burst',
+  'stuck inside',
+  'smoke',
+];
 const HIGH_WORDS = ['leak', 'no power', 'not working', 'urgent', 'sparking', 'no water'];
 
 export interface AIAnalysisInput {
@@ -43,15 +59,21 @@ function derivePriority(note: string, category: CategoryMeta): Priority {
 export function analyzeComplaint({ note, hasVideo }: AIAnalysisInput): Promise<AIAnalysisResult> {
   const category = pickCategory(note);
   const area = pickArea(note);
-  const template = category.descriptionTemplates[Math.floor(Math.random() * category.descriptionTemplates.length)];
+  const template =
+    category.descriptionTemplates[Math.floor(Math.random() * category.descriptionTemplates.length)];
   const priority = derivePriority(note, category);
   const confidence = Math.round((0.8 + Math.random() * 0.17) * 100) / 100;
 
-  const aiDescription = template.replace('{area}', area) + (hasVideo ? ' Video footage confirms the reported symptom.' : '');
+  const aiDescription =
+    template.replace('{area}', area) +
+    (hasVideo ? ' Video footage confirms the reported symptom.' : '');
 
   return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ categoryId: category.categoryId, aiDescription, priority, confidence });
-    }, 1800 + Math.random() * 900);
+    setTimeout(
+      () => {
+        resolve({ categoryId: category.categoryId, aiDescription, priority, confidence });
+      },
+      1800 + Math.random() * 900,
+    );
   });
 }

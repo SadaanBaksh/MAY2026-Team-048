@@ -8,15 +8,30 @@ import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
   { href: '/(manager)/(tabs)', label: 'Analytics', icon: 'stats-chart', match: (p) => p === '/' },
-  { href: '/(manager)/(tabs)/requests', label: 'Requests', icon: 'person-add', match: (p) => p === '/requests' },
-  { href: '/(manager)/(tabs)/performance', label: 'Performance', icon: 'ribbon', match: (p) => p === '/performance' },
+  {
+    href: '/(manager)/(tabs)/requests',
+    label: 'Requests',
+    icon: 'person-add',
+    match: (p) => p === '/requests',
+  },
+  {
+    href: '/(manager)/(tabs)/performance',
+    label: 'Performance',
+    icon: 'ribbon',
+    match: (p) => p === '/performance',
+  },
   {
     href: '/(manager)/(tabs)/history',
     label: 'History',
     icon: 'time',
     match: (p) => p === '/history' || p.startsWith('/complaint/'),
   },
-  { href: '/(manager)/(tabs)/profile', label: 'Profile', icon: 'person-circle', match: (p) => p === '/profile' },
+  {
+    href: '/(manager)/(tabs)/profile',
+    label: 'Profile',
+    icon: 'person-circle',
+    match: (p) => p === '/profile',
+  },
 ];
 
 export default function ManagerLayout() {

@@ -46,15 +46,24 @@ export default function ManagerComplaintAuditScreen() {
   const category = getCategoryById(ticket.categoryId);
   const resident = users.find((u) => u.userId === ticket.residentId);
   const worker = ticket.workerId ? users.find((u) => u.userId === ticket.workerId) : null;
-  const apartment = resident && resident.role === 'resident' ? APARTMENTS.find((a) => a.apartmentId === resident.apartmentId) : null;
+  const apartment =
+    resident && resident.role === 'resident'
+      ? APARTMENTS.find((a) => a.apartmentId === resident.apartmentId)
+      : null;
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
 
   return (
     <View style={styles.wrapper}>
-      <ScreenHeader title={category.categoryName} subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`} showBack />
+      <ScreenHeader
+        title={category.categoryName}
+        subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`}
+        showBack
+      />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />}
+        {ticket.imageUrl && (
+          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />
+        )}
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -75,7 +84,9 @@ export default function ManagerComplaintAuditScreen() {
               <View style={styles.personInfo}>
                 <Text style={styles.sectionLabel}>Resident</Text>
                 <Text style={styles.personName}>{resident.name}</Text>
-                <Text style={styles.personMeta}>{apartment ? `${apartment.unitNumber}, ${apartment.building}` : ''}</Text>
+                <Text style={styles.personMeta}>
+                  {apartment ? `${apartment.unitNumber}, ${apartment.building}` : ''}
+                </Text>
               </View>
             </Card>
           )}
@@ -85,7 +96,9 @@ export default function ManagerComplaintAuditScreen() {
               <View style={styles.personInfo}>
                 <Text style={styles.sectionLabel}>Assigned To</Text>
                 <Text style={styles.personName}>{worker.name}</Text>
-                {'specialization' in worker && <Text style={styles.personMeta}>{worker.specialization}</Text>}
+                {'specialization' in worker && (
+                  <Text style={styles.personMeta}>{worker.specialization}</Text>
+                )}
               </View>
             </Card>
           )}
@@ -107,7 +120,9 @@ export default function ManagerComplaintAuditScreen() {
           <Card>
             <Text style={styles.sectionLabel}>Resident Rating</Text>
             <RatingStars value={ticket.residentRating} readOnly size={20} />
-            {!!ticket.residentFeedback && <Text style={styles.body}>{ticket.residentFeedback}</Text>}
+            {!!ticket.residentFeedback && (
+              <Text style={styles.body}>{ticket.residentFeedback}</Text>
+            )}
           </Card>
         )}
 

@@ -29,7 +29,10 @@ export default function ResidentProfileScreen() {
   return (
     <Screen edges={['top']}>
       <Text style={styles.title}>Profile</Text>
-      <ProfileHeader user={user} meta={apartment ? `${apartment.unitNumber}, ${apartment.building}` : undefined} />
+      <ProfileHeader
+        user={user}
+        meta={apartment ? `${apartment.unitNumber}, ${apartment.building}` : undefined}
+      />
 
       <Card style={styles.statsCard}>
         <View style={styles.statItem}>
@@ -38,41 +41,50 @@ export default function ResidentProfileScreen() {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{tickets.filter((t) => t.status === 'Closed').length}</Text>
+          <Text style={styles.statValue}>
+            {tickets.filter((t) => t.status === 'Closed').length}
+          </Text>
           <Text style={styles.statLabel}>Resolved</Text>
         </View>
       </Card>
 
-      <Button label="Log Out" variant="outline" onPress={handleLogout} fullWidth icon="log-out-outline" />
+      <Button
+        label="Log Out"
+        variant="outline"
+        onPress={handleLogout}
+        fullWidth
+        icon="log-out-outline"
+      />
     </Screen>
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
-    backgroundColor: Colors.border,
-  },
-  statValue: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  statLabel: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    statsCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statItem: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 4,
+    },
+    statDivider: {
+      width: StyleSheet.hairlineWidth,
+      alignSelf: 'stretch',
+      backgroundColor: Colors.border,
+    },
+    statValue: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    statLabel: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+  });

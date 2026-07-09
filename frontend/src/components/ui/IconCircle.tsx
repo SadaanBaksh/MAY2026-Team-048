@@ -18,8 +18,14 @@ export function IconCircle({ name, color, background, size = 40 }: IconCirclePro
     <View
       style={[
         styles.base,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: background ?? `${color}1A` },
-      ]}>
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: background ?? `${color}1A`,
+        },
+      ]}
+    >
       <Ionicons name={name} size={size * 0.5} color={color} />
     </View>
   );
