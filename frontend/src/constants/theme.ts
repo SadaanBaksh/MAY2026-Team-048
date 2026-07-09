@@ -75,13 +75,13 @@ export const LightColors: ColorPalette = {
   border: '#E4E6EA',
   borderStrong: '#D1D3D8',
 
-  primary: '#ffdf00',
-  primaryDark: '#ccb200',
-  primarySoft: '#fff7cc',
-  primaryTint: '#ffee99',
+  primary: '#0c2d35',
+  primaryDark: '#071b20',
+  primarySoft: '#eef2f3',
+  primaryTint: '#d8e1e3',
 
-  accent: '#0a2127',
-  accentSoft: '#e4e9ea',
+  accent: '#ffdf00',
+  accentSoft: '#fffce6',
 
   success: '#1C9C6E',
   successSoft: '#E4F7EF',
@@ -113,13 +113,13 @@ export const DarkColors: ColorPalette = {
   border: '#26383E',
   borderStrong: '#33474E',
 
-  primary: '#ffdf00',
-  primaryDark: '#ccb200',
-  primarySoft: '#332c00',
-  primaryTint: '#4d4200',
+  primary: '#1d6375',
+  primaryDark: '#0c2d35',
+  primarySoft: '#0f2126',
+  primaryTint: '#173840',
 
-  accent: '#1d3a42',
-  accentSoft: '#0f2126',
+  accent: '#ffdf00',
+  accentSoft: '#332c00',
 
   success: '#3FBE8E',
   successSoft: '#173A2C',

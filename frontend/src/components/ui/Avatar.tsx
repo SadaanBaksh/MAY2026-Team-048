@@ -17,7 +17,7 @@ function getInitials(name: string): string {
 
 export function Avatar({ name, color, size = 40 }: AvatarProps) {
   const { Colors } = useTheme();
-  color = color ?? Colors.accent;
+  color = color ?? Colors.primary;
   return (
     <View
       style={[
