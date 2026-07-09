@@ -54,7 +54,10 @@ export default function MaintenanceJobDetailScreen() {
 
   const category = getCategoryById(ticket.categoryId);
   const resident = users.find((u) => u.userId === ticket.residentId);
-  const apartment = resident && resident.role === 'resident' ? APARTMENTS.find((a) => a.apartmentId === resident.apartmentId) : null;
+  const apartment =
+    resident && resident.role === 'resident'
+      ? APARTMENTS.find((a) => a.apartmentId === resident.apartmentId)
+      : null;
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
 
@@ -68,22 +71,36 @@ export default function MaintenanceJobDetailScreen() {
   const pickProof = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+    });
     if (!result.canceled && result.assets[0]) setProofUri(result.assets[0].uri);
   };
 
-  const handleStart = () => startProgress(ticket.ticketId, { name: user.name, role: 'Maintenance Staff' });
+  const handleStart = () =>
+    startProgress(ticket.ticketId, { name: user.name, role: 'Maintenance Staff' });
 
   const handleResolve = () => {
     if (!remarks.trim() || !proofUri) return;
-    resolveTicket(ticket.ticketId, { remarks: remarks.trim(), proofUrl: proofUri }, { name: user.name, role: 'Maintenance Staff' });
+    resolveTicket(
+      ticket.ticketId,
+      { remarks: remarks.trim(), proofUrl: proofUri },
+      { name: user.name, role: 'Maintenance Staff' },
+    );
   };
 
   return (
     <View style={styles.wrapper}>
-      <ScreenHeader title={category.categoryName} subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`} showBack />
+      <ScreenHeader
+        title={category.categoryName}
+        subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`}
+        showBack
+      />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />}
+        {ticket.imageUrl && (
+          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />
+        )}
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -104,7 +121,8 @@ export default function MaintenanceJobDetailScreen() {
               <Text style={styles.sectionLabel}>Resident</Text>
               <Text style={styles.personName}>{resident.name}</Text>
               <Text style={styles.personMeta}>
-                {apartment ? `${apartment.unitNumber}, ${apartment.building}` : ''} · {resident.phone}
+                {apartment ? `${apartment.unitNumber}, ${apartment.building}` : ''} ·{' '}
+                {resident.phone}
               </Text>
             </View>
           </Card>
@@ -125,7 +143,13 @@ export default function MaintenanceJobDetailScreen() {
         )}
 
         {ticket.status === 'Assigned' && (
-          <Button label="Start Work" icon="play-circle-outline" fullWidth size="lg" onPress={handleStart} />
+          <Button
+            label="Start Work"
+            icon="play-circle-outline"
+            fullWidth
+            size="lg"
+            onPress={handleStart}
+          />
         )}
 
         {ticket.status === 'In_Progress' && (
@@ -147,8 +171,20 @@ export default function MaintenanceJobDetailScreen() {
               </View>
             )}
             <View style={styles.mediaActions}>
-              <Button label="Take Photo" icon="camera-outline" variant="secondary" onPress={capturedProof} style={styles.flexButton} />
-              <Button label="Choose Photo" icon="images-outline" variant="secondary" onPress={pickProof} style={styles.flexButton} />
+              <Button
+                label="Take Photo"
+                icon="camera-outline"
+                variant="secondary"
+                onPress={capturedProof}
+                style={styles.flexButton}
+              />
+              <Button
+                label="Choose Photo"
+                icon="images-outline"
+                variant="secondary"
+                onPress={pickProof}
+                style={styles.flexButton}
+              />
             </View>
             <Button
               label="Mark Resolved"
@@ -177,7 +213,9 @@ export default function MaintenanceJobDetailScreen() {
           <Card>
             <Text style={styles.sectionLabel}>Resident Rating</Text>
             <RatingStars value={ticket.residentRating} readOnly size={20} />
-            {!!ticket.residentFeedback && <Text style={styles.body}>{ticket.residentFeedback}</Text>}
+            {!!ticket.residentFeedback && (
+              <Text style={styles.body}>{ticket.residentFeedback}</Text>
+            )}
           </Card>
         )}
 
@@ -190,7 +228,9 @@ export default function MaintenanceJobDetailScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitleLg}>Messages</Text>
-          <Text style={styles.helper}>Need another visit or replacement parts? Let the team know here.</Text>
+          <Text style={styles.helper}>
+            Need another visit or replacement parts? Let the team know here.
+          </Text>
           <Card>
             <CommentsThread
               comments={ticketComments}

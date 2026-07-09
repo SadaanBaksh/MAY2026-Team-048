@@ -1,4 +1,3 @@
-
 import { Platform } from 'react-native';
 
 export interface ColorPalette {
@@ -51,7 +50,10 @@ interface PriorityColorEntry {
   soft: string;
   dot: string;
 }
-export type PriorityColorPalette = Record<'Low' | 'Medium' | 'High' | 'Critical', PriorityColorEntry>;
+export type PriorityColorPalette = Record<
+  'Low' | 'Medium' | 'High' | 'Critical',
+  PriorityColorEntry
+>;
 export type StatusColorPalette = Record<
   'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed',
   PriorityColorEntry

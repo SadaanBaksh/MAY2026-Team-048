@@ -43,14 +43,26 @@ interface TicketState {
   submitComplaint: (input: SubmitComplaintInput) => string;
   reviewAndAssign: (
     ticketId: string,
-    changes: { categoryId: string; priority: Priority; workerId: string; costResponsibility: CostResponsibility },
-    actor: Actor
+    changes: {
+      categoryId: string;
+      priority: Priority;
+      workerId: string;
+      costResponsibility: CostResponsibility;
+    },
+    actor: Actor,
   ) => void;
   updateCostResponsibility: (ticketId: string, costResponsibility: CostResponsibility) => void;
   startProgress: (ticketId: string, actor: Actor) => void;
-  resolveTicket: (ticketId: string, changes: { remarks: string; proofUrl: string }, actor: Actor) => void;
+  resolveTicket: (
+    ticketId: string,
+    changes: { remarks: string; proofUrl: string },
+    actor: Actor,
+  ) => void;
   verifyAndClose: (ticketId: string, changes: { rating: number; feedback: string }) => void;
-  addComment: (ticketId: string, input: { userId: string; authorName: string; authorRole: string; message: string }) => void;
+  addComment: (
+    ticketId: string,
+    input: { userId: string; authorName: string; authorRole: string; message: string },
+  ) => void;
 }
 
 function pushHistory(
@@ -59,7 +71,7 @@ function pushHistory(
   oldStatus: TicketStatus | null,
   newStatus: TicketStatus,
   remarks: string,
-  actorName: string
+  actorName: string,
 ): ComplaintHistoryEntry[] {
   const entry: ComplaintHistoryEntry = {
     historyId: generateId('hist'),
@@ -120,7 +132,14 @@ export const useTicketStore = create<TicketState>()(
               uploadedAt: isoNow(),
             },
           ],
-          history: pushHistory(state, ticketId, null, 'Pending', 'Complaint submitted by resident.', resident?.name ?? 'Resident'),
+          history: pushHistory(
+            state,
+            ticketId,
+            null,
+            'Pending',
+            'Complaint submitted by resident.',
+            resident?.name ?? 'Resident',
+          ),
         }));
 
         const employees = USERS.filter((u) => u.role === 'facility_employee');
@@ -149,7 +168,7 @@ export const useTicketStore = create<TicketState>()(
                   costResponsibility: changes.costResponsibility,
                   status: 'Assigned' as TicketStatus,
                 }
-              : t
+              : t,
           ),
           history: pushHistory(
             state,
@@ -157,7 +176,7 @@ export const useTicketStore = create<TicketState>()(
             state.tickets.find((t) => t.ticketId === ticketId)?.status ?? 'Pending',
             'Assigned',
             `Assigned to ${worker?.name ?? 'maintenance staff'}.`,
-            actor.name
+            actor.name,
           ),
         }));
 
@@ -182,13 +201,15 @@ export const useTicketStore = create<TicketState>()(
 
       updateCostResponsibility: (ticketId, costResponsibility) =>
         set((state) => ({
-          tickets: state.tickets.map((t) => (t.ticketId === ticketId ? { ...t, costResponsibility } : t)),
+          tickets: state.tickets.map((t) =>
+            t.ticketId === ticketId ? { ...t, costResponsibility } : t,
+          ),
         })),
 
       startProgress: (ticketId, actor) => {
         set((state) => ({
           tickets: state.tickets.map((t) =>
-            t.ticketId === ticketId ? { ...t, status: 'In_Progress' as TicketStatus } : t
+            t.ticketId === ticketId ? { ...t, status: 'In_Progress' as TicketStatus } : t,
           ),
           history: pushHistory(
             state,
@@ -196,7 +217,7 @@ export const useTicketStore = create<TicketState>()(
             'Assigned',
             'In_Progress',
             'Work has started on-site.',
-            actor.name
+            actor.name,
           ),
         }));
         const ticket = get().tickets.find((t) => t.ticketId === ticketId);
@@ -221,9 +242,16 @@ export const useTicketStore = create<TicketState>()(
                   resolutionRemarks: changes.remarks,
                   resolutionProofUrl: changes.proofUrl,
                 }
-              : t
+              : t,
           ),
-          history: pushHistory(state, ticketId, 'In_Progress', 'Resolved', changes.remarks, actor.name),
+          history: pushHistory(
+            state,
+            ticketId,
+            'In_Progress',
+            'Resolved',
+            changes.remarks,
+            actor.name,
+          ),
         }));
         const ticket = get().tickets.find((t) => t.ticketId === ticketId);
         if (ticket) {
@@ -249,8 +277,13 @@ export const useTicketStore = create<TicketState>()(
         set((state) => ({
           tickets: state.tickets.map((t) =>
             t.ticketId === ticketId
-              ? { ...t, status: 'Closed' as TicketStatus, residentRating: changes.rating, residentFeedback: changes.feedback }
-              : t
+              ? {
+                  ...t,
+                  status: 'Closed' as TicketStatus,
+                  residentRating: changes.rating,
+                  residentFeedback: changes.feedback,
+                }
+              : t,
           ),
           history: pushHistory(
             state,
@@ -258,7 +291,7 @@ export const useTicketStore = create<TicketState>()(
             'Resolved',
             'Closed',
             'Resident verified the resolution and closed the complaint.',
-            'Resident'
+            'Resident',
           ),
         }));
         const ticket = get().tickets.find((t) => t.ticketId === ticketId);
@@ -291,6 +324,6 @@ export const useTicketStore = create<TicketState>()(
     {
       name: 'simplifix-tickets',
       storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
+    },
+  ),
 );

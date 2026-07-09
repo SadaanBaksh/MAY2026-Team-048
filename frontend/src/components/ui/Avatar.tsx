@@ -22,7 +22,8 @@ export function Avatar({ name, color, size = 40 }: AvatarProps) {
       style={[
         styles.base,
         { width: size, height: size, borderRadius: size / 2, backgroundColor: `${color}1F` },
-      ]}>
+      ]}
+    >
       <Text style={{ color, fontSize: size * 0.38, fontWeight: '700' }}>{getInitials(name)}</Text>
     </View>
   );

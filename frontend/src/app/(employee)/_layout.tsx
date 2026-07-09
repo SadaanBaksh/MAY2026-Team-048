@@ -14,7 +14,12 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
     icon: 'document-text',
     match: (p) => p === '/complaints' || p.startsWith('/complaint/'),
   },
-  { href: '/(employee)/(tabs)/workers', label: 'Workers', icon: 'people', match: (p) => p === '/workers' },
+  {
+    href: '/(employee)/(tabs)/workers',
+    label: 'Workers',
+    icon: 'people',
+    match: (p) => p === '/workers',
+  },
 ];
 
 export default function EmployeeLayout() {

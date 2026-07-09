@@ -9,7 +9,9 @@ import { generateId } from '@/utils/id';
 
 interface NotificationState {
   notifications: AppNotification[];
-  addNotification: (input: Omit<AppNotification, 'notificationId' | 'isRead' | 'createdAt'>) => void;
+  addNotification: (
+    input: Omit<AppNotification, 'notificationId' | 'isRead' | 'createdAt'>,
+  ) => void;
   markRead: (notificationId: string) => void;
   markAllRead: (userId: string) => void;
 }
@@ -30,18 +32,20 @@ export const useNotificationStore = create<NotificationState>()(
       markRead: (notificationId) =>
         set((state) => ({
           notifications: state.notifications.map((n) =>
-            n.notificationId === notificationId ? { ...n, isRead: true } : n
+            n.notificationId === notificationId ? { ...n, isRead: true } : n,
           ),
         })),
 
       markAllRead: (userId) =>
         set((state) => ({
-          notifications: state.notifications.map((n) => (n.userId === userId ? { ...n, isRead: true } : n)),
+          notifications: state.notifications.map((n) =>
+            n.userId === userId ? { ...n, isRead: true } : n,
+          ),
         })),
     }),
     {
       name: 'simplifix-notifications',
       storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
+    },
+  ),
 );

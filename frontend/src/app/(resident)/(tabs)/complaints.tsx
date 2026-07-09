@@ -25,10 +25,12 @@ export default function ResidentComplaintsScreen() {
       tickets
         .filter((t) => t.residentId === user.userId)
         .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime()),
-    [tickets, user.userId]
+    [tickets, user.userId],
   );
 
-  const filtered = myTickets.filter((t) => (segment === 'active' ? t.status !== 'Closed' : t.status === 'Closed'));
+  const filtered = myTickets.filter((t) =>
+    segment === 'active' ? t.status !== 'Closed' : t.status === 'Closed',
+  );
 
   return (
     <Screen edges={['top']}>
@@ -54,7 +56,11 @@ export default function ResidentComplaintsScreen() {
           />
         ) : (
           filtered.map((t) => (
-            <TicketCard key={t.ticketId} ticket={t} onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)} />
+            <TicketCard
+              key={t.ticketId}
+              ticket={t}
+              onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+            />
           ))
         )}
       </View>
@@ -62,12 +68,13 @@ export default function ResidentComplaintsScreen() {
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+  });

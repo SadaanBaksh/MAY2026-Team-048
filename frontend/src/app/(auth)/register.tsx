@@ -25,15 +25,18 @@ const ROLE_COPY: Record<UserRole, { title: string; subtitle: string }> = {
   },
   facility_employee: {
     title: 'Facility employee sign up',
-    subtitle: 'Your request will be sent to your facility manager for approval before you can log in.',
+    subtitle:
+      'Your request will be sent to your facility manager for approval before you can log in.',
   },
   maintenance_staff: {
     title: 'Maintenance staff sign up',
-    subtitle: 'Your request will be sent to your facility manager for approval before you can log in.',
+    subtitle:
+      'Your request will be sent to your facility manager for approval before you can log in.',
   },
   facility_manager: {
     title: 'Facility manager sign up',
-    subtitle: 'Managers get full access right away, including approving employee and staff requests.',
+    subtitle:
+      'Managers get full access right away, including approving employee and staff requests.',
   },
 };
 
@@ -75,7 +78,16 @@ export default function RegisterScreen() {
       setError('Passwords do not match.');
       return;
     }
-    const result = register({ name, email, phone, role, building, unitNumber, title, specialization });
+    const result = register({
+      name,
+      email,
+      phone,
+      role,
+      building,
+      unitNumber,
+      title,
+      specialization,
+    });
     if (!result.success) {
       setError(result.error ?? 'Unable to create account.');
       return;
@@ -88,7 +100,10 @@ export default function RegisterScreen() {
   return (
     <View style={styles.wrapper}>
       <ScreenHeader title="Create Account" showBack onBack={() => router.back()} />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
 
@@ -96,7 +111,13 @@ export default function RegisterScreen() {
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
 
           <View style={styles.form}>
-            <TextField label="Full Name" icon="person-outline" placeholder="Jane Doe" value={name} onChangeText={setName} />
+            <TextField
+              label="Full Name"
+              icon="person-outline"
+              placeholder="Jane Doe"
+              value={name}
+              onChangeText={setName}
+            />
             <TextField
               label="Email"
               icon="mail-outline"
@@ -118,10 +139,20 @@ export default function RegisterScreen() {
             {role === 'resident' && (
               <View style={styles.row}>
                 <View style={styles.rowItem}>
-                  <TextField label="Building / Wing" placeholder="Wing A" value={building} onChangeText={setBuilding} />
+                  <TextField
+                    label="Building / Wing"
+                    placeholder="Wing A"
+                    value={building}
+                    onChangeText={setBuilding}
+                  />
                 </View>
                 <View style={styles.rowItem}>
-                  <TextField label="Unit Number" placeholder="A-305" value={unitNumber} onChangeText={setUnitNumber} />
+                  <TextField
+                    label="Unit Number"
+                    placeholder="A-305"
+                    value={unitNumber}
+                    onChangeText={setUnitNumber}
+                  />
                 </View>
               </View>
             )}
@@ -156,7 +187,14 @@ export default function RegisterScreen() {
               />
             )}
 
-            <TextField label="Password" icon="lock-closed-outline" placeholder="••••••••" secure value={password} onChangeText={setPassword} />
+            <TextField
+              label="Password"
+              icon="lock-closed-outline"
+              placeholder="••••••••"
+              secure
+              value={password}
+              onChangeText={setPassword}
+            />
             <TextField
               label="Confirm Password"
               icon="lock-closed-outline"
@@ -181,55 +219,56 @@ export default function RegisterScreen() {
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  flex: {
-    flex: 1,
-  },
-  content: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xxxl,
-    gap: Spacing.md,
-  },
-  title: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  subtitle: {
-    ...Type.body,
-    color: Colors.inkSecondary,
-    marginTop: -Spacing.xs,
-  },
-  form: {
-    gap: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  rowItem: {
-    flex: 1,
-  },
-  error: {
-    ...Type.caption,
-    color: Colors.danger,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: Spacing.md,
-  },
-  footerText: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  footerLink: {
-    ...Type.captionBold,
-    color: Colors.primary,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    flex: {
+      flex: 1,
+    },
+    content: {
+      padding: Spacing.lg,
+      paddingBottom: Spacing.xxxl,
+      gap: Spacing.md,
+    },
+    title: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    subtitle: {
+      ...Type.body,
+      color: Colors.inkSecondary,
+      marginTop: -Spacing.xs,
+    },
+    form: {
+      gap: Spacing.sm,
+      marginTop: Spacing.xs,
+    },
+    row: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    rowItem: {
+      flex: 1,
+    },
+    error: {
+      ...Type.caption,
+      color: Colors.danger,
+    },
+    footer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: Spacing.md,
+    },
+    footerText: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    footerLink: {
+      ...Type.captionBold,
+      color: Colors.primary,
+    },
+  });

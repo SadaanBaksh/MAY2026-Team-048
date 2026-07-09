@@ -19,7 +19,13 @@ export interface DonutChartProps {
   centerValue?: string;
 }
 
-export function DonutChart({ data, size = 150, strokeWidth = 18, centerLabel, centerValue }: DonutChartProps) {
+export function DonutChart({
+  data,
+  size = 150,
+  strokeWidth = 18,
+  centerLabel,
+  centerValue,
+}: DonutChartProps) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const radius = (size - strokeWidth) / 2;
@@ -87,45 +93,46 @@ export function DonutChart({ data, size = 150, strokeWidth = 18, centerLabel, ce
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.lg,
-  },
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerValue: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  centerLabel: {
-    ...Type.tiny,
-    color: Colors.inkSecondary,
-  },
-  legend: {
-    flex: 1,
-    gap: 8,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendLabel: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-    flex: 1,
-  },
-  legendValue: {
-    ...Type.captionBold,
-    color: Colors.ink,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.lg,
+    },
+    center: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    centerValue: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    centerLabel: {
+      ...Type.tiny,
+      color: Colors.inkSecondary,
+    },
+    legend: {
+      flex: 1,
+      gap: 8,
+    },
+    legendRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    legendDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    legendLabel: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+      flex: 1,
+    },
+    legendValue: {
+      ...Type.captionBold,
+      color: Colors.ink,
+    },
+  });

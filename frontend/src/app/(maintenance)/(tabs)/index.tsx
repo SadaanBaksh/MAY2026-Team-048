@@ -30,11 +30,13 @@ export default function MaintenanceJobsScreen() {
       tickets
         .filter((t) => t.workerId === user.userId)
         .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime()),
-    [tickets, user.userId]
+    [tickets, user.userId],
   );
 
   const filtered = myJobs.filter((t) =>
-    segment === 'active' ? t.status === 'Assigned' || t.status === 'In_Progress' : t.status === 'Resolved' || t.status === 'Closed'
+    segment === 'active'
+      ? t.status === 'Assigned' || t.status === 'In_Progress'
+      : t.status === 'Resolved' || t.status === 'Closed',
   );
 
   const infoFor = (residentId: string) => {
@@ -51,7 +53,10 @@ export default function MaintenanceJobsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <BurgerMenu />
-          <Pressable style={styles.headerProfile} onPress={() => router.push('/(maintenance)/(tabs)/profile')}>
+          <Pressable
+            style={styles.headerProfile}
+            onPress={() => router.push('/(maintenance)/(tabs)/profile')}
+          >
             <Avatar name={user.name} color={user.avatarColor} size={44} />
             <View>
               <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
@@ -59,7 +64,10 @@ export default function MaintenanceJobsScreen() {
             </View>
           </Pressable>
         </View>
-        <NotificationBell userId={user.userId} onPress={() => router.push('/(maintenance)/notifications')} />
+        <NotificationBell
+          userId={user.userId}
+          onPress={() => router.push('/(maintenance)/notifications')}
+        />
       </View>
 
       <SegmentedControl
@@ -76,7 +84,11 @@ export default function MaintenanceJobsScreen() {
           <EmptyState
             icon={segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
             title={segment === 'active' ? 'No active jobs' : 'No completed jobs yet'}
-            message={segment === 'active' ? 'New assignments will appear here.' : 'Jobs you finish will show up here.'}
+            message={
+              segment === 'active'
+                ? 'New assignments will appear here.'
+                : 'Jobs you finish will show up here.'
+            }
           />
         ) : (
           filtered.map((t) => (

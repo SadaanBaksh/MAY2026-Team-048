@@ -31,11 +31,13 @@ export default function ResidentHomeScreen() {
       tickets
         .filter((t) => t.residentId === user.userId)
         .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime()),
-    [tickets, user.userId]
+    [tickets, user.userId],
   );
 
   const active = myTickets.filter((t) => t.status !== 'Closed');
-  const needsAttention = myTickets.filter((t) => t.status === 'Resolved' && t.residentRating == null);
+  const needsAttention = myTickets.filter(
+    (t) => t.status === 'Resolved' && t.residentRating == null,
+  );
   const closed = myTickets.filter((t) => t.status === 'Closed');
 
   return (
@@ -43,15 +45,23 @@ export default function ResidentHomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <BurgerMenu />
-          <Pressable style={styles.headerProfile} onPress={() => router.push('/(resident)/(tabs)/profile')}>
+          <Pressable
+            style={styles.headerProfile}
+            onPress={() => router.push('/(resident)/(tabs)/profile')}
+          >
             <Avatar name={user.name} color={user.avatarColor} size={44} />
             <View>
               <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
-              <Text style={styles.unit}>{apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}</Text>
+              <Text style={styles.unit}>
+                {apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}
+              </Text>
             </View>
           </Pressable>
         </View>
-        <NotificationBell userId={user.userId} onPress={() => router.push('/(resident)/notifications')} />
+        <NotificationBell
+          userId={user.userId}
+          onPress={() => router.push('/(resident)/notifications')}
+        />
       </View>
 
       <Pressable onPress={() => router.push('/(resident)/new-complaint')}>
@@ -61,16 +71,33 @@ export default function ResidentHomeScreen() {
           </View>
           <View style={styles.reportText}>
             <Text style={styles.reportTitle}>Report an Issue</Text>
-            <Text style={styles.reportSubtitle}>Snap a photo or video — AI fills in the details</Text>
+            <Text style={styles.reportSubtitle}>
+              Snap a photo or video — AI fills in the details
+            </Text>
           </View>
           <Ionicons name="arrow-forward-circle" size={26} color={Colors.white} />
         </Card>
       </Pressable>
 
       <View style={styles.statsRow}>
-        <StatCard label="Active" value={active.length} icon="pulse-outline" color={Colors.primary} />
-        <StatCard label="Needs Review" value={needsAttention.length} icon="star-outline" color={Colors.accent} />
-        <StatCard label="Resolved" value={closed.length} icon="checkmark-done-outline" color={Colors.success} />
+        <StatCard
+          label="Active"
+          value={active.length}
+          icon="pulse-outline"
+          color={Colors.primary}
+        />
+        <StatCard
+          label="Needs Review"
+          value={needsAttention.length}
+          icon="star-outline"
+          color={Colors.accent}
+        />
+        <StatCard
+          label="Resolved"
+          value={closed.length}
+          icon="checkmark-done-outline"
+          color={Colors.success}
+        />
       </View>
 
       {needsAttention.length > 0 && (
@@ -93,7 +120,10 @@ export default function ResidentHomeScreen() {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Recent Complaints</Text>
           {myTickets.length > 0 && (
-            <Text style={styles.viewAll} onPress={() => router.push('/(resident)/(tabs)/complaints')}>
+            <Text
+              style={styles.viewAll}
+              onPress={() => router.push('/(resident)/(tabs)/complaints')}
+            >
               View all
             </Text>
           )}
@@ -109,7 +139,11 @@ export default function ResidentHomeScreen() {
         ) : (
           <View style={styles.list}>
             {myTickets.slice(0, 3).map((t) => (
-              <TicketCard key={t.ticketId} ticket={t} onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)} />
+              <TicketCard
+                key={t.ticketId}
+                ticket={t}
+                onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+              />
             ))}
           </View>
         )}
@@ -120,77 +154,77 @@ export default function ResidentHomeScreen() {
 
 const getStyles = (Colors: ThemeColors) =>
   StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  headerProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  greeting: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  unit: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  reportCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderWidth: 0,
-  },
-  reportIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reportText: {
-    flex: 1,
-  },
-  reportTitle: {
-    ...Type.bodyMedium,
-    color: Colors.white,
-  },
-  reportSubtitle: {
-    ...Type.caption,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  viewAll: {
-    ...Type.captionBold,
-    color: Colors.primary,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-});
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    headerProfile: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    greeting: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    unit: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    reportCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      backgroundColor: Colors.primary,
+      borderWidth: 0,
+    },
+    reportIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: Radius.md,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    reportText: {
+      flex: 1,
+    },
+    reportTitle: {
+      ...Type.bodyMedium,
+      color: Colors.white,
+    },
+    reportSubtitle: {
+      ...Type.caption,
+      color: 'rgba(255,255,255,0.85)',
+      marginTop: 2,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    viewAll: {
+      ...Type.captionBold,
+      color: Colors.primary,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+  });

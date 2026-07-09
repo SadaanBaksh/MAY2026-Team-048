@@ -188,7 +188,8 @@ export const TICKETS: Ticket[] = [
     categoryId: 'cat_plumbing',
     imageUrl: 'https://picsum.photos/seed/tkt1001/900/700',
     mediaType: 'Image',
-    residentNote: 'The kitchen tap has been leaking non-stop since this morning, water is pooling on the counter.',
+    residentNote:
+      'The kitchen tap has been leaking non-stop since this morning, water is pooling on the counter.',
     aiDescription:
       'Continuous dripping detected from the kitchen fixture. Washer or cartridge replacement may be required to stop water wastage.',
     aiConfidence: 0.93,
@@ -420,7 +421,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1011/900/700',
     mediaType: 'Image',
     residentNote: 'Window lock in the bedroom is jammed and will not latch.',
-    aiDescription: 'Window lock at the bedroom is jammed, requiring lubrication or hardware replacement.',
+    aiDescription:
+      'Window lock at the bedroom is jammed, requiring lubrication or hardware replacement.',
     aiConfidence: 0.84,
     priority: 'Low',
     status: 'Pending',
@@ -442,7 +444,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1012/900/700',
     mediaType: 'Image',
     residentNote: 'Refrigerator stopped powering on this morning.',
-    aiDescription: 'The refrigerator unit is not powering on. Suspect a tripped thermal cutoff or faulty control board.',
+    aiDescription:
+      'The refrigerator unit is not powering on. Suspect a tripped thermal cutoff or faulty control board.',
     aiConfidence: 0.85,
     priority: 'High',
     status: 'Assigned',
@@ -566,7 +569,8 @@ export const COMMENTS: Comment[] = [
     userId: 'user_wrk_1',
     authorName: 'Ramesh Yadav',
     authorRole: 'maintenance_staff',
-    message: 'Reached the site, cartridge needs replacement. Picking up the part now, back in an hour.',
+    message:
+      'Reached the site, cartridge needs replacement. Picking up the part now, back in an hour.',
     postedAt: hoursAgo(19),
   },
   {
@@ -584,7 +588,8 @@ export const COMMENTS: Comment[] = [
     userId: 'user_emp_1',
     authorName: 'Neha Kulkarni',
     authorRole: 'facility_employee',
-    message: 'Power to that section has been isolated as a precaution until an electrician arrives.',
+    message:
+      'Power to that section has been isolated as a precaution until an electrician arrives.',
     postedAt: hoursAgo(27),
   },
 ];

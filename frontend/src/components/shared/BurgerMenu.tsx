@@ -41,7 +41,11 @@ export function BurgerMenu() {
   const openMenu = () => setVisible(true);
 
   const closeMenu = () => {
-    Animated.timing(translateX, { toValue: -PANEL_WIDTH, duration: 180, useNativeDriver: true }).start(() => {
+    Animated.timing(translateX, {
+      toValue: -PANEL_WIDTH,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
       setVisible(false);
     });
   };
@@ -82,14 +86,25 @@ export function BurgerMenu() {
               <Divider />
 
               <View style={styles.items}>
-                <MenuItem icon="person-outline" label="Profile" onPress={() => goTo(ROLE_PROFILE[user.role])} />
+                <MenuItem
+                  icon="person-outline"
+                  label="Profile"
+                  onPress={() => goTo(ROLE_PROFILE[user.role])}
+                />
                 <View style={styles.item}>
-                  <Ionicons name={isDark ? 'moon' : 'moon-outline'} size={20} color={Colors.inkSecondary} />
+                  <Ionicons
+                    name={isDark ? 'moon' : 'moon-outline'}
+                    size={20}
+                    color={Colors.inkSecondary}
+                  />
                   <Text style={[styles.itemLabel, styles.itemLabelGrow]}>Dark Mode</Text>
                   <Switch
                     value={isDark}
                     onValueChange={toggleTheme}
-                    trackColor={{ false: Colors.borderStrong, true: isDark ? Colors.primaryDark : Colors.primary }}
+                    trackColor={{
+                      false: Colors.borderStrong,
+                      true: isDark ? Colors.primaryDark : Colors.primary,
+                    }}
                     thumbColor={Colors.white}
                     ios_backgroundColor={Colors.borderStrong}
                   />

@@ -25,7 +25,13 @@ export default function ManagerProfileScreen() {
     <Screen edges={['top']}>
       <Text style={styles.title}>Profile</Text>
       <ProfileHeader user={user} meta={user.title} />
-      <Button label="Log Out" variant="outline" onPress={handleLogout} fullWidth icon="log-out-outline" />
+      <Button
+        label="Log Out"
+        variant="outline"
+        onPress={handleLogout}
+        fullWidth
+        icon="log-out-outline"
+      />
     </Screen>
   );
 }

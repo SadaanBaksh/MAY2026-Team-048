@@ -31,7 +31,10 @@ export function BarChart({ data, valueSuffix = '' }: BarChartProps) {
             <View
               style={[
                 styles.fill,
-                { width: `${Math.max((d.value / max) * 100, 4)}%`, backgroundColor: d.color ?? Colors.primary },
+                {
+                  width: `${Math.max((d.value / max) * 100, 4)}%`,
+                  backgroundColor: d.color ?? Colors.primary,
+                },
               ]}
             />
           </View>
@@ -45,35 +48,36 @@ export function BarChart({ data, valueSuffix = '' }: BarChartProps) {
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    gap: Spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  label: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-    width: 92,
-  },
-  track: {
-    flex: 1,
-    height: 10,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceSunken,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    borderRadius: Radius.pill,
-  },
-  value: {
-    ...Type.captionBold,
-    color: Colors.ink,
-    width: 28,
-    textAlign: 'right',
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      gap: Spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    label: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+      width: 92,
+    },
+    track: {
+      flex: 1,
+      height: 10,
+      borderRadius: Radius.pill,
+      backgroundColor: Colors.surfaceSunken,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      borderRadius: Radius.pill,
+    },
+    value: {
+      ...Type.captionBold,
+      color: Colors.ink,
+      width: 28,
+      textAlign: 'right',
+    },
+  });

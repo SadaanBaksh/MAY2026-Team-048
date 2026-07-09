@@ -19,7 +19,10 @@ export default function MaintenanceProfileScreen() {
   const logout = useAuthStore((s) => s.logout);
   const tickets = useTicketStore((s) => s.tickets);
 
-  const jobs = useMemo(() => tickets.filter((t) => t.workerId === user.userId), [tickets, user.userId]);
+  const jobs = useMemo(
+    () => tickets.filter((t) => t.workerId === user.userId),
+    [tickets, user.userId],
+  );
   const completed = jobs.filter((t) => t.status === 'Resolved' || t.status === 'Closed');
   const styles = useMemo(() => getStyles(Colors), [Colors]);
 
@@ -50,7 +53,13 @@ export default function MaintenanceProfileScreen() {
         </View>
       </Card>
 
-      <Button label="Log Out" variant="outline" onPress={handleLogout} fullWidth icon="log-out-outline" />
+      <Button
+        label="Log Out"
+        variant="outline"
+        onPress={handleLogout}
+        fullWidth
+        icon="log-out-outline"
+      />
     </Screen>
   );
 }

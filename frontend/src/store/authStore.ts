@@ -50,7 +50,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       register: (input: RegisterInput) => {
-        const exists = get().users.some((u) => u.email.toLowerCase() === input.email.trim().toLowerCase());
+        const exists = get().users.some(
+          (u) => u.email.toLowerCase() === input.email.trim().toLowerCase(),
+        );
         if (exists) return { success: false, error: 'An account with that email already exists.' };
 
         const palette = ['#3452D9', '#7A3FC2', '#C2740F', '#1C7A5A', '#B62B4D', '#2E7BC2'];
@@ -122,12 +124,16 @@ export const useAuthStore = create<AuthState>()(
 
       approveUser: (userId: string) =>
         set((state) => ({
-          users: state.users.map((u) => (u.userId === userId ? { ...u, accountStatus: 'active' } : u)),
+          users: state.users.map((u) =>
+            u.userId === userId ? { ...u, accountStatus: 'active' } : u,
+          ),
         })),
 
       rejectUser: (userId: string) =>
         set((state) => ({
-          users: state.users.map((u) => (u.userId === userId ? { ...u, accountStatus: 'rejected' } : u)),
+          users: state.users.map((u) =>
+            u.userId === userId ? { ...u, accountStatus: 'rejected' } : u,
+          ),
         })),
     }),
     {
@@ -137,13 +143,14 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({ currentUser: state.currentUser, users: state.users }),
       migrate: (persistedState) => {
         const state = persistedState as { currentUser: AppUser | null; users: AppUser[] };
-        const backfill = (u: AppUser): AppUser => (u.accountStatus ? u : ({ ...u, accountStatus: 'active' } as AppUser));
+        const backfill = (u: AppUser): AppUser =>
+          u.accountStatus ? u : ({ ...u, accountStatus: 'active' } as AppUser);
         return {
           ...state,
           users: (state?.users ?? []).map(backfill),
           currentUser: state?.currentUser ? backfill(state.currentUser) : null,
         };
       },
-    }
-  )
+    },
+  ),
 );

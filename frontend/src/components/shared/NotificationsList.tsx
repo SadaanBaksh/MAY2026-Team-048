@@ -19,10 +19,18 @@ export function NotificationsList({ notifications, onPressItem }: NotificationsL
   const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   if (notifications.length === 0) {
-    return <EmptyState icon="notifications-outline" title="No notifications" message="You're all caught up." />;
+    return (
+      <EmptyState
+        icon="notifications-outline"
+        title="No notifications"
+        message="You're all caught up."
+      />
+    );
   }
 
-  const sorted = [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sorted = [...notifications].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   return (
     <View style={styles.list}>
@@ -30,9 +38,18 @@ export function NotificationsList({ notifications, onPressItem }: NotificationsL
         <Pressable
           key={n.notificationId}
           onPress={() => onPressItem(n)}
-          style={({ pressed }) => [styles.row, !n.isRead && styles.rowUnread, pressed && styles.pressed]}>
+          style={({ pressed }) => [
+            styles.row,
+            !n.isRead && styles.rowUnread,
+            pressed && styles.pressed,
+          ]}
+        >
           <IconCircle
-            name={n.title.toLowerCase().includes('overdue') ? 'alert-circle-outline' : 'notifications-outline'}
+            name={
+              n.title.toLowerCase().includes('overdue')
+                ? 'alert-circle-outline'
+                : 'notifications-outline'
+            }
             color={n.title.toLowerCase().includes('overdue') ? Colors.danger : Colors.primary}
             size={36}
           />

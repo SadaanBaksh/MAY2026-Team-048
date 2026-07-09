@@ -35,8 +35,13 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
             <Pressable
               key={item.href}
               onPress={() => router.push(item.href as never)}
-              style={[styles.item, active && styles.itemActive]}>
-              <Ionicons name={item.icon} size={20} color={active ? Colors.primary : Colors.inkSecondary} />
+              style={[styles.item, active && styles.itemActive]}
+            >
+              <Ionicons
+                name={item.icon}
+                size={20}
+                color={active ? Colors.primary : Colors.inkSecondary}
+              />
               <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
             </Pressable>
           );

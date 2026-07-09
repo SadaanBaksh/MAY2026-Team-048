@@ -44,22 +44,31 @@ export default function EmployeeComplaintDetailScreen() {
   const [categoryId, setCategoryId] = useState(ticket?.categoryId ?? '');
   const [priority, setPriority] = useState<Priority>(ticket?.priority ?? 'Medium');
   const [costResponsibility, setCostResponsibility] = useState<CostResponsibility>(
-    ticket?.costResponsibility ?? 'Pending Review'
+    ticket?.costResponsibility ?? 'Pending Review',
   );
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(ticket?.workerId ?? null);
 
   const resident = ticket ? users.find((u) => u.userId === ticket.residentId) : null;
-  const apartment = resident && resident.role === 'resident' ? APARTMENTS.find((a) => a.apartmentId === resident.apartmentId) : null;
+  const apartment =
+    resident && resident.role === 'resident'
+      ? APARTMENTS.find((a) => a.apartmentId === resident.apartmentId)
+      : null;
 
   const workers = useMemo(() => {
     if (!ticket) return [];
     const category = getCategoryById(categoryId);
-    const staff = users.filter((u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active');
+    const staff = users.filter(
+      (u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active',
+    );
     return staff
       .map((w) => ({
         worker: w,
-        activeJobs: tickets.filter((t) => t.workerId === w.userId && (t.status === 'Assigned' || t.status === 'In_Progress')).length,
-        relevance: category.categoryName.toLowerCase().includes(w.specialization.toLowerCase().split(' ')[0])
+        activeJobs: tickets.filter(
+          (t) => t.workerId === w.userId && (t.status === 'Assigned' || t.status === 'In_Progress'),
+        ).length,
+        relevance: category.categoryName
+          .toLowerCase()
+          .includes(w.specialization.toLowerCase().split(' ')[0])
           ? 0
           : 1,
       }))
@@ -88,15 +97,21 @@ export default function EmployeeComplaintDetailScreen() {
     reviewAndAssign(
       ticket.ticketId,
       { categoryId, priority, workerId: selectedWorkerId, costResponsibility },
-      { name: user.name, role: 'Facility Employee' }
+      { name: user.name, role: 'Facility Employee' },
     );
   };
 
   return (
     <View style={styles.wrapper}>
-      <ScreenHeader title={category.categoryName} subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`} showBack />
+      <ScreenHeader
+        title={category.categoryName}
+        subtitle={`Reported ${formatFullDate(ticket.dateOfRequest)}`}
+        showBack
+      />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />}
+        {ticket.imageUrl && (
+          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />
+        )}
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -117,7 +132,8 @@ export default function EmployeeComplaintDetailScreen() {
               <Text style={styles.sectionLabel}>Reported By</Text>
               <Text style={styles.personName}>{resident.name}</Text>
               <Text style={styles.personMeta}>
-                {apartment ? `${apartment.unitNumber}, ${apartment.building}` : ''} · {resident.phone}
+                {apartment ? `${apartment.unitNumber}, ${apartment.building}` : ''} ·{' '}
+                {resident.phone}
               </Text>
             </View>
           </Card>
@@ -138,7 +154,12 @@ export default function EmployeeComplaintDetailScreen() {
           {canEdit ? (
             <View style={styles.chipRow}>
               {COST_OPTIONS.map((opt) => (
-                <Chip key={opt} label={opt} active={costResponsibility === opt} onPress={() => setCostResponsibility(opt)} />
+                <Chip
+                  key={opt}
+                  label={opt}
+                  active={costResponsibility === opt}
+                  onPress={() => setCostResponsibility(opt)}
+                />
               ))}
             </View>
           ) : (
@@ -147,7 +168,9 @@ export default function EmployeeComplaintDetailScreen() {
         </Card>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitleLg}>{canEdit ? 'Assign Maintenance Staff' : 'Assigned Staff'}</Text>
+          <Text style={styles.sectionTitleLg}>
+            {canEdit ? 'Assign Maintenance Staff' : 'Assigned Staff'}
+          </Text>
           {canEdit ? (
             <View style={styles.workerList}>
               {workers.map(({ worker, activeJobs }) => {
@@ -156,7 +179,8 @@ export default function EmployeeComplaintDetailScreen() {
                   <Card
                     key={worker.userId}
                     onPress={() => setSelectedWorkerId(worker.userId)}
-                    style={[styles.workerCard, selected && styles.workerCardSelected]}>
+                    style={[styles.workerCard, selected && styles.workerCardSelected]}
+                  >
                     <Avatar name={worker.name} color={worker.avatarColor} size={40} />
                     <View style={styles.personInfo}>
                       <Text style={styles.personName}>{worker.name}</Text>
@@ -186,7 +210,9 @@ export default function EmployeeComplaintDetailScreen() {
               <Avatar name={assignedWorker.name} color={assignedWorker.avatarColor} size={44} />
               <View style={styles.personInfo}>
                 <Text style={styles.personName}>{assignedWorker.name}</Text>
-                {'specialization' in assignedWorker && <Text style={styles.personMeta}>{assignedWorker.specialization}</Text>}
+                {'specialization' in assignedWorker && (
+                  <Text style={styles.personMeta}>{assignedWorker.specialization}</Text>
+                )}
               </View>
             </Card>
           ) : null}
@@ -196,7 +222,9 @@ export default function EmployeeComplaintDetailScreen() {
           <Card>
             <Text style={styles.sectionLabel}>Resident Feedback</Text>
             <RatingStars value={ticket.residentRating} readOnly size={20} />
-            {!!ticket.residentFeedback && <Text style={styles.body}>{ticket.residentFeedback}</Text>}
+            {!!ticket.residentFeedback && (
+              <Text style={styles.body}>{ticket.residentFeedback}</Text>
+            )}
           </Card>
         )}
 

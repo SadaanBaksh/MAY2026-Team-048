@@ -8,10 +8,17 @@ import { useNotificationStore } from '@/store/notificationStore';
 export function NotificationBell({ userId, onPress }: { userId: string; onPress: () => void }) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
-  const unread = useNotificationStore((s) => s.notifications.filter((n) => n.userId === userId && !n.isRead).length);
+  const unread = useNotificationStore(
+    (s) => s.notifications.filter((n) => n.userId === userId && !n.isRead).length,
+  );
 
   return (
-    <Pressable onPress={onPress} hitSlop={10} style={styles.wrapper} accessibilityLabel="Notifications">
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      style={styles.wrapper}
+      accessibilityLabel="Notifications"
+    >
       <Ionicons name="notifications-outline" size={22} color={Colors.ink} />
       {unread > 0 && (
         <View style={styles.badge}>

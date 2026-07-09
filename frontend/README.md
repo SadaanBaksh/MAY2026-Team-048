@@ -60,12 +60,12 @@ frontend/
 
 ## Roles
 
-| Role | Route group | Can do |
-|---|---|---|
-| Resident | `(resident)` | File complaints, track status, view history |
-| Facility Employee | `(employee)` | Triage complaints, assign to maintenance staff |
-| Maintenance Staff | `(maintenance)` | View and update assigned jobs |
-| Facility Manager | `(manager)` | Portfolio-wide history and performance view |
+| Role              | Route group     | Can do                                         |
+| ----------------- | --------------- | ---------------------------------------------- |
+| Resident          | `(resident)`    | File complaints, track status, view history    |
+| Facility Employee | `(employee)`    | Triage complaints, assign to maintenance staff |
+| Maintenance Staff | `(maintenance)` | View and update assigned jobs                  |
+| Facility Manager  | `(manager)`     | Portfolio-wide history and performance view    |
 
 ## Frontend Tech Stack
 

@@ -1,8 +1,4 @@
-export type UserRole =
-  | 'resident'
-  | 'facility_employee'
-  | 'maintenance_staff'
-  | 'facility_manager';
+export type UserRole = 'resident' | 'facility_employee' | 'maintenance_staff' | 'facility_manager';
 
 export type AccountStatus = 'active' | 'pending' | 'rejected';
 

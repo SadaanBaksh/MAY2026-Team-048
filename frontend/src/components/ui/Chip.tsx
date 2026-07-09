@@ -21,10 +21,17 @@ export function Chip({ label, active, onPress, icon, color }: ChipProps) {
       onPress={onPress}
       style={[
         styles.base,
-        { borderColor: active ? color : Colors.border, backgroundColor: active ? `${color}14` : Colors.surface },
-      ]}>
+        {
+          borderColor: active ? color : Colors.border,
+          backgroundColor: active ? `${color}14` : Colors.surface,
+        },
+      ]}
+    >
       {icon && <Ionicons name={icon} size={14} color={active ? color : Colors.inkSecondary} />}
-      <Text style={[styles.label, { color: active ? color : Colors.inkSecondary }]} numberOfLines={1}>
+      <Text
+        style={[styles.label, { color: active ? color : Colors.inkSecondary }]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>

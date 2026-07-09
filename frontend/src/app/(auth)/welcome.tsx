@@ -25,14 +25,19 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <LinearGradient colors={[Colors.primaryDark, Colors.primary]} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={[Colors.primaryDark, Colors.primary]}
+        style={StyleSheet.absoluteFill}
+      />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.hero}>
           <View style={styles.brandMark}>
             <HouseLogo width={40} height={40} />
           </View>
           <Text style={styles.brand}>Simplifix</Text>
-          <Text style={styles.tagline}>AI-assisted complaint management for residential communities.</Text>
+          <Text style={styles.tagline}>
+            AI-assisted complaint management for residential communities.
+          </Text>
         </View>
 
         <View style={styles.card}>
@@ -49,7 +54,12 @@ export default function WelcomeScreen() {
           </View>
 
           <View style={styles.actions}>
-            <Button label="Log In" onPress={() => router.push('/(auth)/login')} fullWidth size="lg" />
+            <Button
+              label="Log In"
+              onPress={() => router.push('/(auth)/login')}
+              fullWidth
+              size="lg"
+            />
             <Button
               label="Create an Account"
               onPress={() => router.push('/(auth)/register')}
@@ -64,73 +74,74 @@ export default function WelcomeScreen() {
   );
 }
 
-const getStyles = (Colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  hero: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxl,
-    gap: Spacing.xs,
-  },
-  brandMark: {
-    width: 56,
-    height: 56,
-    borderRadius: Radius.lg,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.sm,
-  },
-  brand: {
-    ...Type.display,
-    fontSize: 34,
-    color: Colors.white,
-  },
-  tagline: {
-    ...Type.body,
-    color: 'rgba(255,255,255,0.85)',
-    maxWidth: 280,
-  },
-  card: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius.xl + 6,
-    borderTopRightRadius: Radius.xl + 6,
-    padding: Spacing.xl,
-    paddingBottom: Spacing.xxl,
-    gap: Spacing.lg,
-  },
-  cardTitle: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  roleGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  roleItem: {
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  roleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  roleLabel: {
-    ...Type.tiny,
-    color: Colors.inkSecondary,
-    textAlign: 'center',
-  },
-  actions: {
-    gap: Spacing.sm,
-  },
-});
+const getStyles = (Colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    safeArea: {
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    hero: {
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.xxl,
+      gap: Spacing.xs,
+    },
+    brandMark: {
+      width: 56,
+      height: 56,
+      borderRadius: Radius.lg,
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Spacing.sm,
+    },
+    brand: {
+      ...Type.display,
+      fontSize: 34,
+      color: Colors.white,
+    },
+    tagline: {
+      ...Type.body,
+      color: 'rgba(255,255,255,0.85)',
+      maxWidth: 280,
+    },
+    card: {
+      backgroundColor: Colors.surface,
+      borderTopLeftRadius: Radius.xl + 6,
+      borderTopRightRadius: Radius.xl + 6,
+      padding: Spacing.xl,
+      paddingBottom: Spacing.xxl,
+      gap: Spacing.lg,
+    },
+    cardTitle: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    roleGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    roleItem: {
+      alignItems: 'center',
+      gap: 8,
+      flex: 1,
+    },
+    roleIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: Colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    roleLabel: {
+      ...Type.tiny,
+      color: Colors.inkSecondary,
+      textAlign: 'center',
+    },
+    actions: {
+      gap: Spacing.sm,
+    },
+  });

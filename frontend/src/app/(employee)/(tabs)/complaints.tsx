@@ -17,7 +17,14 @@ import { isTicketOverdue } from '@/utils/overdue';
 
 type StatusFilter = 'All' | TicketStatus;
 
-const STATUS_FILTERS: StatusFilter[] = ['All', 'Pending', 'Assigned', 'In_Progress', 'Resolved', 'Closed'];
+const STATUS_FILTERS: StatusFilter[] = [
+  'All',
+  'Pending',
+  'Assigned',
+  'In_Progress',
+  'Resolved',
+  'Closed',
+];
 
 export default function EmployeeComplaintsScreen() {
   const { Colors } = useTheme();
@@ -28,7 +35,8 @@ export default function EmployeeComplaintsScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [overdueOnly, setOverdueOnly] = useState(false);
 
-  const residentName = (residentId: string) => users.find((u) => u.userId === residentId)?.name ?? 'Resident';
+  const residentName = (residentId: string) =>
+    users.find((u) => u.userId === residentId)?.name ?? 'Resident';
   const apartmentFor = (residentId: string) => {
     const resident = users.find((u) => u.userId === residentId);
     if (!resident || resident.role !== 'resident') return '';
@@ -58,9 +66,17 @@ export default function EmployeeComplaintsScreen() {
   return (
     <Screen edges={['top']}>
       <Text style={styles.title}>Complaints</Text>
-      <SearchBar value={query} onChangeText={setQuery} placeholder="Search by title, resident, or unit" />
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search by title, resident, or unit"
+      />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+      >
         {STATUS_FILTERS.map((s) => (
           <Chip
             key={s}
@@ -69,12 +85,22 @@ export default function EmployeeComplaintsScreen() {
             onPress={() => setStatusFilter(s)}
           />
         ))}
-        <Chip label="Overdue" icon="alert-circle-outline" active={overdueOnly} color={Colors.danger} onPress={() => setOverdueOnly((v) => !v)} />
+        <Chip
+          label="Overdue"
+          icon="alert-circle-outline"
+          active={overdueOnly}
+          color={Colors.danger}
+          onPress={() => setOverdueOnly((v) => !v)}
+        />
       </ScrollView>
 
       <View style={styles.list}>
         {filtered.length === 0 ? (
-          <EmptyState icon="search-outline" title="No complaints found" message="Try adjusting your search or filters." />
+          <EmptyState
+            icon="search-outline"
+            title="No complaints found"
+            message="Try adjusting your search or filters."
+          />
         ) : (
           filtered.map((t) => (
             <TicketCard
