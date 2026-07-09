@@ -65,19 +65,21 @@ export default function ResidentChatScreen() {
       tickets
         .filter((ticket) => ticket.residentId === user.userId)
         .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime()),
-    [tickets, user.userId]
+    [tickets, user.userId],
   );
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     makeMessage(
       'assistant',
       `Hi ${user.name.split(' ')[0]}. I can help you check service status, assigned professionals, pending reviews, and complaint details.`,
-      { suggestions: STARTER_PROMPTS }
+      { suggestions: STARTER_PROMPTS },
     ),
   ]);
 
   const activeCount = myTickets.filter((ticket) => ticket.status !== 'Closed').length;
-  const reviewCount = myTickets.filter((ticket) => ticket.status === 'Resolved' && ticket.residentRating == null).length;
+  const reviewCount = myTickets.filter(
+    (ticket) => ticket.status === 'Resolved' && ticket.residentRating == null,
+  ).length;
 
   useEffect(() => {
     const handle = requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
@@ -88,7 +90,7 @@ export default function ResidentChatScreen() {
     () => () => {
       if (responseTimerRef.current) clearTimeout(responseTimerRef.current);
     },
-    []
+    [],
   );
 
   const sendMessage = (rawText: string) => {
@@ -113,7 +115,10 @@ export default function ResidentChatScreen() {
     }, 650);
   };
 
-  const latestSuggestions = messages[messages.length - 1]?.role === 'assistant' ? messages[messages.length - 1].suggestions : undefined;
+  const latestSuggestions =
+    messages[messages.length - 1]?.role === 'assistant'
+      ? messages[messages.length - 1].suggestions
+      : undefined;
   const promptChips = latestSuggestions?.length ? latestSuggestions : STARTER_PROMPTS;
 
   return (
@@ -131,14 +136,16 @@ export default function ResidentChatScreen() {
       <KeyboardAvoidingView
         style={styles.keyboard}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+      >
         <Screen scroll={false} padded={false} edges={['bottom']} style={styles.screen}>
           <ScrollView
             ref={scrollRef}
             style={styles.messagesScroll}
             contentContainerStyle={styles.messagesContent}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.contextPanel}>
               <View style={styles.contextIcon}>
                 <Ionicons name="chatbubbles" size={20} color={Colors.primary} />
@@ -154,16 +161,35 @@ export default function ResidentChatScreen() {
             {messages.map((message) => (
               <View
                 key={message.id}
-                style={[styles.messageRow, message.role === 'resident' ? styles.messageRowResident : styles.messageRowAssistant]}>
-                <View style={[styles.bubble, message.role === 'resident' ? styles.residentBubble : styles.assistantBubble]}>
-                  <Text style={[styles.messageText, message.role === 'resident' ? styles.residentText : styles.assistantText]}>
+                style={[
+                  styles.messageRow,
+                  message.role === 'resident'
+                    ? styles.messageRowResident
+                    : styles.messageRowAssistant,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.bubble,
+                    message.role === 'resident' ? styles.residentBubble : styles.assistantBubble,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.messageText,
+                      message.role === 'resident' ? styles.residentText : styles.assistantText,
+                    ]}
+                  >
                     {message.text}
                   </Text>
                   {message.relatedTicketId && (
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => router.push(`/(resident)/complaint/${message.relatedTicketId}`)}
-                      style={styles.ticketLink}>
+                      onPress={() =>
+                        router.push(`/(resident)/complaint/${message.relatedTicketId}`)
+                      }
+                      style={styles.ticketLink}
+                    >
                       <Text style={styles.ticketLinkText}>Open complaint</Text>
                       <Ionicons name="arrow-forward" size={14} color={Colors.primary} />
                     </Pressable>
@@ -191,13 +217,15 @@ export default function ResidentChatScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.promptRow}>
+              contentContainerStyle={styles.promptRow}
+            >
               {promptChips.map((prompt) => (
                 <Pressable
                   key={prompt}
                   accessibilityRole="button"
                   onPress={() => sendMessage(prompt)}
-                  style={({ pressed }) => [styles.promptChip, pressed && styles.pressed]}>
+                  style={({ pressed }) => [styles.promptChip, pressed && styles.pressed]}
+                >
                   <Text style={styles.promptText}>{prompt}</Text>
                 </Pressable>
               ))}
@@ -223,7 +251,8 @@ export default function ResidentChatScreen() {
                   styles.sendButton,
                   (!input.trim() || isThinking) && styles.sendButtonDisabled,
                   pressed && input.trim() && !isThinking && styles.pressed,
-                ]}>
+                ]}
+              >
                 <Ionicons name="send" size={18} color={Colors.white} />
               </Pressable>
             </View>

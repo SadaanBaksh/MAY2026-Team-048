@@ -44,114 +44,114 @@ export default function ResidentHomeScreen() {
     <View style={styles.root}>
       <Screen edges={['top']}>
         <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <BurgerMenu />
-          <Pressable
-            style={styles.headerProfile}
-            onPress={() => router.push('/(resident)/(tabs)/profile')}
-          >
-            <Avatar name={user.name} color={user.avatarColor} size={44} />
-            <View>
-              <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
-              <Text style={styles.unit}>
-                {apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}
+          <View style={styles.headerLeft}>
+            <BurgerMenu />
+            <Pressable
+              style={styles.headerProfile}
+              onPress={() => router.push('/(resident)/(tabs)/profile')}
+            >
+              <Avatar name={user.name} color={user.avatarColor} size={44} />
+              <View>
+                <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
+                <Text style={styles.unit}>
+                  {apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+          <NotificationBell
+            userId={user.userId}
+            onPress={() => router.push('/(resident)/notifications')}
+          />
+        </View>
+
+        <Pressable onPress={() => router.push('/(resident)/new-complaint')}>
+          <Card style={styles.reportCard} elevated={false}>
+            <View style={styles.reportIcon}>
+              <Ionicons name="camera" size={22} color={Colors.white} />
+            </View>
+            <View style={styles.reportText}>
+              <Text style={styles.reportTitle}>Report an Issue</Text>
+              <Text style={styles.reportSubtitle}>
+                Snap a photo or video — AI fills in the details
               </Text>
             </View>
-          </Pressable>
-        </View>
-        <NotificationBell
-          userId={user.userId}
-          onPress={() => router.push('/(resident)/notifications')}
-        />
-      </View>
+            <Ionicons name="arrow-forward-circle" size={26} color={Colors.white} />
+          </Card>
+        </Pressable>
 
-      <Pressable onPress={() => router.push('/(resident)/new-complaint')}>
-        <Card style={styles.reportCard} elevated={false}>
-          <View style={styles.reportIcon}>
-            <Ionicons name="camera" size={22} color={Colors.white} />
-          </View>
-          <View style={styles.reportText}>
-            <Text style={styles.reportTitle}>Report an Issue</Text>
-            <Text style={styles.reportSubtitle}>
-              Snap a photo or video — AI fills in the details
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward-circle" size={26} color={Colors.white} />
-        </Card>
-      </Pressable>
-
-      <View style={styles.statsRow}>
-        <StatCard
-          label="Active"
-          value={active.length}
-          icon="pulse-outline"
-          color={Colors.primary}
-        />
-        <StatCard
-          label="Needs Review"
-          value={needsAttention.length}
-          icon="star-outline"
-          color={Colors.accent}
-        />
-        <StatCard
-          label="Resolved"
-          value={closed.length}
-          icon="checkmark-done-outline"
-          color={Colors.success}
-        />
-      </View>
-
-      {needsAttention.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Needs your review</Text>
-          <View style={styles.list}>
-            {needsAttention.map((t) => (
-              <TicketCard
-                key={t.ticketId}
-                ticket={t}
-                subtitle="Verify the fix and rate the work"
-                onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
-              />
-            ))}
-          </View>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Recent Complaints</Text>
-          {myTickets.length > 0 && (
-            <Text
-              style={styles.viewAll}
-              onPress={() => router.push('/(resident)/(tabs)/complaints')}
-            >
-              View all
-            </Text>
-          )}
-        </View>
-        {myTickets.length === 0 ? (
-          <EmptyState
-            icon="document-text-outline"
-            title="No complaints yet"
-            message="Report your first maintenance issue and our AI will help describe it."
-            actionLabel="Report an Issue"
-            onAction={() => router.push('/(resident)/new-complaint')}
+        <View style={styles.statsRow}>
+          <StatCard
+            label="Active"
+            value={active.length}
+            icon="pulse-outline"
+            color={Colors.primary}
           />
-        ) : (
-          <View style={styles.list}>
-            {myTickets.slice(0, 3).map((t) => (
-              <TicketCard
-                key={t.ticketId}
-                ticket={t}
-                onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
-              />
-            ))}
+          <StatCard
+            label="Needs Review"
+            value={needsAttention.length}
+            icon="star-outline"
+            color={Colors.accent}
+          />
+          <StatCard
+            label="Resolved"
+            value={closed.length}
+            icon="checkmark-done-outline"
+            color={Colors.success}
+          />
+        </View>
+
+        {needsAttention.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Needs your review</Text>
+            <View style={styles.list}>
+              {needsAttention.map((t) => (
+                <TicketCard
+                  key={t.ticketId}
+                  ticket={t}
+                  subtitle="Verify the fix and rate the work"
+                  onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+                />
+              ))}
+            </View>
           </View>
         )}
-      </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Recent Complaints</Text>
+            {myTickets.length > 0 && (
+              <Text
+                style={styles.viewAll}
+                onPress={() => router.push('/(resident)/(tabs)/complaints')}
+              >
+                View all
+              </Text>
+            )}
+          </View>
+          {myTickets.length === 0 ? (
+            <EmptyState
+              icon="document-text-outline"
+              title="No complaints yet"
+              message="Report your first maintenance issue and our AI will help describe it."
+              actionLabel="Report an Issue"
+              onAction={() => router.push('/(resident)/new-complaint')}
+            />
+          ) : (
+            <View style={styles.list}>
+              {myTickets.slice(0, 3).map((t) => (
+                <TicketCard
+                  key={t.ticketId}
+                  ticket={t}
+                  onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+                />
+              ))}
+            </View>
+          )}
+        </View>
       </Screen>
 
-      <Pressable 
+      <Pressable
         style={({ pressed }) => [styles.chatFab, pressed && styles.chatFabPressed]}
         onPress={() => router.push('/(resident)/chat')}
       >
@@ -163,102 +163,102 @@ export default function ResidentHomeScreen() {
 
 const getStyles = (Colors: ThemeColors) =>
   StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  chatFab: {
-    position: 'absolute',
-    bottom: Spacing.xl,
-    right: Spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-    zIndex: 10,
-  },
-  chatFabPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.96 }],
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  headerProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  greeting: {
-    ...Type.title,
-    color: Colors.ink,
-  },
-  unit: {
-    ...Type.caption,
-    color: Colors.inkSecondary,
-  },
-  reportCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderWidth: 0,
-  },
-  reportIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reportText: {
-    flex: 1,
-  },
-  reportTitle: {
-    ...Type.bodyMedium,
-    color: Colors.white,
-  },
-  reportSubtitle: {
-    ...Type.caption,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  section: {
-    gap: Spacing.sm,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    ...Type.subtitle,
-    color: Colors.ink,
-  },
-  viewAll: {
-    ...Type.captionBold,
-    color: Colors.primary,
-  },
-  list: {
-    gap: Spacing.sm,
-  },
-});
+    root: {
+      flex: 1,
+      backgroundColor: Colors.surfaceMuted,
+    },
+    chatFab: {
+      position: 'absolute',
+      bottom: Spacing.xl,
+      right: Spacing.lg,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: Colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
+      zIndex: 10,
+    },
+    chatFabPressed: {
+      opacity: 0.8,
+      transform: [{ scale: 0.96 }],
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    headerProfile: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    greeting: {
+      ...Type.title,
+      color: Colors.ink,
+    },
+    unit: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+    },
+    reportCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      backgroundColor: Colors.primary,
+      borderWidth: 0,
+    },
+    reportIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: Radius.md,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    reportText: {
+      flex: 1,
+    },
+    reportTitle: {
+      ...Type.bodyMedium,
+      color: Colors.white,
+    },
+    reportSubtitle: {
+      ...Type.caption,
+      color: 'rgba(255,255,255,0.85)',
+      marginTop: 2,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      ...Type.subtitle,
+      color: Colors.ink,
+    },
+    viewAll: {
+      ...Type.captionBold,
+      color: Colors.primary,
+    },
+    list: {
+      gap: Spacing.sm,
+    },
+  });
