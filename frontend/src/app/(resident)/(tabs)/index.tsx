@@ -39,8 +39,9 @@ export default function ResidentHomeScreen() {
   const closed = myTickets.filter((t) => t.status === 'Closed');
 
   return (
-    <Screen edges={['top']}>
-      <View style={styles.header}>
+    <View style={styles.root}>
+      <Screen edges={['top']}>
+        <View style={styles.header}>
         <View style={styles.headerLeft}>
           <BurgerMenu />
           <Pressable style={styles.headerProfile} onPress={() => router.push('/(resident)/(tabs)/profile')}>
@@ -114,12 +115,45 @@ export default function ResidentHomeScreen() {
           </View>
         )}
       </View>
-    </Screen>
+      </Screen>
+
+      <Pressable 
+        style={({ pressed }) => [styles.chatFab, pressed && styles.chatFabPressed]}
+        onPress={() => router.push('/(resident)/chat')}
+      >
+        <Ionicons name="sparkles" size={24} color={Colors.white} />
+      </Pressable>
+    </View>
   );
 }
 
 const getStyles = (Colors: ThemeColors) =>
   StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.surfaceMuted,
+  },
+  chatFab: {
+    position: 'absolute',
+    bottom: Spacing.xl,
+    right: Spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+    zIndex: 10,
+  },
+  chatFabPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
