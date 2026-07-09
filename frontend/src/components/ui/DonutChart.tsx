@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, G } from 'react-native-svg';
+import { VictoryPie } from 'victory-native';
 
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -28,49 +28,29 @@ export function DonutChart({
 }: DonutChartProps) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
-
-  const cumulativeStarts = data.reduce<number[]>((acc, d, i) => {
-    const previousStart = i === 0 ? 0 : acc[i - 1] + data[i - 1].value / total;
-    return [...acc, previousStart];
-  }, []);
 
   return (
     <View style={styles.wrapper}>
       <View style={{ width: size, height: size }}>
-        <Svg width={size} height={size}>
-          <G rotation={-90} originX={size / 2} originY={size / 2}>
-            <Circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              stroke={Colors.surfaceSunken}
-              strokeWidth={strokeWidth}
-              fill="transparent"
-            />
-            {data.map((d, i) => {
-              const fraction = d.value / total;
-              const dashLength = circumference * fraction;
-              const offset = circumference * (1 - cumulativeStarts[i]);
-              return (
-                <Circle
-                  key={i}
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  stroke={d.color}
-                  strokeWidth={strokeWidth}
-                  strokeDasharray={`${dashLength} ${circumference - dashLength}`}
-                  strokeDashoffset={offset}
-                  strokeLinecap="butt"
-                  fill="transparent"
-                />
-              );
-            })}
-          </G>
-        </Svg>
+        <VictoryPie
+          width={size}
+          height={size}
+          data={data}
+          x="label"
+          y="value"
+          innerRadius={size / 2 - strokeWidth}
+          padAngle={3}
+          cornerRadius={6}
+          labels={() => ''}
+          style={{
+            data: {
+              fill: (args) => (args.datum as DonutDatum | undefined)?.color ?? Colors.primary,
+            },
+            labels: { fill: 'transparent', fontSize: 0 },
+          }}
+          animate={{ duration: 1100, easing: 'bounce', onLoad: { duration: 1100 } }}
+          padding={0}
+        />
         {(centerLabel || centerValue) && (
           <View style={[StyleSheet.absoluteFill, styles.center]}>
             {centerValue && <Text style={styles.centerValue}>{centerValue}</Text>}
