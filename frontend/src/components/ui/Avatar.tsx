@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { FontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 export interface AvatarProps {

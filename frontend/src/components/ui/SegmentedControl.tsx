@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Radius, Type } from '@/constants/theme';
+import { FontFamily, Radius, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface SegmentedControlProps<T extends string> {
@@ -66,6 +66,6 @@ const getStyles = (Colors: ThemeColors) =>
     },
     labelActive: {
       color: Colors.ink,
-      fontWeight: '700',
+      fontFamily: FontFamily.bold,
     },
   });

@@ -15,7 +15,7 @@ import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
 
 const CHART_PALETTE = [
-  '#3452D9',
+  '#0c2d35',
   '#7A3FC2',
   '#EE9A3A',
   '#1C9C6E',

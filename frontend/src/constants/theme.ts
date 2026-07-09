@@ -65,20 +65,23 @@ export const LightColors: ColorPalette = {
   inkTertiary: '#9296A3',
   inkInverse: '#FFFFFF',
 
+  // #f8f8f6 is the brand off-white — it's the app's main/background color (matches
+  // the landing page's section background), so elevated surfaces (cards, headers,
+  // tab bars) sit one step lighter (white) to pop the way they do on the landing page.
   surface: '#FFFFFF',
-  surfaceMuted: '#F6F7FB',
-  surfaceSunken: '#EEF0F6',
-  surfaceOverlay: 'rgba(18,20,28,0.55)',
-  border: '#E6E8F0',
-  borderStrong: '#D6D9E4',
+  surfaceMuted: '#f8f8f6',
+  surfaceSunken: '#f0f0ee',
+  surfaceOverlay: 'rgba(12,45,53,0.55)',
+  border: '#E4E6EA',
+  borderStrong: '#D1D3D8',
 
-  primary: '#3452D9',
-  primaryDark: '#22349B',
-  primarySoft: '#EAEEFD',
-  primaryTint: '#DCE3FB',
+  primary: '#0c2d35',
+  primaryDark: '#071b20',
+  primarySoft: '#eef2f3',
+  primaryTint: '#d8e1e3',
 
-  accent: '#EE9A3A',
-  accentSoft: '#FCF0DE',
+  accent: '#ffdf00',
+  accentSoft: '#fffce6',
 
   success: '#1C9C6E',
   successSoft: '#E4F7EF',
@@ -98,23 +101,25 @@ export const LightColors: ColorPalette = {
 export const DarkColors: ColorPalette = {
   ink: '#F1F2F6',
   inkSecondary: '#A9ADBB',
-  inkTertiary: '#7B7F8F',
+  inkTertiary: '#7B8890',
   inkInverse: '#FFFFFF',
 
-  surface: '#1B1D26',
-  surfaceMuted: '#121319',
-  surfaceSunken: '#0C0D12',
-  surfaceOverlay: 'rgba(0,0,0,0.65)',
-  border: '#2C2F3A',
-  borderStrong: '#3D4150',
+  // Dark surfaces carry a teal cast (derived from the #0c2d35 brand color) rather than
+  // a neutral gray-black, so dark mode still reads as the same brand as the landing page.
+  surface: '#16262B',
+  surfaceMuted: '#0d1a1d',
+  surfaceSunken: '#081215',
+  surfaceOverlay: 'rgba(3,10,12,0.7)',
+  border: '#26383E',
+  borderStrong: '#33474E',
 
-  primary: '#5B78E5',
-  primaryDark: '#3452D9',
-  primarySoft: '#202A4D',
-  primaryTint: '#28345C',
+  primary: '#1d6375',
+  primaryDark: '#0c2d35',
+  primarySoft: '#0f2126',
+  primaryTint: '#173840',
 
-  accent: '#F0AC5C',
-  accentSoft: '#3D2F17',
+  accent: '#ffdf00',
+  accentSoft: '#332c00',
 
   success: '#3FBE8E',
   successSoft: '#173A2C',
@@ -132,14 +137,14 @@ export const DarkColors: ColorPalette = {
 };
 
 export const LightRoleColors: RoleColorPalette = {
-  resident: { text: '#3452D9', soft: '#EAEEFD' },
+  resident: { text: '#0c2d35', soft: '#eef2f3' },
   facility_employee: { text: '#7A3FC2', soft: '#F1E9FA' },
   maintenance_staff: { text: '#C2740F', soft: '#FBF0DA' },
   facility_manager: { text: '#1C7A5A', soft: '#E1F5ED' },
 };
 
 export const DarkRoleColors: RoleColorPalette = {
-  resident: { text: '#7C93EF', soft: '#20294B' },
+  resident: { text: '#1d6375', soft: '#041215' },
   facility_employee: { text: '#B08AE0', soft: '#2C2340' },
   maintenance_staff: { text: '#E0A968', soft: '#3A2C14' },
   facility_manager: { text: '#5FC79A', soft: '#173328' },
@@ -188,27 +193,32 @@ export const Spacing = {
 
 export const Radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 22,
+  md: 14,
+  lg: 20,
+  xl: 28,
   pill: 999,
 } as const;
 
-export const FontFamily = Platform.select({
-  ios: { sans: 'System', mono: 'Menlo' },
-  android: { sans: 'sans-serif', mono: 'monospace' },
-  default: { sans: 'System', mono: 'monospace' },
-})!;
+// Matches the landing page's Archivo webfont (loaded via useFonts in app/_layout.tsx).
+// Static per-weight font files don't respond to the `fontWeight` style prop, so every
+// text style picks its weight by selecting the matching family here instead.
+export const FontFamily = {
+  regular: 'Archivo_400Regular',
+  medium: 'Archivo_500Medium',
+  semiBold: 'Archivo_600SemiBold',
+  bold: 'Archivo_700Bold',
+  extraBold: 'Archivo_800ExtraBold',
+} as const;
 
 export const Type = {
-  display: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const },
-  title: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const },
-  subtitle: { fontSize: 17, lineHeight: 23, fontWeight: '600' as const },
-  body: { fontSize: 15, lineHeight: 22, fontWeight: '400' as const },
-  bodyMedium: { fontSize: 15, lineHeight: 22, fontWeight: '600' as const },
-  caption: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const },
-  captionBold: { fontSize: 13, lineHeight: 18, fontWeight: '700' as const },
-  tiny: { fontSize: 11, lineHeight: 14, fontWeight: '600' as const },
+  display: { fontSize: 28, lineHeight: 34, fontFamily: FontFamily.extraBold },
+  title: { fontSize: 22, lineHeight: 28, fontFamily: FontFamily.bold },
+  subtitle: { fontSize: 17, lineHeight: 23, fontFamily: FontFamily.semiBold },
+  body: { fontSize: 15, lineHeight: 22, fontFamily: FontFamily.regular },
+  bodyMedium: { fontSize: 15, lineHeight: 22, fontFamily: FontFamily.semiBold },
+  caption: { fontSize: 13, lineHeight: 18, fontFamily: FontFamily.medium },
+  captionBold: { fontSize: 13, lineHeight: 18, fontFamily: FontFamily.bold },
+  tiny: { fontSize: 11, lineHeight: 14, fontFamily: FontFamily.semiBold },
 } as const;
 
 export const Shadow = Platform.select({

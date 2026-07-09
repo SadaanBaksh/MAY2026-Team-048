@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { Radius, Type } from '@/constants/theme';
+import { FontFamily, Radius, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 export interface ChipProps {
@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Type.caption,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
   },
 });
