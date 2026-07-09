@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
         const exists = get().users.some((u) => u.email.toLowerCase() === input.email.trim().toLowerCase());
         if (exists) return { success: false, error: 'An account with that email already exists.' };
 
-        const palette = ['#3452D9', '#7A3FC2', '#C2740F', '#1C7A5A', '#B62B4D', '#2E7BC2'];
+        const palette = ['#0c2d35', '#7A3FC2', '#C2740F', '#1C7A5A', '#B62B4D', '#2E7BC2'];
         const base = {
           name: input.name,
           email: input.email,

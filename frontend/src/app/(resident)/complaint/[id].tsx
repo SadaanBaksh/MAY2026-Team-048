@@ -247,7 +247,7 @@ const getStyles = (Colors: ThemeColors) => StyleSheet.create({
   verifyCard: {
     gap: Spacing.sm,
     backgroundColor: Colors.accentSoft,
-    borderColor: '#F1D9AE',
+    borderColor: 'rgba(255,223,0,0.35)',
   },
   verifyTitle: {
     ...Type.subtitle,
