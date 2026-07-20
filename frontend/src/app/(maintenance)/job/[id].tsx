@@ -7,6 +7,7 @@ import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
 import { MediaThumb } from '@/components/shared/MediaThumb';
+import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -139,6 +140,13 @@ export default function MaintenanceJobDetailScreen() {
           <Card>
             <Text style={styles.sectionLabel}>Resident&rsquo;s Note</Text>
             <Text style={styles.body}>{ticket.residentNote}</Text>
+          </Card>
+        )}
+
+        {!!ticket.voiceNoteUrl && (
+          <Card>
+            <Text style={styles.sectionLabel}>Voice Note</Text>
+            <VoiceNotePlayer uri={ticket.voiceNoteUrl} durationSec={ticket.voiceNoteDurationSec} />
           </Card>
         )}
 

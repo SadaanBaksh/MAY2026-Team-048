@@ -20,6 +20,12 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
     icon: 'people',
     match: (p) => p === '/workers',
   },
+  {
+    href: '/(employee)/(tabs)/profile',
+    label: 'Profile',
+    icon: 'person-circle',
+    match: (p) => p === '/profile',
+  },
 ];
 
 export default function EmployeeLayout() {

@@ -103,6 +103,8 @@ export interface Ticket {
   imageUrl: string | null;
   mediaType: MediaType | null;
   residentNote: string;
+  voiceNoteUrl: string | null;
+  voiceNoteDurationSec: number | null;
   aiDescription: string;
   aiConfidence: number;
   priority: Priority;

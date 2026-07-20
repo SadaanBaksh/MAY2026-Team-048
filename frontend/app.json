@@ -13,7 +13,8 @@
       "supportsTablet": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Simplifix uses your camera so you can capture photos or videos of a maintenance issue.",
-        "NSPhotoLibraryUsageDescription": "Simplifix uses your photo library so you can attach an existing photo or video to a complaint."
+        "NSPhotoLibraryUsageDescription": "Simplifix uses your photo library so you can attach an existing photo or video to a complaint.",
+        "NSMicrophoneUsageDescription": "Simplifix uses your microphone so you can record a voice note describing a maintenance issue."
       }
     },
     "android": {
@@ -44,6 +45,12 @@
         {
           "photosPermission": "Simplifix uses your photo library so you can attach an existing photo or video to a complaint.",
           "cameraPermission": "Simplifix uses your camera so you can capture photos or videos of a maintenance issue."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Simplifix uses your microphone so you can record a voice note describing a maintenance issue."
         }
       ]
     ],
