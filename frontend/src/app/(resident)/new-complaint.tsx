@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -45,6 +45,7 @@ export default function NewComplaintScreen() {
   const voiceRecorder = useVoiceRecorder();
   const [voiceNoteUri, setVoiceNoteUri] = useState<string | null>(null);
   const [voiceNoteDurationSec, setVoiceNoteDurationSec] = useState<number | null>(null);
+  const voiceActionInFlight = useRef(false);
 
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
   const [description, setDescription] = useState('');
@@ -109,18 +110,30 @@ export default function NewComplaintScreen() {
   };
 
   const handleRecordVoiceNote = async () => {
+    if (voiceActionInFlight.current) return;
+    voiceActionInFlight.current = true;
     setPermissionError('');
-    const granted = await voiceRecorder.start();
-    if (!granted) {
-      setPermissionError('Microphone permission is required to record a voice note.');
+    try {
+      const granted = await voiceRecorder.start();
+      if (!granted) {
+        setPermissionError('Microphone permission is required to record a voice note.');
+      }
+    } finally {
+      voiceActionInFlight.current = false;
     }
   };
 
   const handleStopVoiceNote = async () => {
-    const recording = await voiceRecorder.stop();
-    if (recording) {
-      setVoiceNoteUri(recording.uri);
-      setVoiceNoteDurationSec(recording.durationSec);
+    if (voiceActionInFlight.current) return;
+    voiceActionInFlight.current = true;
+    try {
+      const recording = await voiceRecorder.stop();
+      if (recording) {
+        setVoiceNoteUri(recording.uri);
+        setVoiceNoteDurationSec(recording.durationSec);
+      }
+    } finally {
+      voiceActionInFlight.current = false;
     }
   };
 

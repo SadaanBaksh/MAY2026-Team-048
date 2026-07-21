@@ -25,7 +25,7 @@ export function VoiceNotePlayer({ uri, durationSec, onDelete }: VoiceNotePlayerP
   const player = useAudioPlayer(uri);
   const status = useAudioPlayerStatus(player);
 
-  const totalSec = status.duration || durationSec || 0;
+  const totalSec = (status.isLoaded ? status.duration : null) ?? durationSec ?? 0;
 
   const togglePlayback = () => {
     if (status.playing) {
