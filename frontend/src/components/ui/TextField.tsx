@@ -78,7 +78,7 @@ const getStyles = (Colors: ThemeColors) =>
       gap: Spacing.xs,
     },
     inputRowFocused: {
-      borderColor: Colors.primary,
+      borderColor: Colors.teal,
       backgroundColor: Colors.surface,
     },
     inputRowError: {

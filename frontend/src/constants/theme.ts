@@ -18,6 +18,8 @@ export interface ColorPalette {
   primarySoft: string;
   primaryTint: string;
 
+  teal: string;
+
   accent: string;
   accentSoft: string;
 
@@ -80,6 +82,8 @@ export const LightColors: ColorPalette = {
   primarySoft: '#eef2f3',
   primaryTint: '#d8e1e3',
 
+  teal: '#0c8577',
+
   accent: '#ffdf00',
   accentSoft: '#fffce6',
 
@@ -104,19 +108,20 @@ export const DarkColors: ColorPalette = {
   inkTertiary: '#7B8890',
   inkInverse: '#FFFFFF',
 
-  // Dark surfaces carry a teal cast (derived from the #0c2d35 brand color) rather than
-  // a neutral gray-black, so dark mode still reads as the same brand as the landing page.
-  surface: '#16262B',
-  surfaceMuted: '#0d1a1d',
-  surfaceSunken: '#081215',
-  surfaceOverlay: 'rgba(3,10,12,0.7)',
-  border: '#26383E',
-  borderStrong: '#33474E',
+  // Neutral blackish-gray surfaces (no brand teal cast).
+  surface: '#18181b',
+  surfaceMuted: '#09090b',
+  surfaceSunken: '#030303',
+  surfaceOverlay: 'rgba(0,0,0,0.7)',
+  border: '#27272a',
+  borderStrong: '#3f3f46',
 
-  primary: '#1d6375',
-  primaryDark: '#0c2d35',
-  primarySoft: '#0f2126',
-  primaryTint: '#173840',
+  primary: '#0c8577',
+  primaryDark: '#52525b',
+  primarySoft: '#1f1f22',
+  primaryTint: '#2a2a2e',
+
+  teal: '#0c8577',
 
   accent: '#ffdf00',
   accentSoft: '#332c00',

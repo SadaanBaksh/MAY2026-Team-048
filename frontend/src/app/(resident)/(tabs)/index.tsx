@@ -85,7 +85,7 @@ export default function ResidentHomeScreen() {
             label="Active"
             value={active.length}
             icon="pulse-outline"
-            color={Colors.primary}
+            color={Colors.teal}
           />
           <StatCard
             label="Needs Review"
@@ -215,7 +215,7 @@ const getStyles = (Colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: Spacing.sm,
-      backgroundColor: Colors.primary,
+      backgroundColor: Colors.teal,
       borderWidth: 0,
     },
     reportIcon: {
@@ -256,7 +256,7 @@ const getStyles = (Colors: ThemeColors) =>
     },
     viewAll: {
       ...Type.captionBold,
-      color: Colors.primary,
+      color: Colors.teal,
     },
     list: {
       gap: Spacing.sm,

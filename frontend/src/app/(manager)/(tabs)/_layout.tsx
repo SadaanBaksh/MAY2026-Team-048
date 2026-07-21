@@ -18,7 +18,7 @@ export default function ManagerTabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
+        tabBarActiveTintColor: Colors.teal,
         tabBarInactiveTintColor: Colors.inkTertiary,
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
       }}

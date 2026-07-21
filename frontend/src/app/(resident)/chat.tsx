@@ -50,8 +50,8 @@ function makeMessage(role: MessageRole, text: string, extra?: Partial<ChatMessag
 }
 
 export default function ResidentChatScreen() {
-  const { Colors } = useTheme();
-  const styles = useMemo(() => getStyles(Colors), [Colors]);
+  const { Colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(Colors, isDark), [Colors, isDark]);
   const scrollRef = useRef<ScrollView>(null);
   const responseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const user = useAuthStore((state) => state.currentUser) as Resident;
@@ -129,7 +129,7 @@ export default function ResidentChatScreen() {
         showBack
         right={
           <View style={styles.headerBadge}>
-            <Ionicons name="sparkles" size={16} color={Colors.primary} />
+            <Ionicons name="sparkles" size={16} color={Colors.teal} />
           </View>
         }
       />
@@ -148,7 +148,7 @@ export default function ResidentChatScreen() {
           >
             <View style={styles.contextPanel}>
               <View style={styles.contextIcon}>
-                <Ionicons name="chatbubbles" size={20} color={Colors.primary} />
+                <Ionicons name="chatbubbles" size={20} color={Colors.teal} />
               </View>
               <View style={styles.contextText}>
                 <Text style={styles.contextTitle}>Customer side assistant</Text>
@@ -263,7 +263,7 @@ export default function ResidentChatScreen() {
   );
 }
 
-const getStyles = (Colors: ThemeColors) =>
+const getStyles = (Colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     root: {
       flex: 1,
@@ -407,7 +407,7 @@ const getStyles = (Colors: ThemeColors) =>
     },
     promptText: {
       ...Type.captionBold,
-      color: Colors.primary,
+      color: isDark ? Colors.white : Colors.primary,
     },
     inputRow: {
       flexDirection: 'row',

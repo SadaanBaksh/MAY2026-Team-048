@@ -82,6 +82,7 @@ export default function EmployeeComplaintsScreen() {
             key={s}
             label={s === 'All' ? 'All' : s.replace('_', ' ')}
             active={statusFilter === s}
+            color={Colors.teal}
             onPress={() => setStatusFilter(s)}
           />
         ))}
