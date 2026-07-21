@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { FontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 export interface AvatarProps {
@@ -17,12 +16,19 @@ function getInitials(name: string): string {
 
 export function Avatar({ name, color, size = 40 }: AvatarProps) {
   const { Colors } = useTheme();
-  color = color ?? Colors.primary;
+  color = color ?? Colors.teal;
   return (
     <View
       style={[
         styles.base,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: `${color}1F` },
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: `${color}1F`,
+          borderWidth: StyleSheet.hairlineWidth * 2,
+          borderColor: Colors.border,
+        },
       ]}
     >
       <Text style={{ color, fontSize: size * 0.38, fontWeight: '700' }}>{getInitials(name)}</Text>

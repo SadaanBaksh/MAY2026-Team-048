@@ -29,6 +29,7 @@ export interface ButtonProps {
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  textColor?: string;
 }
 
 const getVariantStyles = (
@@ -61,11 +62,13 @@ export function Button({
   iconPosition = 'left',
   fullWidth,
   style,
+  textColor,
 }: ButtonProps) {
   const { Colors } = useTheme();
   const VARIANT_STYLES = useMemo(() => getVariantStyles(Colors), [Colors]);
   const v = VARIANT_STYLES[variant];
   const s = SIZE_STYLES[size];
+  const labelColor = textColor ?? v.text;
   const isDisabled = disabled || loading;
 
   const handlePress = () => {
@@ -94,17 +97,20 @@ export function Button({
     >
       <View style={styles.content}>
         {loading ? (
-          <ActivityIndicator size="small" color={v.text} />
+          <ActivityIndicator size="small" color={labelColor} />
         ) : (
           <>
             {icon && iconPosition === 'left' && (
-              <Ionicons name={icon} size={s.fontSize + 4} color={v.text} />
+              <Ionicons name={icon} size={s.fontSize + 4} color={labelColor} />
             )}
-            <Text style={[styles.label, { color: v.text, fontSize: s.fontSize }]} numberOfLines={1}>
+            <Text
+              style={[styles.label, { color: labelColor, fontSize: s.fontSize }]}
+              numberOfLines={1}
+            >
               {label}
             </Text>
             {icon && iconPosition === 'right' && (
-              <Ionicons name={icon} size={s.fontSize + 4} color={v.text} />
+              <Ionicons name={icon} size={s.fontSize + 4} color={labelColor} />
             )}
           </>
         )}

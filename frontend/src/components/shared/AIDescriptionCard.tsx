@@ -71,7 +71,7 @@ export function AIDescriptionCard({
           <CategoryPicker value={categoryId} onChange={onChangeCategory} />
         ) : (
           <View style={styles.readonlyRow}>
-            <Ionicons name={category.icon} size={16} color={Colors.primary} />
+            <Ionicons name={category.icon} size={16} color={Colors.teal} />
             <Text style={styles.readonlyText}>{category.categoryName}</Text>
           </View>
         )}

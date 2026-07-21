@@ -51,6 +51,7 @@ const getStyles = (Colors: ThemeColors) =>
     },
     name: {
       ...Type.title,
+      color: Colors.ink,
       marginTop: Spacing.xs,
     },
     roleBadge: {
