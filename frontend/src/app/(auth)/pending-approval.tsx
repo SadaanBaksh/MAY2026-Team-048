@@ -18,8 +18,9 @@ export default function PendingApprovalScreen() {
   const isRejected = currentUser?.accountStatus === 'rejected';
 
   const handleLogout = () => {
+    const role = currentUser?.role;
     logout();
-    router.replace('/(auth)/welcome');
+    router.replace(role === 'resident' ? '/(auth)/customer-login' : '/(auth)/employee-login');
   };
 
   return (

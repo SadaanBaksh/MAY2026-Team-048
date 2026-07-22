@@ -19,7 +19,7 @@ export default function EmployeeProfileScreen() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/(auth)/welcome');
+    router.replace('/(auth)/employee-login');
   };
 
   return (

@@ -60,9 +60,10 @@ export function BurgerMenu() {
   };
 
   const handleLogout = () => {
+    const role = user?.role;
     closeMenu();
     logout();
-    router.replace('/(auth)/welcome');
+    router.replace(role === 'resident' ? '/(auth)/customer-login' : '/(auth)/employee-login');
   };
 
   return (
