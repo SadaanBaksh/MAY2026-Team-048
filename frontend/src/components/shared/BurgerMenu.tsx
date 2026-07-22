@@ -6,6 +6,7 @@ import { Animated, Modal, Pressable, StyleSheet, Switch, Text, View } from 'reac
 import { Avatar } from '@/components/ui/Avatar';
 import { Divider } from '@/components/ui/Divider';
 import { Radius, Spacing, Type } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -24,6 +25,7 @@ export function BurgerMenu() {
   const { Colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const isDesktop = useIsDesktop();
   const [visible, setVisible] = useState(false);
   const translateX = useRef(new Animated.Value(-PANEL_WIDTH)).current;
 
@@ -36,7 +38,9 @@ export function BurgerMenu() {
     }
   }, [visible, translateX]);
 
-  if (!user) return null;
+  // Desktop layouts (Employee/Manager) already show a persistent SidebarNav
+  // with the same profile/logout access, so the burger would be redundant.
+  if (!user || isDesktop) return null;
 
   const openMenu = () => setVisible(true);
 

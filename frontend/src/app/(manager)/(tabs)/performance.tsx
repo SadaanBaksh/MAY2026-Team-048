@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
 import { Spacing, Type } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
@@ -15,6 +16,7 @@ import type { MaintenanceStaff } from '@/types';
 export default function ManagerPerformanceScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
+  const isDesktop = useIsDesktop();
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
 
@@ -56,14 +58,14 @@ export default function ManagerPerformanceScreen() {
     <Screen edges={['top']}>
       <Text style={styles.title}>Staff Performance</Text>
 
-      <Card style={styles.section}>
+      <Card style={[styles.section, isDesktop && styles.chartCard]}>
         <Text style={styles.sectionTitle}>Active Load by Staff</Text>
         <BarChart data={loadData} />
       </Card>
 
-      <View style={styles.list}>
+      <View style={isDesktop ? styles.gridList : styles.list}>
         {rows.map(({ worker, active, completed, avgRating, avgHours }) => (
-          <Card key={worker.userId} style={styles.card}>
+          <Card key={worker.userId} style={[styles.card, isDesktop && styles.gridCard]}>
             <View style={styles.row}>
               <Avatar name={worker.name} color={worker.avatarColor} size={44} />
               <View style={styles.info}>
@@ -104,6 +106,9 @@ const getStyles = (Colors: ThemeColors) =>
     section: {
       gap: Spacing.sm,
     },
+    chartCard: {
+      maxWidth: 560,
+    },
     sectionTitle: {
       ...Type.subtitle,
       color: Colors.ink,
@@ -111,8 +116,17 @@ const getStyles = (Colors: ThemeColors) =>
     list: {
       gap: Spacing.sm,
     },
+    gridList: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+    },
     card: {
       gap: Spacing.sm,
+    },
+    gridCard: {
+      flexBasis: '48%',
+      flexGrow: 1,
     },
     row: {
       flexDirection: 'row',

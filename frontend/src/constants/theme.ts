@@ -249,4 +249,7 @@ export const ShadowSmall = Platform.select({
 })!;
 
 export const BottomTabInset = Platform.select({ ios: 34, android: 24, default: 0 });
-export const MaxContentWidth = 720;
+// Content area beside the 240px desktop sidebar; paired with it this keeps
+// desktop pages around the audit's recommended ~1200px total page width.
+export const MaxContentWidth = 960;
+export const MaxAuthCardWidth = 420;

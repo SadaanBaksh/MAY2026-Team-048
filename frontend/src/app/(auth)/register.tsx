@@ -1,21 +1,31 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import HouseLogo from '@/assets/images/house_logo-house-white.svg';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
-import { Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import type { UserRole } from '@/types';
 
-const ROLE_OPTIONS: { label: string; value: UserRole }[] = [
-  { label: 'Resident', value: 'resident' },
-  { label: 'Employee', value: 'facility_employee' },
-  { label: 'Staff', value: 'maintenance_staff' },
+const REGISTER_CARD_MAX_WIDTH = 480;
+
+// The employee/manager back-office roles register from the desktop app; residents and
+// maintenance staff register from the mobile app, so each surface only offers its pair.
+const DESKTOP_ROLE_OPTIONS: { label: string; value: UserRole }[] = [
   { label: 'Manager', value: 'facility_manager' },
+  { label: 'Employee', value: 'facility_employee' },
+];
+
+const MOBILE_ROLE_OPTIONS: { label: string; value: UserRole }[] = [
+  { label: 'Resident', value: 'resident' },
+  { label: 'Staff', value: 'maintenance_staff' },
 ];
 
 const ROLE_COPY: Record<UserRole, { title: string; subtitle: string }> = {
@@ -42,10 +52,12 @@ const ROLE_COPY: Record<UserRole, { title: string; subtitle: string }> = {
 
 export default function RegisterScreen() {
   const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const register = useAuthStore((s) => s.register);
 
-  const [role, setRole] = useState<UserRole>('resident');
+  const roleOptions = isDesktop ? DESKTOP_ROLE_OPTIONS : MOBILE_ROLE_OPTIONS;
+  const [role, setRole] = useState<UserRole>(isDesktop ? 'facility_manager' : 'resident');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -56,6 +68,12 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+
+  // Keep the selected role valid for whichever pair of options the current
+  // breakpoint shows (e.g. resizing from desktop down to mobile width).
+  useEffect(() => {
+    setRole(isDesktop ? 'facility_manager' : 'resident');
+  }, [isDesktop]);
 
   const handleSubmit = () => {
     if (!name.trim() || !email.trim() || !phone.trim() || !password) {
@@ -104,108 +122,120 @@ export default function RegisterScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
-
-          <Text style={styles.title}>{copy.title}</Text>
-          <Text style={styles.subtitle}>{copy.subtitle}</Text>
-
-          <View style={styles.form}>
-            <TextField
-              label="Full Name"
-              icon="person-outline"
-              placeholder="Jane Doe"
-              value={name}
-              onChangeText={setName}
-            />
-            <TextField
-              label="Email"
-              icon="mail-outline"
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <TextField
-              label="Phone"
-              icon="call-outline"
-              placeholder="+91 98765 43210"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-            />
-
-            {role === 'resident' && (
-              <View style={styles.row}>
-                <View style={styles.rowItem}>
-                  <TextField
-                    label="Building / Wing"
-                    placeholder="Wing A"
-                    value={building}
-                    onChangeText={setBuilding}
-                  />
-                </View>
-                <View style={styles.rowItem}>
-                  <TextField
-                    label="Unit Number"
-                    placeholder="A-305"
-                    value={unitNumber}
-                    onChangeText={setUnitNumber}
-                  />
-                </View>
+        <ScrollView
+          contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Card style={[styles.card, isDesktop && styles.cardDesktop]}>
+            <View style={styles.brandRow}>
+              <View style={styles.brandMark}>
+                <HouseLogo width={18} height={18} />
               </View>
-            )}
+              <Text style={styles.brandName}>Simplifix</Text>
+            </View>
 
-            {role === 'facility_employee' && (
+            <SegmentedControl options={roleOptions} value={role} onChange={setRole} />
+
+            <Text style={styles.title}>{copy.title}</Text>
+            <Text style={styles.subtitle}>{copy.subtitle}</Text>
+
+            <View style={styles.form}>
               <TextField
-                label="Job Title"
-                icon="briefcase-outline"
-                placeholder="Facility Coordinator"
-                value={title}
-                onChangeText={setTitle}
+                label="Full Name"
+                icon="person-outline"
+                placeholder="Jane Doe"
+                value={name}
+                onChangeText={setName}
               />
-            )}
-
-            {role === 'maintenance_staff' && (
               <TextField
-                label="Specialization"
-                icon="construct-outline"
-                placeholder="Plumbing, Electrical, ..."
-                value={specialization}
-                onChangeText={setSpecialization}
+                label="Email"
+                icon="mail-outline"
+                placeholder="you@example.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
               />
-            )}
-
-            {role === 'facility_manager' && (
               <TextField
-                label="Job Title (optional)"
-                icon="briefcase-outline"
-                placeholder="Facility Manager"
-                value={title}
-                onChangeText={setTitle}
+                label="Phone"
+                icon="call-outline"
+                placeholder="+91 98765 43210"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
               />
-            )}
 
-            <TextField
-              label="Password"
-              icon="lock-closed-outline"
-              placeholder="••••••••"
-              secure
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TextField
-              label="Confirm Password"
-              icon="lock-closed-outline"
-              placeholder="••••••••"
-              secure
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-            {!!error && <Text style={styles.error}>{error}</Text>}
-            <Button label="Create Account" onPress={handleSubmit} fullWidth size="lg" />
-          </View>
+              {role === 'resident' && (
+                <View style={styles.row}>
+                  <View style={styles.rowItem}>
+                    <TextField
+                      label="Building / Wing"
+                      placeholder="Wing A"
+                      value={building}
+                      onChangeText={setBuilding}
+                    />
+                  </View>
+                  <View style={styles.rowItem}>
+                    <TextField
+                      label="Unit Number"
+                      placeholder="A-305"
+                      value={unitNumber}
+                      onChangeText={setUnitNumber}
+                    />
+                  </View>
+                </View>
+              )}
+
+              {role === 'facility_employee' && (
+                <TextField
+                  label="Job Title"
+                  icon="briefcase-outline"
+                  placeholder="Facility Coordinator"
+                  value={title}
+                  onChangeText={setTitle}
+                />
+              )}
+
+              {role === 'maintenance_staff' && (
+                <TextField
+                  label="Specialization"
+                  icon="construct-outline"
+                  placeholder="Plumbing, Electrical, ..."
+                  value={specialization}
+                  onChangeText={setSpecialization}
+                />
+              )}
+
+              {role === 'facility_manager' && (
+                <TextField
+                  label="Job Title (optional)"
+                  icon="briefcase-outline"
+                  placeholder="Facility Manager"
+                  value={title}
+                  onChangeText={setTitle}
+                />
+              )}
+
+              <TextField
+                label="Password"
+                icon="lock-closed-outline"
+                placeholder="••••••••"
+                secure
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TextField
+                label="Confirm Password"
+                icon="lock-closed-outline"
+                placeholder="••••••••"
+                secure
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              {!!error && <Text style={styles.error}>{error}</Text>}
+              <Button label="Create Account" onPress={handleSubmit} fullWidth size="lg" />
+            </View>
+          </Card>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account?</Text>
@@ -232,6 +262,36 @@ const getStyles = (Colors: ThemeColors) =>
       padding: Spacing.lg,
       paddingBottom: Spacing.xxxl,
       gap: Spacing.md,
+    },
+    contentDesktop: {
+      alignItems: 'center',
+      paddingTop: Spacing.xxl,
+    },
+    card: {
+      width: '100%',
+      gap: Spacing.md,
+      padding: Spacing.xl,
+      borderRadius: Radius.xl,
+    },
+    cardDesktop: {
+      maxWidth: REGISTER_CARD_MAX_WIDTH,
+    },
+    brandRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    brandMark: {
+      width: 32,
+      height: 32,
+      borderRadius: Radius.md,
+      backgroundColor: Colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    brandName: {
+      ...Type.subtitle,
+      color: Colors.ink,
     },
     title: {
       ...Type.title,
@@ -261,7 +321,7 @@ const getStyles = (Colors: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'center',
       gap: 6,
-      marginTop: Spacing.md,
+      marginTop: Spacing.sm,
     },
     footerText: {
       ...Type.caption,

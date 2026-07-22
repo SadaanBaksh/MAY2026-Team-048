@@ -53,7 +53,7 @@ const getStyles = (Colors: ThemeColors) =>
       alignItems: 'center',
     },
     segmentActive: {
-      backgroundColor: '#14b8a6',
+      backgroundColor: Colors.teal,
       shadowColor: '#0F1729',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.08,

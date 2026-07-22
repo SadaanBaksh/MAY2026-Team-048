@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
+import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
 import { APARTMENTS } from '@/data/seed';
 import { Type } from '@/constants/theme';
@@ -27,7 +28,7 @@ export default function ResidentProfileScreen() {
   };
 
   return (
-    <Screen edges={['top']}>
+    <Screen edges={['top']} maxWidth={480}>
       <Text style={styles.title}>Profile</Text>
       <ProfileHeader
         user={user}
@@ -47,6 +48,8 @@ export default function ResidentProfileScreen() {
           <Text style={styles.statLabel}>Resolved</Text>
         </View>
       </Card>
+
+      <DarkModeToggle />
 
       <Button
         label="Log Out"

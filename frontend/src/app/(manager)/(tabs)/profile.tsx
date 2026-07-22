@@ -4,6 +4,7 @@ import { StyleSheet, Text } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
+import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
 import { Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -22,9 +23,10 @@ export default function ManagerProfileScreen() {
   };
 
   return (
-    <Screen edges={['top']}>
+    <Screen edges={['top']} maxWidth={480}>
       <Text style={styles.title}>Profile</Text>
       <ProfileHeader user={user} meta={user.title} />
+      <DarkModeToggle />
       <Button
         label="Log Out"
         variant="outline"

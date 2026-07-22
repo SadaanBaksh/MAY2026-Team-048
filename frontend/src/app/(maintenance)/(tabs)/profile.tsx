@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
+import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
 import { Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -32,7 +33,7 @@ export default function MaintenanceProfileScreen() {
   };
 
   return (
-    <Screen edges={['top']}>
+    <Screen edges={['top']} maxWidth={480}>
       <Text style={styles.title}>Profile</Text>
       <ProfileHeader user={user} meta={user.specialization} />
 
@@ -52,6 +53,8 @@ export default function MaintenanceProfileScreen() {
           <Text style={styles.statLabel}>{user.rating.toFixed(1)} rating</Text>
         </View>
       </Card>
+
+      <DarkModeToggle />
 
       <Button
         label="Log Out"

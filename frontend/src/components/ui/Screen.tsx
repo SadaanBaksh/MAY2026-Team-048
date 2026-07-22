@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
 export interface ScreenProps {
@@ -21,6 +22,8 @@ export interface ScreenProps {
   refreshing?: boolean;
   onRefresh?: () => void;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  /** Overrides the default desktop content max-width (e.g. narrower for single-card pages like Profile). */
+  maxWidth?: number;
 }
 
 export function Screen({
@@ -32,17 +35,23 @@ export function Screen({
   refreshing,
   onRefresh,
   edges = ['top'],
+  maxWidth = MaxContentWidth,
 }: ScreenProps) {
   const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
-  const inner = padded ? styles.padded : undefined;
+  const outer = padded ? styles.padded : undefined;
+
+  const content = (
+    <View style={[styles.inner, padded && styles.gap, isDesktop && { maxWidth }]}>{children}</View>
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, style]} edges={edges}>
       {scroll ? (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[inner, contentStyle]}
+          contentContainerStyle={[outer, isDesktop && styles.centered, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={
@@ -55,10 +64,12 @@ export function Screen({
             ) : undefined
           }
         >
-          {children}
+          {content}
         </ScrollView>
       ) : (
-        <View style={[styles.scroll, inner, contentStyle]}>{children}</View>
+        <View style={[styles.scroll, outer, isDesktop && styles.centered, contentStyle]}>
+          {content}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -76,6 +87,14 @@ const getStyles = (Colors: ThemeColors) =>
     padded: {
       padding: Spacing.md,
       paddingBottom: Spacing.xxxl,
+    },
+    centered: {
+      alignItems: 'center',
+    },
+    inner: {
+      width: '100%',
+    },
+    gap: {
       gap: Spacing.md,
     },
   });
