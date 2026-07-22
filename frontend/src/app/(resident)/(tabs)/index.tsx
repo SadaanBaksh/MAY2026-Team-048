@@ -7,7 +7,6 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
-import { StatCard } from '@/components/ui/StatCard';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { APARTMENTS } from '@/data/seed';
@@ -33,11 +32,9 @@ export default function ResidentHomeScreen() {
     [tickets, user.userId],
   );
 
-  const active = myTickets.filter((t) => t.status !== 'Closed');
   const needsAttention = myTickets.filter(
     (t) => t.status === 'Resolved' && t.residentRating == null,
   );
-  const closed = myTickets.filter((t) => t.status === 'Closed');
 
   return (
     <View style={styles.root}>
@@ -77,27 +74,6 @@ export default function ResidentHomeScreen() {
             <Ionicons name="arrow-forward-circle" size={26} color={Colors.white} />
           </Card>
         </Pressable>
-
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Active"
-            value={active.length}
-            icon="pulse-outline"
-            color={Colors.teal}
-          />
-          <StatCard
-            label="Needs Review"
-            value={needsAttention.length}
-            icon="star-outline"
-            color={Colors.accent}
-          />
-          <StatCard
-            label="Resolved"
-            value={closed.length}
-            icon="checkmark-done-outline"
-            color={Colors.success}
-          />
-        </View>
 
         {needsAttention.length > 0 && (
           <View style={styles.section}>
@@ -237,10 +213,6 @@ const getStyles = (Colors: ThemeColors) =>
       ...Type.caption,
       color: 'rgba(255,255,255,0.85)',
       marginTop: 2,
-    },
-    statsRow: {
-      flexDirection: 'row',
-      gap: Spacing.sm,
     },
     section: {
       gap: Spacing.sm,

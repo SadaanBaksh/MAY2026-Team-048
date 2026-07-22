@@ -24,7 +24,7 @@ export default function ResidentProfileScreen() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/(auth)/welcome');
+    router.replace('/(auth)/login');
   };
 
   return (

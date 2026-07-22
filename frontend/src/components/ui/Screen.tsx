@@ -43,7 +43,16 @@ export function Screen({
   const outer = padded ? styles.padded : undefined;
 
   const content = (
-    <View style={[styles.inner, padded && styles.gap, isDesktop && { maxWidth }]}>{children}</View>
+    <View
+      style={[
+        styles.inner,
+        !scroll && styles.innerFlex,
+        padded && styles.gap,
+        isDesktop && { maxWidth },
+      ]}
+    >
+      {children}
+    </View>
   );
 
   return (
@@ -93,6 +102,9 @@ const getStyles = (Colors: ThemeColors) =>
     },
     inner: {
       width: '100%',
+    },
+    innerFlex: {
+      flex: 1,
     },
     gap: {
       gap: Spacing.md,
