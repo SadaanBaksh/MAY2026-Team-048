@@ -131,7 +131,7 @@ const getStyles = (Colors: ThemeColors) =>
     legendLabel: {
       ...Type.caption,
       color: Colors.inkSecondary,
-      width: 96,
+      flex: 1,
     },
     legendValue: {
       ...Type.captionBold,

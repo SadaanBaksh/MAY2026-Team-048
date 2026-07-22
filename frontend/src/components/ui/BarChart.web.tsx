@@ -50,7 +50,7 @@ export function BarChart({ data, valueSuffix = '' }: BarChartProps) {
 
   const options: ChartOptions<'bar'> = useMemo(
     () => ({
-      indexAxis: 'y' as const,
+      indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { right: 40 } },
