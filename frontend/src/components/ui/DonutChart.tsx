@@ -21,8 +21,8 @@ export interface DonutChartProps {
 
 export function DonutChart({
   data,
-  size = 150,
-  strokeWidth = 18,
+  size = 180,
+  strokeWidth = 20,
   centerLabel,
   centerValue,
 }: DonutChartProps) {
@@ -78,6 +78,7 @@ const getStyles = (Colors: ThemeColors) =>
     wrapper: {
       flexDirection: 'row',
       alignItems: 'center',
+      alignSelf: 'center',
       gap: Spacing.lg,
     },
     center: {
@@ -93,7 +94,6 @@ const getStyles = (Colors: ThemeColors) =>
       color: Colors.inkSecondary,
     },
     legend: {
-      flex: 1,
       gap: 8,
     },
     legendRow: {
@@ -109,7 +109,7 @@ const getStyles = (Colors: ThemeColors) =>
     legendLabel: {
       ...Type.caption,
       color: Colors.inkSecondary,
-      flex: 1,
+      width: 96,
     },
     legendValue: {
       ...Type.captionBold,

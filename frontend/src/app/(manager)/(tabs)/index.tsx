@@ -9,6 +9,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { CATEGORIES } from '@/data/categories';
 import { Spacing, Type } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
@@ -29,6 +30,7 @@ const CHART_PALETTE = [
 export default function ManagerAnalyticsScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
+  const isDesktop = useIsDesktop();
   const user = useAuthStore((s) => s.currentUser)!;
   const tickets = useTicketStore((s) => s.tickets);
 
@@ -139,19 +141,25 @@ export default function ManagerAnalyticsScreen() {
         />
       </View>
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Complaints by Category</Text>
-        {categoryData.length > 0 ? (
-          <DonutChart data={categoryData} centerValue={String(stats.total)} centerLabel="Total" />
-        ) : (
-          <Text style={styles.empty}>No complaint data yet.</Text>
-        )}
-      </Card>
+      <View style={isDesktop ? styles.chartGrid : styles.chartStack}>
+        <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
+          <Text style={styles.sectionTitle}>Complaints by Category</Text>
+          {categoryData.length > 0 ? (
+            <DonutChart
+              data={categoryData}
+              centerValue={String(stats.total)}
+              centerLabel="Total"
+            />
+          ) : (
+            <Text style={styles.empty}>No complaint data yet.</Text>
+          )}
+        </Card>
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Status Breakdown</Text>
-        <BarChart data={statusData} />
-      </Card>
+        <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
+          <Text style={styles.sectionTitle}>Status Breakdown</Text>
+          <BarChart data={statusData} />
+        </Card>
+      </View>
 
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Resident Satisfaction</Text>
@@ -192,6 +200,17 @@ const getStyles = (Colors: ThemeColors) =>
     },
     section: {
       gap: Spacing.sm,
+    },
+    chartStack: {
+      gap: Spacing.md,
+    },
+    chartGrid: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      gap: Spacing.md,
+    },
+    chartGridItem: {
+      flex: 1,
     },
     sectionTitle: {
       ...Type.subtitle,

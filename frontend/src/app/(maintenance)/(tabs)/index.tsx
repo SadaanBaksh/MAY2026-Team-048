@@ -6,7 +6,6 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { APARTMENTS } from '@/data/seed';
@@ -52,7 +51,6 @@ export default function MaintenanceJobsScreen() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <BurgerMenu />
           <Pressable
             style={styles.headerProfile}
             onPress={() => router.push('/(maintenance)/(tabs)/profile')}
