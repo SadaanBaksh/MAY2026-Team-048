@@ -58,7 +58,7 @@ export default function WelcomeScreen() {
           <View style={styles.actions}>
             <Button
               label="Log In"
-              onPress={() => router.push('/(auth)/login')}
+              onPress={() => router.push('/(auth)/customer-login')}
               fullWidth
               size="lg"
               style={{ backgroundColor: Colors.primary }}

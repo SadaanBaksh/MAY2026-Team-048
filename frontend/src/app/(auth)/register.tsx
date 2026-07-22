@@ -239,7 +239,12 @@ export default function RegisterScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account?</Text>
-            <Text style={styles.footerLink} onPress={() => router.replace('/(auth)/login')}>
+            <Text
+              style={styles.footerLink}
+              onPress={() =>
+                router.replace(role === 'resident' ? '/(auth)/customer-login' : '/(auth)/employee-login')
+              }
+            >
               Log in
             </Text>
           </View>
