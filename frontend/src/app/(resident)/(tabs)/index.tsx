@@ -82,27 +82,6 @@ export default function ResidentHomeScreen() {
           </Card>
         </Pressable>
 
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Active"
-            value={active.length}
-            icon="pulse-outline"
-            color={Colors.teal}
-          />
-          <StatCard
-            label="Needs Review"
-            value={needsAttention.length}
-            icon="star-outline"
-            color={Colors.accent}
-          />
-          <StatCard
-            label="Resolved"
-            value={closed.length}
-            icon="checkmark-done-outline"
-            color={Colors.success}
-          />
-        </View>
-
         <AISummaryCard
           summary={RESIDENT_AI_SUMMARY}
           variant="resident"
