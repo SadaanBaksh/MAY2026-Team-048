@@ -15,9 +15,11 @@ export interface TicketCardProps {
   ticket: Ticket;
   subtitle?: string;
   onPress?: () => void;
+  /** Simplified layout: drops the priority/overdue tags and shows just the status under the date. */
+  compact?: boolean;
 }
 
-export function TicketCard({ ticket, subtitle, onPress }: TicketCardProps) {
+export function TicketCard({ ticket, subtitle, onPress, compact }: TicketCardProps) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const category = getCategoryById(ticket.categoryId);
@@ -32,20 +34,31 @@ export function TicketCard({ ticket, subtitle, onPress }: TicketCardProps) {
             <Text style={styles.title} numberOfLines={1}>
               {ticket.title}
             </Text>
-            <Text style={styles.time}>{timeAgo(ticket.dateOfRequest)}</Text>
+            {compact ? (
+              <View style={styles.timeStatusCol}>
+                <Text style={styles.time}>{timeAgo(ticket.dateOfRequest)}</Text>
+                <View style={styles.statusWrap}>
+                  <StatusBadge status={ticket.status} />
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.time}>{timeAgo(ticket.dateOfRequest)}</Text>
+            )}
           </View>
           <Text style={styles.subtitle} numberOfLines={1}>
             {subtitle ?? category.categoryName}
           </Text>
-          <View style={styles.badgeRow}>
-            <PriorityBadge priority={ticket.priority} />
-            <StatusBadge status={ticket.status} />
-            {overdue && (
-              <View style={styles.overdueChip}>
-                <Text style={styles.overdueText}>Overdue</Text>
-              </View>
-            )}
-          </View>
+          {!compact && (
+            <View style={styles.badgeRow}>
+              <PriorityBadge priority={ticket.priority} />
+              <StatusBadge status={ticket.status} />
+              {overdue && (
+                <View style={styles.overdueChip}>
+                  <Text style={styles.overdueText}>Overdue</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </View>
     </Card>
@@ -78,6 +91,13 @@ const getStyles = (Colors: ThemeColors) =>
     time: {
       ...Type.tiny,
       color: Colors.inkTertiary,
+    },
+    timeStatusCol: {
+      alignItems: 'flex-end',
+      gap: 4,
+    },
+    statusWrap: {
+      flexDirection: 'row',
     },
     subtitle: {
       ...Type.caption,

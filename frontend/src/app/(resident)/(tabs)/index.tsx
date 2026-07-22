@@ -109,6 +109,7 @@ export default function ResidentHomeScreen() {
                   ticket={t}
                   subtitle="Verify the fix and rate the work"
                   onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+                  compact
                 />
               ))}
             </View>
@@ -142,6 +143,7 @@ export default function ResidentHomeScreen() {
                   key={t.ticketId}
                   ticket={t}
                   onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+                  compact
                 />
               ))}
             </View>
