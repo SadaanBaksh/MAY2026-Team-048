@@ -50,7 +50,7 @@ export function NotificationsList({ notifications, onPressItem }: NotificationsL
                 ? 'alert-circle-outline'
                 : 'notifications-outline'
             }
-            color={n.title.toLowerCase().includes('overdue') ? Colors.danger : Colors.primary}
+            color={n.title.toLowerCase().includes('overdue') ? Colors.danger : Colors.teal}
             size={36}
           />
           <View style={styles.body}>
@@ -109,7 +109,7 @@ const getStyles = (Colors: ThemeColors) =>
       width: 6,
       height: 6,
       borderRadius: 3,
-      backgroundColor: Colors.primary,
+      backgroundColor: Colors.teal,
     },
     message: {
       ...Type.caption,

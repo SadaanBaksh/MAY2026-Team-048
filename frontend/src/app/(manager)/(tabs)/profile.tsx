@@ -33,6 +33,7 @@ export default function ManagerProfileScreen() {
         onPress={handleLogout}
         fullWidth
         icon="log-out-outline"
+        textColor={Colors.danger}
       />
     </Screen>
   );

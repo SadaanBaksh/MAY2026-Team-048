@@ -101,7 +101,13 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
               />
               {!!error && <Text style={styles.error}>{error}</Text>}
-              <Button label="Log In" onPress={handleLogin} fullWidth size="lg" />
+              <Button
+                label="Log In"
+                onPress={handleLogin}
+                fullWidth
+                size="lg"
+                style={styles.loginButton}
+              />
             </View>
 
             <View style={styles.divider}>
@@ -243,6 +249,9 @@ const getStyles = (Colors: ThemeColors) =>
       gap: Spacing.sm,
       marginTop: Spacing.xs,
     },
+    loginButton: {
+      backgroundColor: Colors.teal,
+    },
     error: {
       ...Type.caption,
       color: Colors.danger,
@@ -279,6 +288,6 @@ const getStyles = (Colors: ThemeColors) =>
     },
     footerLink: {
       ...Type.captionBold,
-      color: Colors.primary,
+      color: Colors.teal,
     },
   });

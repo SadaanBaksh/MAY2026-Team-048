@@ -57,6 +57,7 @@ export default function ResidentProfileScreen() {
         onPress={handleLogout}
         fullWidth
         icon="log-out-outline"
+        textColor={Colors.danger}
       />
     </Screen>
   );

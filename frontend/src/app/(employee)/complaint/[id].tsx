@@ -7,6 +7,7 @@ import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
 import { MediaThumb } from '@/components/shared/MediaThumb';
+import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -148,6 +149,13 @@ export default function EmployeeComplaintDetailScreen() {
           onChangeCategory={canEdit ? setCategoryId : undefined}
           onChangePriority={canEdit ? setPriority : undefined}
         />
+
+        {!!ticket.voiceNoteUrl && (
+          <Card>
+            <Text style={styles.sectionLabel}>Voice Note</Text>
+            <VoiceNotePlayer uri={ticket.voiceNoteUrl} durationSec={ticket.voiceNoteDurationSec} />
+          </Card>
+        )}
 
         <Card style={styles.section}>
           <Text style={styles.sectionLabel}>Cost Responsibility</Text>

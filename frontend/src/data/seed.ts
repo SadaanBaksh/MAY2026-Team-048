@@ -190,6 +190,8 @@ export const TICKETS: Ticket[] = [
     mediaType: 'Image',
     residentNote:
       'The kitchen tap has been leaking non-stop since this morning, water is pooling on the counter.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Continuous dripping detected from the kitchen fixture. Washer or cartridge replacement may be required to stop water wastage.',
     aiConfidence: 0.93,
@@ -213,6 +215,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1002/900/700',
     mediaType: 'Image',
     residentNote: 'AC in the bedroom is running but not cooling at all.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Reduced cooling performance reported from the bedroom unit. Likely low refrigerant or a clogged filter; gauge set recommended.',
     aiConfidence: 0.88,
@@ -236,6 +240,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1003/900/700',
     mediaType: 'Video',
     residentNote: 'Saw sparks coming from the hallway switchboard near my door, quite scary.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Intermittent sparking observed at the hallway switchboard. Suspected loose wiring connection; power isolation recommended before inspection.',
     aiConfidence: 0.95,
@@ -259,6 +265,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1004/900/700',
     mediaType: 'Image',
     residentNote: 'Damp patch on the living room ceiling is getting bigger.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Damp patch spreading across the living room ceiling, suggesting seepage from the floor above. Joint inspection needed.',
     aiConfidence: 0.9,
@@ -283,6 +291,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1005/900/700',
     mediaType: 'Image',
     residentNote: 'Cupboard door in the bedroom has come off its hinge.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Cupboard shutter at the bedroom has come loose from its track; screws or track replacement may be needed.',
     aiConfidence: 0.86,
@@ -306,6 +316,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1006/900/700',
     mediaType: 'Image',
     residentNote: 'Seeing cockroaches near the kitchen sink every night.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Pest activity reported near the kitchen, consistent with a minor infestation. Recommend scheduling a licensed pest-control visit.',
     aiConfidence: 0.82,
@@ -329,6 +341,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1007/900/700',
     mediaType: 'Image',
     residentNote: 'Main gate CCTV screen has been black since yesterday.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'CCTV feed from the main gate appears offline. Likely a network or power connection issue at the camera junction.',
     aiConfidence: 0.91,
@@ -352,6 +366,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1008/900/700',
     mediaType: 'Video',
     residentNote: 'Lift in Wing B is making a loud grinding noise and jerks between floors.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Unusual grinding noise from the Wing B lift shaft, possibly indicating worn cables or guide rails.',
     aiConfidence: 0.89,
@@ -375,6 +391,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1009/900/700',
     mediaType: 'Image',
     residentNote: 'Garbage bins near the lobby have not been cleared in two days.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Uncollected waste accumulating near the lobby. Recommend an additional housekeeping round and bin servicing.',
     aiConfidence: 0.8,
@@ -398,6 +416,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1010/900/700',
     mediaType: 'Image',
     residentNote: 'Bathroom drain is very slow, water collects while showering.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Slow drainage reported at the bathroom. Possible blockage in the trap or downstream pipeline; snaking tool advised.',
     aiConfidence: 0.87,
@@ -421,6 +441,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1011/900/700',
     mediaType: 'Image',
     residentNote: 'Window lock in the bedroom is jammed and will not latch.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'Window lock at the bedroom is jammed, requiring lubrication or hardware replacement.',
     aiConfidence: 0.84,
@@ -444,6 +466,8 @@ export const TICKETS: Ticket[] = [
     imageUrl: 'https://picsum.photos/seed/tkt1012/900/700',
     mediaType: 'Image',
     residentNote: 'Refrigerator stopped powering on this morning.',
+    voiceNoteUrl: null,
+    voiceNoteDurationSec: null,
     aiDescription:
       'The refrigerator unit is not powering on. Suspect a tripped thermal cutoff or faulty control board.',
     aiConfidence: 0.85,

@@ -18,6 +18,8 @@ export interface ColorPalette {
   primarySoft: string;
   primaryTint: string;
 
+  teal: string;
+
   accent: string;
   accentSoft: string;
 
@@ -75,13 +77,15 @@ export const LightColors: ColorPalette = {
   border: '#E4E6EA',
   borderStrong: '#D1D3D8',
 
-  primary: '#ffdf00',
-  primaryDark: '#ccb200',
-  primarySoft: '#fff7cc',
-  primaryTint: '#ffee99',
+  primary: '#0c2d35',
+  primaryDark: '#071b20',
+  primarySoft: '#eef2f3',
+  primaryTint: '#d8e1e3',
 
-  accent: '#0a2127',
-  accentSoft: '#e4e9ea',
+  teal: '#0c8577',
+
+  accent: '#ffdf00',
+  accentSoft: '#fffce6',
 
   success: '#1C9C6E',
   successSoft: '#E4F7EF',
@@ -104,22 +108,23 @@ export const DarkColors: ColorPalette = {
   inkTertiary: '#7B8890',
   inkInverse: '#FFFFFF',
 
-  // Dark surfaces carry a teal cast (derived from the #0c2d35 brand color) rather than
-  // a neutral gray-black, so dark mode still reads as the same brand as the landing page.
-  surface: '#16262B',
-  surfaceMuted: '#0d1a1d',
-  surfaceSunken: '#081215',
-  surfaceOverlay: 'rgba(3,10,12,0.7)',
-  border: '#26383E',
-  borderStrong: '#33474E',
+  // Neutral blackish-gray surfaces (no brand teal cast).
+  surface: '#18181b',
+  surfaceMuted: '#09090b',
+  surfaceSunken: '#030303',
+  surfaceOverlay: 'rgba(0,0,0,0.7)',
+  border: '#27272a',
+  borderStrong: '#3f3f46',
 
-  primary: '#ffdf00',
-  primaryDark: '#ccb200',
-  primarySoft: '#332c00',
-  primaryTint: '#4d4200',
+  primary: '#0c8577',
+  primaryDark: '#52525b',
+  primarySoft: '#1f1f22',
+  primaryTint: '#2a2a2e',
 
-  accent: '#1d3a42',
-  accentSoft: '#0f2126',
+  teal: '#0c8577',
+
+  accent: '#ffdf00',
+  accentSoft: '#332c00',
 
   success: '#3FBE8E',
   successSoft: '#173A2C',

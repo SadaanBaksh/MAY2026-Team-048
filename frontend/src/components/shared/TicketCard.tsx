@@ -26,7 +26,7 @@ export function TicketCard({ ticket, subtitle, onPress }: TicketCardProps) {
   return (
     <Card onPress={onPress} style={styles.card}>
       <View style={styles.row}>
-        <IconCircle name={category.icon} color={Colors.primary} size={40} />
+        <IconCircle name={category.icon} color={Colors.teal} size={40} />
         <View style={styles.body}>
           <View style={styles.titleRow}>
             <Text style={styles.title} numberOfLines={1}>

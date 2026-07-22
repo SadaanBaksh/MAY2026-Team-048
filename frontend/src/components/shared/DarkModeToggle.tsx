@@ -21,7 +21,7 @@ export function DarkModeToggle() {
         onValueChange={toggleTheme}
         trackColor={{
           false: Colors.borderStrong,
-          true: isDark ? Colors.primaryDark : Colors.primary,
+          true: isDark ? Colors.teal : Colors.primary,
         }}
         thumbColor={Colors.white}
         ios_backgroundColor={Colors.borderStrong}

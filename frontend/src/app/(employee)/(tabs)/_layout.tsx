@@ -18,7 +18,7 @@ export default function EmployeeTabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
+        tabBarActiveTintColor: Colors.teal,
         tabBarInactiveTintColor: Colors.inkTertiary,
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
       }}
@@ -53,7 +53,6 @@ export default function EmployeeTabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle" size={size} color={color} />
           ),
-          href: null,
         }}
       />
     </Tabs>

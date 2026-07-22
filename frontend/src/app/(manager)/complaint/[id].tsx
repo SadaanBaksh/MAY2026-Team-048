@@ -6,6 +6,7 @@ import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
 import { MediaThumb } from '@/components/shared/MediaThumb';
+import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -110,6 +111,13 @@ export default function ManagerComplaintAuditScreen() {
           categoryId={ticket.categoryId}
           priority={ticket.priority}
         />
+
+        {!!ticket.voiceNoteUrl && (
+          <Card>
+            <Text style={styles.sectionLabel}>Voice Note</Text>
+            <VoiceNotePlayer uri={ticket.voiceNoteUrl} durationSec={ticket.voiceNoteDurationSec} />
+          </Card>
+        )}
 
         <Card>
           <Text style={styles.sectionLabel}>Cost Responsibility</Text>

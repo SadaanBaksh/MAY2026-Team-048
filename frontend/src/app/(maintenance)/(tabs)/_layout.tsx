@@ -9,7 +9,7 @@ export default function MaintenanceTabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
+        tabBarActiveTintColor: Colors.teal,
         tabBarInactiveTintColor: Colors.inkTertiary,
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
       }}

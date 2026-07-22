@@ -25,6 +25,7 @@ const HIGH_WORDS = ['leak', 'no power', 'not working', 'urgent', 'sparking', 'no
 export interface AIAnalysisInput {
   note: string;
   hasVideo: boolean;
+  hasVoiceNote?: boolean;
 }
 
 export interface AIAnalysisResult {
@@ -56,7 +57,11 @@ function derivePriority(note: string, category: CategoryMeta): Priority {
 }
 
 /** Simulates an async multimodal AI job (image/video -> description, category, priority). */
-export function analyzeComplaint({ note, hasVideo }: AIAnalysisInput): Promise<AIAnalysisResult> {
+export function analyzeComplaint({
+  note,
+  hasVideo,
+  hasVoiceNote,
+}: AIAnalysisInput): Promise<AIAnalysisResult> {
   const category = pickCategory(note);
   const area = pickArea(note);
   const template =
@@ -66,7 +71,8 @@ export function analyzeComplaint({ note, hasVideo }: AIAnalysisInput): Promise<A
 
   const aiDescription =
     template.replace('{area}', area) +
-    (hasVideo ? ' Video footage confirms the reported symptom.' : '');
+    (hasVideo ? ' Video footage confirms the reported symptom.' : '') +
+    (hasVoiceNote ? ' Voice note reviewed for additional context.' : '');
 
   return new Promise((resolve) => {
     setTimeout(
