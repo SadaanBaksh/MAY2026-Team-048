@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AISummaryCard } from '@/components/ui/AISummaryCard';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -16,6 +17,9 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Resident } from '@/types';
+
+const RESIDENT_AI_SUMMARY =
+  'Your plumbing complaint (Unit A-101) was marked In Progress 3 hours ago — a technician has been assigned. 1 resolved ticket is awaiting your review and rating.';
 
 export default function ResidentHomeScreen() {
   const { Colors } = useTheme();
@@ -98,6 +102,12 @@ export default function ResidentHomeScreen() {
             color={Colors.success}
           />
         </View>
+
+        <AISummaryCard
+          summary={RESIDENT_AI_SUMMARY}
+          variant="resident"
+          label="My Complaints Summary"
+        />
 
         {needsAttention.length > 0 && (
           <View style={styles.section}>

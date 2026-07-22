@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AISummaryCard } from '@/components/ui/AISummaryCard';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
@@ -15,6 +16,9 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
+
+const EMPLOYEE_AI_SUMMARY =
+  '5 complaints are currently in progress — the most urgent is a gas leak report in Wing B (Critical). 2 tickets have stalled in Assigned status for over 12 hours. Top category this week: Plumbing (4 tickets). No new complaints since 2 hours ago.';
 
 export default function EmployeeDashboardScreen() {
   const { Colors } = useTheme();
@@ -94,6 +98,12 @@ export default function EmployeeDashboardScreen() {
           color={Colors.success}
         />
       </View>
+
+      <AISummaryCard
+        summary={EMPLOYEE_AI_SUMMARY}
+        variant="employee"
+        label="Operations Brief"
+      />
 
       {overdue.length > 0 && (
         <View style={styles.section}>
