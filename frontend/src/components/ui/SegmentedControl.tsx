@@ -53,7 +53,7 @@ const getStyles = (Colors: ThemeColors) =>
       alignItems: 'center',
     },
     segmentActive: {
-      backgroundColor: Colors.surface,
+      backgroundColor: '#14b8a6',
       shadowColor: '#0F1729',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.08,
@@ -65,7 +65,7 @@ const getStyles = (Colors: ThemeColors) =>
       color: Colors.inkSecondary,
     },
     labelActive: {
-      color: Colors.ink,
+      color: Colors.white,
       fontFamily: FontFamily.bold,
     },
   });

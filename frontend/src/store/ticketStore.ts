@@ -27,6 +27,8 @@ export interface SubmitComplaintInput {
   mediaUrl: string;
   mediaType: MediaType;
   residentNote: string;
+  voiceNoteUrl: string | null;
+  voiceNoteDurationSec: number | null;
 }
 
 export interface Actor {
@@ -103,6 +105,8 @@ export const useTicketStore = create<TicketState>()(
           imageUrl: input.mediaUrl,
           mediaType: input.mediaType,
           residentNote: input.residentNote,
+          voiceNoteUrl: input.voiceNoteUrl,
+          voiceNoteDurationSec: input.voiceNoteDurationSec,
           aiDescription: input.aiDescription,
           aiConfidence: input.aiConfidence,
           priority: input.priority,

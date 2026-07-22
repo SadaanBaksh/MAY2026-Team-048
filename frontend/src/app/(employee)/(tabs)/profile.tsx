@@ -31,6 +31,7 @@ export default function EmployeeProfileScreen() {
         onPress={handleLogout}
         fullWidth
         icon="log-out-outline"
+        textColor={Colors.danger}
       />
     </Screen>
   );

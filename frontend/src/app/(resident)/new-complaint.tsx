@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -11,9 +11,11 @@ import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { MediaThumb } from '@/components/shared/MediaThumb';
+import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { getCategoryById } from '@/data/categories';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { MediaType, Priority } from '@/types';
@@ -39,6 +41,11 @@ export default function NewComplaintScreen() {
   const [mediaType, setMediaType] = useState<MediaType | null>(null);
   const [note, setNote] = useState('');
   const [permissionError, setPermissionError] = useState('');
+
+  const voiceRecorder = useVoiceRecorder();
+  const [voiceNoteUri, setVoiceNoteUri] = useState<string | null>(null);
+  const [voiceNoteDurationSec, setVoiceNoteDurationSec] = useState<number | null>(null);
+  const voiceActionInFlight = useRef(false);
 
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
   const [description, setDescription] = useState('');
@@ -102,10 +109,47 @@ export default function NewComplaintScreen() {
     }
   };
 
+  const handleRecordVoiceNote = async () => {
+    if (voiceActionInFlight.current) return;
+    voiceActionInFlight.current = true;
+    setPermissionError('');
+    try {
+      const granted = await voiceRecorder.start();
+      if (!granted) {
+        setPermissionError('Microphone permission is required to record a voice note.');
+      }
+    } finally {
+      voiceActionInFlight.current = false;
+    }
+  };
+
+  const handleStopVoiceNote = async () => {
+    if (voiceActionInFlight.current) return;
+    voiceActionInFlight.current = true;
+    try {
+      const recording = await voiceRecorder.stop();
+      if (recording) {
+        setVoiceNoteUri(recording.uri);
+        setVoiceNoteDurationSec(recording.durationSec);
+      }
+    } finally {
+      voiceActionInFlight.current = false;
+    }
+  };
+
+  const handleDeleteVoiceNote = () => {
+    setVoiceNoteUri(null);
+    setVoiceNoteDurationSec(null);
+  };
+
   const handleAnalyze = async () => {
     if (!mediaUri || !mediaType) return;
     setStep('analyzing');
-    const result = await analyzeComplaint({ note, hasVideo: mediaType === 'Video' });
+    const result = await analyzeComplaint({
+      note,
+      hasVideo: mediaType === 'Video',
+      hasVoiceNote: !!voiceNoteUri,
+    });
     setAiResult(result);
     setDescription(result.aiDescription);
     setCategoryId(result.categoryId);
@@ -126,6 +170,8 @@ export default function NewComplaintScreen() {
       mediaUrl: mediaUri,
       mediaType,
       residentNote: note,
+      voiceNoteUrl: voiceNoteUri,
+      voiceNoteDurationSec,
     });
     setNewTicketId(ticketId);
     setStep('done');
@@ -244,6 +290,36 @@ export default function NewComplaintScreen() {
               />
             </Card>
 
+            <Text style={styles.label}>Add a voice note (optional)</Text>
+            {voiceNoteUri ? (
+              <VoiceNotePlayer
+                uri={voiceNoteUri}
+                durationSec={voiceNoteDurationSec}
+                onDelete={handleDeleteVoiceNote}
+              />
+            ) : voiceRecorder.isRecording ? (
+              <View style={styles.recordingRow}>
+                <View style={styles.recordingDot} />
+                <Text style={styles.recordingText}>
+                  Recording… {Math.floor(voiceRecorder.durationMillis / 1000)}s
+                </Text>
+                <Button
+                  label="Stop"
+                  icon="stop-circle"
+                  variant="danger"
+                  size="sm"
+                  onPress={handleStopVoiceNote}
+                />
+              </View>
+            ) : (
+              <Button
+                label="Record Voice Note"
+                icon="mic-outline"
+                variant="secondary"
+                onPress={handleRecordVoiceNote}
+              />
+            )}
+
             <Button
               label="Analyze with AI"
               icon="sparkles-outline"
@@ -259,6 +335,9 @@ export default function NewComplaintScreen() {
           <>
             <MediaThumb uri={mediaUri} mediaType={mediaType} height={200} />
             {!!note && <Text style={styles.noteEcho}>“{note}”</Text>}
+            {!!voiceNoteUri && (
+              <VoiceNotePlayer uri={voiceNoteUri} durationSec={voiceNoteDurationSec} />
+            )}
             <AIDescriptionCard
               description={description}
               onChangeDescription={setDescription}
@@ -343,6 +422,25 @@ const getStyles = (Colors: ThemeColors) =>
       ...Type.caption,
       color: Colors.inkSecondary,
       fontStyle: 'italic',
+    },
+    recordingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      backgroundColor: Colors.dangerSoft,
+      borderRadius: Radius.lg,
+      padding: Spacing.sm,
+    },
+    recordingDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: Colors.danger,
+    },
+    recordingText: {
+      ...Type.bodyMedium,
+      color: Colors.danger,
+      flex: 1,
     },
     helper: {
       ...Type.caption,

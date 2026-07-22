@@ -8,8 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import HouseLogo from '@/assets/images/house_logo-house-white.svg';
 import { Button } from '@/components/ui/Button';
-import { Radius, Spacing, Type } from '@/constants/theme';
-import { useTheme, type ThemeColors } from '@/hooks/useTheme';
+import { LightColors, Radius, Spacing, Type } from '@/constants/theme';
+import type { ThemeColors } from '@/hooks/useTheme';
 
 const ROLE_HIGHLIGHTS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { icon: 'home-outline', label: 'Residents' },
@@ -19,7 +19,9 @@ const ROLE_HIGHLIGHTS: { icon: keyof typeof Ionicons.glyphMap; label: string }[]
 ];
 
 export default function WelcomeScreen() {
-  const { Colors } = useTheme();
+  // Always rendered with the light palette, regardless of the app's theme mode —
+  // this is a brand-colored splash screen, not a themed app surface.
+  const Colors = LightColors;
   const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   return (
@@ -59,6 +61,8 @@ export default function WelcomeScreen() {
               onPress={() => router.push('/(auth)/login')}
               fullWidth
               size="lg"
+              style={{ backgroundColor: Colors.primary }}
+              textColor={Colors.white}
             />
             <Button
               label="Create an Account"
@@ -66,6 +70,8 @@ export default function WelcomeScreen() {
               variant="outline"
               fullWidth
               size="lg"
+              style={{ borderColor: Colors.borderStrong }}
+              textColor={Colors.ink}
             />
           </View>
         </View>
