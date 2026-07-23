@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -138,6 +138,16 @@ export default function ResidentHomeScreen() {
       </Screen>
 
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Request emergency service"
+        style={({ pressed }) => [styles.emergencyFab, pressed && styles.chatFabPressed]}
+        onPress={() => router.push('/(resident)/emergency' as Href)}
+      >
+        <Ionicons name="warning" size={24} color={Colors.white} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open AI assistant"
         style={({ pressed }) => [styles.chatFab, pressed && styles.chatFabPressed]}
         onPress={() => router.push('/(resident)/chat')}
       >
@@ -164,6 +174,23 @@ const getStyles = (Colors: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
+      zIndex: 10,
+    },
+    emergencyFab: {
+      position: 'absolute',
+      bottom: Spacing.xl + 68,
+      right: Spacing.lg,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: Colors.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: Colors.danger,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 12,

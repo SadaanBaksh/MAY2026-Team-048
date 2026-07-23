@@ -14,6 +14,10 @@ export default function ResidentLayout() {
         name="new-complaint"
         options={{ presentation: 'card', animation: 'slide_from_bottom' }}
       />
+      <Stack.Screen
+        name="emergency"
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
       <Stack.Screen name="notifications" />
     </Stack>
   );

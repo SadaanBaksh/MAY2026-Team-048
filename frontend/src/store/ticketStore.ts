@@ -24,8 +24,8 @@ export interface SubmitComplaintInput {
   aiDescription: string;
   aiConfidence: number;
   priority: Priority;
-  mediaUrl: string;
-  mediaType: MediaType;
+  mediaUrl: string | null;
+  mediaType: MediaType | null;
   residentNote: string;
   voiceNoteUrl: string | null;
   voiceNoteDurationSec: number | null;
@@ -126,16 +126,19 @@ export const useTicketStore = create<TicketState>()(
 
         set((state) => ({
           tickets: [ticket, ...state.tickets],
-          media: [
-            ...state.media,
-            {
-              mediaId: generateId('media'),
-              ticketId,
-              mediaUrl: input.mediaUrl,
-              mediaType: input.mediaType,
-              uploadedAt: isoNow(),
-            },
-          ],
+          media:
+            input.mediaUrl && input.mediaType
+              ? [
+                  ...state.media,
+                  {
+                    mediaId: generateId('media'),
+                    ticketId,
+                    mediaUrl: input.mediaUrl,
+                    mediaType: input.mediaType,
+                    uploadedAt: isoNow(),
+                  },
+                ]
+              : state.media,
           history: pushHistory(
             state,
             ticketId,
@@ -151,8 +154,14 @@ export const useTicketStore = create<TicketState>()(
           useNotificationStore.getState().addNotification({
             userId: emp.userId,
             ticketId,
-            title: 'New complaint submitted',
-            message: `${resident?.name ?? 'A resident'} reported: ${input.title}`,
+            title:
+              input.priority === 'Emergency'
+                ? 'Emergency service request'
+                : 'New complaint submitted',
+            message:
+              input.priority === 'Emergency'
+                ? `${resident?.name ?? 'A resident'} needs emergency assistance: ${input.title}`
+                : `${resident?.name ?? 'A resident'} reported: ${input.title}`,
           });
         });
 

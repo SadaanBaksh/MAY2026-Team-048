@@ -79,7 +79,7 @@ export function AIDescriptionCard({
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Priority</Text>
-        {editable && onChangePriority ? (
+        {editable && onChangePriority && priority !== 'Emergency' ? (
           <PriorityPicker value={priority} onChange={onChangePriority} />
         ) : (
           <PriorityBadge priority={priority} />

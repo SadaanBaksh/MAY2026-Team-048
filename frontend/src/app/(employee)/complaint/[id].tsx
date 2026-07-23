@@ -88,6 +88,7 @@ export default function EmployeeComplaintDetailScreen() {
   }
 
   const category = getCategoryById(ticket.categoryId);
+  const isEmergency = ticket.priority === 'Emergency';
   const assignedWorker = ticket.workerId ? users.find((u) => u.userId === ticket.workerId) : null;
   const canEdit = ticket.status === 'Pending' || ticket.status === 'Assigned';
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
@@ -146,7 +147,7 @@ export default function EmployeeComplaintDetailScreen() {
           categoryId={categoryId}
           priority={priority}
           editable={canEdit}
-          onChangeCategory={canEdit ? setCategoryId : undefined}
+          onChangeCategory={canEdit && !isEmergency ? setCategoryId : undefined}
           onChangePriority={canEdit ? setPriority : undefined}
         />
 
