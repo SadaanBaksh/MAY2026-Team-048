@@ -23,19 +23,24 @@ const heroImg = require('../../../assets/images/landing/hero-banner.jpg');
 const residentImg = require('../../../assets/images/landing/resident-complaint.jpg');
 const managerImg = require('../../../assets/images/landing/manager-dashboard.jpg');
 const workerImg = require('../../../assets/images/landing/maintenance-worker.jpg');
-const appMockupImg = require('../../../assets/images/landing/app-mockup.jpg');
+const appMockupImg = require('../../../assets/images/landing/customer-dashboard.png');
 
 // ─── Palette ─────────────────────────────────────────
 const P = {
-  primary: '#0c2d35',
-  primaryLight: '#134750',
-  accent: '#ffdf00',
-  accentHover: '#e6c800',
-  white: '#ffffff',
-  offWhite: '#f8f8f6',
-  text: '#1a1a1a',
-  textMuted: '#5a5f6b',
-  border: '#e4e6ea',
+  primary: '#0c8577',
+  primaryDark: '#076659',
+  primaryLight: '#E6F4F2',
+  white: '#FFFFFF',
+  offWhite: '#F7FAFA',
+  mintSoft: '#EAF5F4',
+  sagePastel: '#D4EDEA',
+  peachPastel: '#FFF3EE',
+  skyPastel: '#EEF6FF',
+  lavenderPastel: '#F0EEFF',
+  text: '#18201F',
+  textMuted: '#57686A',
+  border: '#DDE9E8',
+  borderLight: '#EBF3F2',
 };
 
 // ─── Breakpoints ─────────────────────────────────────
@@ -50,21 +55,34 @@ const useIsDesktop = () => {
 
 // ─── Shared sub-components ───────────────────────────
 
-function SectionEyebrow({ children, light }: { children: string; light?: boolean }) {
+function SectionEyebrow({ children, dark }: { children: string; dark?: boolean }) {
   return (
     <Text
       style={[
         s.eyebrow,
-        light && { color: P.accent, backgroundColor: 'rgba(255,223,0,0.12)' },
+        dark && { color: '#9ADBD5', backgroundColor: 'rgba(154,219,213,0.12)' },
       ]}>
       {children}
     </Text>
   );
 }
 
-function SectionHeading({ children, light, align }: { children: string; light?: boolean; align?: 'left' | 'center' }) {
+function SectionHeading({
+  children,
+  light,
+  align,
+}: {
+  children: string;
+  light?: boolean;
+  align?: 'left' | 'center';
+}) {
   return (
-    <Text style={[s.sectionHeading, light && { color: P.white }, align === 'left' && { textAlign: 'left' }]}>
+    <Text
+      style={[
+        s.sectionHeading,
+        light && { color: P.white },
+        align === 'left' && { textAlign: 'left' },
+      ]}>
       {children}
     </Text>
   );
@@ -78,26 +96,28 @@ function Btn({
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'accent' | 'outlineLight' | 'outlineDark';
+  variant?: 'primary' | 'ghost' | 'outlineLight' | 'outlineDark';
   size?: 'md' | 'lg';
 }) {
   const bg =
     variant === 'primary'
       ? P.primary
-      : variant === 'accent'
-      ? P.accent
+      : variant === 'ghost'
+      ? 'rgba(12,133,7,0.08)'
       : 'transparent';
+
   const textColor =
     variant === 'primary'
       ? P.white
-      : variant === 'accent'
+      : variant === 'ghost'
       ? P.primary
       : variant === 'outlineLight'
       ? P.white
       : P.primary;
+
   const borderColor =
     variant === 'outlineLight'
-      ? 'rgba(255,255,255,0.6)'
+      ? 'rgba(255,255,255,0.55)'
       : variant === 'outlineDark'
       ? P.primary
       : 'transparent';
@@ -112,18 +132,20 @@ function Btn({
           backgroundColor: bg,
           borderColor,
           borderWidth: variant === 'outlineLight' || variant === 'outlineDark' ? 2 : 0,
-          opacity: pressed ? 0.85 : 1,
+          opacity: pressed ? 0.82 : 1,
         },
       ]}>
-      <Text style={[s.btnText, size === 'lg' && { fontSize: 16 }, { color: textColor }]}>{label}</Text>
+      <Text style={[s.btnText, size === 'lg' && { fontSize: 16 }, { color: textColor }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
-function FeatureIcon({ name }: { name: keyof typeof Ionicons.glyphMap }) {
+function FeatureIcon({ name, tint }: { name: keyof typeof Ionicons.glyphMap; tint?: string }) {
   return (
-    <View style={s.featureIconWrap}>
-      <Ionicons name={name} size={24} color={P.accent} />
+    <View style={[s.featureIconWrap, tint ? { backgroundColor: tint } : {}]}>
+      <Ionicons name={name} size={22} color={P.primary} />
     </View>
   );
 }
@@ -135,10 +157,22 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
     <Pressable onPress={() => setOpen((o) => !o)} style={[s.faqItem, open && s.faqItemOpen]}>
       <View style={s.faqHeader}>
         <Text style={s.faqQuestion}>{question}</Text>
-        <Text style={s.faqToggle}>{open ? '−' : '+'}</Text>
+        <View style={[s.faqToggleWrap, open && { backgroundColor: P.primary }]}>
+          <Text style={[s.faqToggle, open && { color: P.white }]}>{open ? '-' : '+'}</Text>
+        </View>
       </View>
       {open && <Text style={s.faqAnswer}>{answer}</Text>}
     </Pressable>
+  );
+}
+
+// ─── AI Badge ────────────────────────────────────────
+function AiBadge({ label }: { label: string }) {
+  return (
+    <View style={s.aiBadge}>
+      <Ionicons name="sparkles" size={11} color={P.primary} />
+      <Text style={s.aiBadgeText}>{label}</Text>
+    </View>
   );
 }
 
@@ -156,37 +190,76 @@ export default function LandingPage() {
 
   return (
     <View style={{ flex: 1, backgroundColor: P.white }}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}>
 
+        {/* ───── NAV BAR ───── */}
+        <View
+          style={[
+            s.navbar,
+            { paddingTop: Math.max(insets.top + 8, 16) },
+            isDesktop && { paddingHorizontal: 48 },
+          ]}>
+          <View style={s.logoBadge}>
+            <View style={s.logoIconWrap}>
+              <SimplifixLogo width={28} height={28} />
+            </View>
+            <Text style={s.logoText}>Simplifix</Text>
+          </View>
+          <View style={s.navActions}>
+            <Btn label="Log In" onPress={goLogin} variant="ghost" size="md" />
+            <Btn label="Get Started" onPress={goRegister} variant="primary" size="md" />
+          </View>
+        </View>
+
         {/* ───── HERO ───── */}
-        <View style={[s.hero, isDesktop && { minHeight: 600 }]}>
+        <View style={[s.hero, isDesktop && { minHeight: 620 }]}>
           <Image source={heroImg} style={StyleSheet.absoluteFill} contentFit="cover" />
           <LinearGradient
-            colors={['rgba(12,45,53,0.9)', 'rgba(12,45,53,0.55)', 'rgba(12,45,53,0.35)']}
+            colors={[
+              'rgba(0,0,0,0.65)',
+              'rgba(0,0,0,0.40)',
+              'rgba(0,0,0,0.20)',
+            ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <View style={[s.heroContent, isDesktop && { maxWidth: 640, paddingVertical: 100 }, { paddingTop: Math.max(insets.top + 16, 28) }]}>
-            <View style={s.logoBadge}>
-              <View style={s.logoIconWrap}>
-                <SimplifixLogo width={50} height={50} />
-              </View>
-              <Text style={s.logoText}>Simplifix</Text>
+
+          <View
+            style={[
+              s.heroContent,
+              isDesktop && { maxWidth: 660, paddingVertical: 100 },
+            ]}>
+            <View style={s.heroAiTag}>
+              <Ionicons name="sparkles" size={13} color="#9ADBD5" />
+              <Text style={s.heroAiTagText}>AI-First Maintenance Platform</Text>
             </View>
-            <Text style={[s.heroTitle, isDesktop && { fontSize: 52, lineHeight: 56 }]}>
-              Smarter maintenance for modern communities
+
+            <Text style={[s.heroTitle, isDesktop && { fontSize: 54, lineHeight: 60 }]}>
+              {'Maintenance complaints,\n'}
+              <Text style={{ color: '#7DD9D0' }}>resolved before they escalate.</Text>
             </Text>
-            <Text style={[s.heroSub, isDesktop && { fontSize: 18, lineHeight: 28 }]}>
-              An AI-powered platform that takes apartment maintenance complaints from chaos to resolution — automatically.
+
+            <Text style={[s.heroSub, isDesktop && { fontSize: 17, lineHeight: 28 }]}>
+              Simplifix gives residents a frictionless way to report issues, and gives your team
+              the intelligence to resolve them — faster, smarter, and with full transparency.
             </Text>
+
             <View style={[s.heroButtons, !isWide && { flexDirection: 'column' }]}>
-              <Btn label="Log In" onPress={goLogin} variant="accent" size="lg" />
-              <Btn label="Create Account" onPress={goRegister} variant="outlineLight" size="lg" />
+              <Btn label="Get Started Free" onPress={goRegister} variant="primary" size="lg" />
+              <Btn label="Log In to Dashboard" onPress={goLogin} variant="outlineLight" size="lg" />
+            </View>
+
+            <View style={s.heroPillRow}>
+              {['Snap & Submit', 'AI Triage', 'Real-Time Tracking', 'Instant Alerts'].map((p) => (
+                <View key={p} style={s.heroPill}>
+                  <Text style={s.heroPillText}>{p}</Text>
+                </View>
+              ))}
             </View>
           </View>
         </View>
@@ -195,10 +268,10 @@ export default function LandingPage() {
         <View style={s.statsBar}>
           <View style={[s.container, s.statsGrid, !isWide && { flexWrap: 'wrap' }]}>
             {[
-              { num: '3', label: 'Distinct User Roles' },
-              { num: '6', label: 'Complaint Categories' },
               { num: '5', label: 'Status Stages' },
+              { num: '4', label: 'User Roles' },
               { num: '100%', label: 'AI-Powered Triage' },
+              { num: '<24h', label: 'SLA for Critical Issues' },
             ].map((stat) => (
               <View key={stat.label} style={[s.stat, !isWide && { width: '50%' }]}>
                 <Text style={s.statNum}>{stat.num}</Text>
@@ -213,44 +286,58 @@ export default function LandingPage() {
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>The Simplifix Platform</SectionEyebrow>
-              <SectionHeading>Your complete maintenance ecosystem</SectionHeading>
+              <SectionHeading>One platform. Every stakeholder. Zero chaos.</SectionHeading>
               <Text style={s.sectionSub}>
-                We pull every moving part of your community&apos;s complaint lifecycle into one intelligent platform.
+                From the moment a resident snaps a photo to the moment a technician uploads proof of
+                repair — every step is tracked, intelligent, and transparent.
               </Text>
             </View>
 
-            {/* Large card */}
             <View style={[s.card, isWide && { flexDirection: 'row' }]}>
               <Image
                 source={residentImg}
-                style={[s.cardImg, isWide && { width: '55%' }]}
+                style={[s.cardImg, isWide && { width: '52%' }]}
                 contentFit="cover"
               />
               <View style={[s.cardBody, isWide && { flex: 1, justifyContent: 'center' }]}>
-                <Text style={s.cardTitle}>AI-Powered Complaint Intake</Text>
+                <AiBadge label="AI Complaint Engine" />
+                <Text style={s.cardTitle}>Residents just snap. AI does the rest.</Text>
                 <Text style={s.cardDesc}>
-                  Residents upload a photo or video. Our multimodal AI instantly generates a detailed description, determines the category, and assigns a priority level — no forms to fill.
+                  Upload a photo or video of your issue — our AI instantly generates a detailed
+                  description, selects the right category, and assigns a priority. No forms.
+                  No guesswork. No follow-up calls.
                 </Text>
+                <View style={s.cardFeatureRow}>
+                  {['Auto-categorization', 'Priority scoring', 'AI Summarizer'].map((tag) => (
+                    <View key={tag} style={s.cardTag}>
+                      <Text style={s.cardTagText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
 
-            {/* Two smaller cards */}
             <View style={[{ gap: 16 }, isWide && { flexDirection: 'row' }]}>
               <View style={[s.card, isWide && { flex: 1 }]}>
                 <Image source={managerImg} style={s.cardImg} contentFit="cover" />
                 <View style={s.cardBody}>
-                  <Text style={s.cardTitle}>Centralized Manager Dashboard</Text>
+                  <AiBadge label="Smart Dashboard" />
+                  <Text style={s.cardTitle}>Your team, always in control.</Text>
                   <Text style={s.cardDesc}>
-                    Review AI-processed complaints, override generated tags, assign workers, and monitor resolution times — all from a single pane.
+                    Facility employees review AI-processed tickets, override details where
+                    needed, assign the right technician, and monitor every SLA — from a single
+                    pane of glass.
                   </Text>
                 </View>
               </View>
               <View style={[s.card, isWide && { flex: 1 }]}>
                 <Image source={workerImg} style={s.cardImg} contentFit="cover" />
                 <View style={s.cardBody}>
-                  <Text style={s.cardTitle}>Mobile Worker Action Center</Text>
+                  <AiBadge label="Mobile Worker View" />
+                  <Text style={s.cardTitle}>Workers arrive prepared, not surprised.</Text>
                   <Text style={s.cardDesc}>
-                    Maintenance staff receive assignments in real-time, update job status on the go, and upload completion proof.
+                    Maintenance staff see the AI-generated complaint summary before they set
+                    foot on site — right tools, right parts, right first time.
                   </Text>
                 </View>
               </View>
@@ -258,12 +345,84 @@ export default function LandingPage() {
           </View>
         </View>
 
+        {/* ───── AI FEATURES SPOTLIGHT ───── */}
+        <View style={[s.section, { backgroundColor: P.white }]}>
+          <View style={s.container}>
+            <View style={{ alignItems: 'center' }}>
+              <SectionEyebrow>Powered by AI</SectionEyebrow>
+              <SectionHeading>Intelligence built into every step</SectionHeading>
+              <Text style={s.sectionSub}>
+                {'Simplifix doesn\'t bolt AI on as an afterthought. It\'s woven into the entire complaint lifecycle — from intake to closure.'}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                s.aiGrid,
+                isWide && { flexDirection: 'row', flexWrap: 'wrap' },
+              ]}>
+              {AI_FEATURES.map((f) => (
+                <View
+                  key={f.title}
+                  style={[
+                    s.aiTile,
+                    isDesktop ? { width: '47%' } : { width: '100%' },
+                    { backgroundColor: f.bg },
+                  ]}>
+                  <View style={s.aiTileIconWrap}>
+                    <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={24} color={P.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.aiTileTitle}>{f.title}</Text>
+                    <Text style={s.aiTileDesc}>{f.desc}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* ───── HOW IT WORKS ───── */}
+        <View style={[s.section, { backgroundColor: P.primaryDark }]}>
+          <View style={s.container}>
+            <View style={{ alignItems: 'center' }}>
+              <SectionEyebrow dark>How It Works</SectionEyebrow>
+              <SectionHeading light>From complaint to closed in 5 steps</SectionHeading>
+              <Text style={[s.sectionSub, { color: 'rgba(255,255,255,0.60)' }]}>
+                A structured workflow that eliminates the back-and-forth, so nothing slips through the cracks.
+              </Text>
+            </View>
+            <View style={[s.stepsContainer, isDesktop && { maxWidth: 720, alignSelf: 'center' }]}>
+              {STEPS.map((step, i) => (
+                <View key={step.title} style={s.step}>
+                  <View style={s.stepMarkerCol}>
+                    <View style={s.stepMarker}>
+                      <Text style={s.stepNum}>{i + 1}</Text>
+                    </View>
+                    {i < STEPS.length - 1 && <View style={s.stepConnector} />}
+                  </View>
+                  <View style={s.stepBody}>
+                    <Text style={s.stepTitle}>{step.title}</Text>
+                    <Text style={s.stepDesc}>{step.desc}</Text>
+                    {step.badge && (
+                      <View style={s.stepBadge}>
+                        <Ionicons name="sparkles" size={10} color={P.primary} />
+                        <Text style={s.stepBadgeText}>{step.badge}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
         {/* ───── FEATURES GRID ───── */}
-        <View style={s.section}>
+        <View style={[s.section, { backgroundColor: P.offWhite }]}>
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>Core Features</SectionEyebrow>
-              <SectionHeading>Everything you need, nothing you don&apos;t</SectionHeading>
+              <SectionHeading>Everything your community needs</SectionHeading>
             </View>
             <View
               style={[
@@ -277,7 +436,10 @@ export default function LandingPage() {
                     s.featureTile,
                     isDesktop ? { width: '31%' } : isWide ? { width: '47%' } : { width: '100%' },
                   ]}>
-                  <FeatureIcon name={f.icon as keyof typeof Ionicons.glyphMap} />
+                  <FeatureIcon
+                    name={f.icon as keyof typeof Ionicons.glyphMap}
+                    tint={f.tint}
+                  />
                   <Text style={s.featureTileTitle}>{f.title}</Text>
                   <Text style={s.featureTileDesc}>{f.desc}</Text>
                 </View>
@@ -286,37 +448,15 @@ export default function LandingPage() {
           </View>
         </View>
 
-        {/* ───── HOW IT WORKS ───── */}
-        <View style={[s.section, { backgroundColor: P.primary }]}>
-          <View style={s.container}>
-            <View style={{ alignItems: 'center' }}>
-              <SectionEyebrow light>How it Works</SectionEyebrow>
-              <SectionHeading light>From complaint to resolution in 5 steps</SectionHeading>
-            </View>
-            <View style={[s.stepsContainer, isDesktop && { maxWidth: 700, alignSelf: 'center' }]}>
-              {STEPS.map((step, i) => (
-                <View key={step.title} style={s.step}>
-                  <View style={s.stepMarker}>
-                    <Text style={s.stepNum}>{i + 1}</Text>
-                  </View>
-                  <View style={s.stepBody}>
-                    <Text style={s.stepTitle}>{step.title}</Text>
-                    <Text style={s.stepDesc}>{step.desc}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        </View>
-
         {/* ───── ROLES / WHO IT'S FOR ───── */}
-        <View style={[s.section, { backgroundColor: P.offWhite }]}>
+        <View style={[s.section, { backgroundColor: P.white }]}>
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
-              <SectionEyebrow>Who it&apos;s For</SectionEyebrow>
-              <SectionHeading>One platform, every stakeholder</SectionHeading>
+              <SectionEyebrow>{"Who It's For"}</SectionEyebrow>
+              <SectionHeading>Built for everyone in the workflow</SectionHeading>
               <Text style={s.sectionSub}>
-                Simplifix delivers a tailored experience for each person in the maintenance workflow.
+                Simplifix delivers a precisely tailored experience for each person involved —
+                from the resident who spots the issue to the manager who closes the loop.
               </Text>
             </View>
             <View style={[{ gap: 16 }, isWide && { flexDirection: 'row' }]}>
@@ -328,18 +468,43 @@ export default function LandingPage() {
                     isWide && { flex: 1 },
                     role.highlight && s.roleCardHighlight,
                   ]}>
-                  <View style={[s.roleIconWrap, role.highlight && { backgroundColor: 'rgba(255,223,0,0.15)' }]}>
+                  <View
+                    style={[
+                      s.roleIconWrap,
+                      role.highlight && { backgroundColor: 'rgba(255,255,255,0.15)' },
+                    ]}>
                     <Ionicons
                       name={role.icon as keyof typeof Ionicons.glyphMap}
-                      size={28}
-                      color={role.highlight ? P.accent : P.primary}
+                      size={26}
+                      color={role.highlight ? P.white : P.primary}
                     />
                   </View>
-                  <Text style={[s.roleTitle, role.highlight && { color: P.accent }]}>{role.title}</Text>
+                  <Text style={[s.roleTitle, role.highlight && { color: P.white }]}>
+                    {role.title}
+                  </Text>
+                  <Text style={[s.roleSubtitle, role.highlight && { color: 'rgba(255,255,255,0.7)' }]}>
+                    {role.subtitle}
+                  </Text>
                   {role.items.map((item) => (
                     <View key={item} style={s.roleListItem}>
-                      <Text style={[s.roleCheck, role.highlight && { color: P.accent }]}>✓</Text>
-                      <Text style={[s.roleItemText, role.highlight && { color: 'rgba(255,255,255,0.8)' }]}>{item}</Text>
+                      <View
+                        style={[
+                          s.roleCheckDot,
+                          role.highlight && { backgroundColor: 'rgba(255,255,255,0.25)' },
+                        ]}>
+                        <Ionicons
+                          name="checkmark"
+                          size={10}
+                          color={role.highlight ? P.white : P.primary}
+                        />
+                      </View>
+                      <Text
+                        style={[
+                          s.roleItemText,
+                          role.highlight && { color: 'rgba(255,255,255,0.85)' },
+                        ]}>
+                        {item}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -349,30 +514,41 @@ export default function LandingPage() {
         </View>
 
         {/* ───── APP SHOWCASE ───── */}
-        <View style={s.section}>
-          <View style={[s.container, isWide && { flexDirection: 'row', alignItems: 'center', gap: 48 }]}>
-            <View style={[isWide && { flex: 1 }]}>
-              <SectionEyebrow>The Simplifix App</SectionEyebrow>
-              <SectionHeading align="left">Built with React Native. Available everywhere.</SectionHeading>
-              <Text style={[s.sectionSub, { textAlign: 'left', marginBottom: 24 }]}>
-                Simplifix is a cross-platform mobile application built with Expo and React Native. Residents, managers, and workers all share one app — but see only the experience designed for them.
-              </Text>
-              <View style={s.techList}>
-                {['React Native + Expo', 'FastAPI Backend', 'PostgreSQL', 'GPT-4 / Gemini AI', 'Celery + Redis', 'JWT Auth (RBAC)'].map(
-                  (tech) => (
-                    <View key={tech} style={s.techPill}>
-                      <Text style={s.techPillText}>{tech}</Text>
-                    </View>
-                  )
-                )}
-              </View>
-            </View>
+        <View style={[s.section, { backgroundColor: P.mintSoft }]}>
+          <View
+            style={[
+              s.container,
+              isWide && { flexDirection: 'row', alignItems: 'center', gap: 56 },
+            ]}>
             <View style={[{ alignItems: 'center' }, isWide && { flex: 1 }]}>
               <Image
                 source={appMockupImg}
-                style={[s.appMockup, isWide && { width: 300, height: 520 }]}
+                style={[s.appMockup, isWide && { width: 312, height: 675 }]}
                 contentFit="cover"
               />
+            </View>
+            <View style={[isWide && { flex: 1 }]}>
+              <SectionEyebrow>Cross-Platform</SectionEyebrow>
+              <SectionHeading align="left">One app. Every role. Any device.</SectionHeading>
+              <Text style={[s.sectionSub, { textAlign: 'left', marginBottom: 24 }]}>
+                Built with React Native and Expo — residents, managers, and maintenance staff
+                share one codebase but experience their own focused interface. Available on
+                iOS, Android, and web.
+              </Text>
+              <View style={s.techList}>
+                {[
+                  'React Native + Expo',
+                  'FastAPI Backend',
+                  'PostgreSQL',
+                  'AI (Gemini / GPT-4)',
+                  'Celery + Redis',
+                  'JWT Auth (RBAC)',
+                ].map((tech) => (
+                  <View key={tech} style={s.techPill}>
+                    <Text style={s.techPillText}>{tech}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
         </View>
@@ -382,9 +558,9 @@ export default function LandingPage() {
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>FAQ</SectionEyebrow>
-              <SectionHeading>Frequently asked questions</SectionHeading>
+              <SectionHeading>Your questions, answered</SectionHeading>
             </View>
-            <View style={[s.faqList, isDesktop && { maxWidth: 720, alignSelf: 'center' }]}>
+            <View style={[s.faqList, isDesktop && { maxWidth: 740, alignSelf: 'center' }]}>
               {FAQS.map((faq) => (
                 <FaqItem key={faq.q} question={faq.q} answer={faq.a} />
               ))}
@@ -393,15 +569,21 @@ export default function LandingPage() {
         </View>
 
         {/* ───── CTA ───── */}
-        <View style={[s.section, { backgroundColor: P.accent }]}>
+        <View style={[s.section, { backgroundColor: P.primary }]}>
           <View style={[s.container, { alignItems: 'center' }]}>
-            <Text style={s.ctaTitle}>Ready to simplify your community&apos;s maintenance?</Text>
+            <View style={s.ctaIcon}>
+              <Ionicons name="home" size={28} color={P.white} />
+            </View>
+            <Text style={s.ctaTitle}>
+              {'Ready to transform your community\'s maintenance?'}
+            </Text>
             <Text style={s.ctaSub}>
-              Join the future of intelligent apartment management. Simplifix turns frustration into resolution — powered by AI.
+              Join the apartment communities that have moved from scattered WhatsApp threads
+              to a single, intelligent platform. Residents get peace of mind. Your team gets results.
             </Text>
             <View style={[s.heroButtons, !isWide && { flexDirection: 'column', width: '100%' }]}>
-              <Btn label="Log In" onPress={goLogin} variant="primary" size="lg" />
-              <Btn label="Create Account" onPress={goRegister} variant="outlineDark" size="lg" />
+              <Btn label="Create Your Account" onPress={goRegister} variant="ghost" size="lg" />
+              <Btn label="Log In" onPress={goLogin} variant="outlineLight" size="lg" />
             </View>
           </View>
         </View>
@@ -411,28 +593,42 @@ export default function LandingPage() {
           <View style={[s.container, isWide && { flexDirection: 'row', gap: 48 }]}>
             <View style={[isWide && { flex: 2 }]}>
               <View style={[s.logoBadge, { marginBottom: 12 }]}>
-                <View style={[s.logoIconWrap, s.logoIconWrapSm]}>
-                  <SimplifixLogo width={16} height={16} />
+                <View style={s.logoIconWrapFooter}>
+                  <SimplifixLogo width={18} height={18} />
                 </View>
-                <Text style={[s.logoText, { fontSize: 18 }]}>Simplifix</Text>
+                <Text style={s.logoTextFooter}>Simplifix</Text>
               </View>
               <Text style={s.footerTagline}>
-                AI-assisted complaint management for residential communities.
+                AI-assisted maintenance complaint management for residential communities.
+                Smarter resolution. Happier residents.
               </Text>
             </View>
             {FOOTER_GROUPS.map((group) => (
-              <View key={group.title} style={[{ marginTop: isWide ? 0 : 28 }, isWide && { flex: 1 }]}>
+              <View
+                key={group.title}
+                style={[{ marginTop: isWide ? 0 : 28 }, isWide && { flex: 1 }]}>
                 <Text style={s.footerGroupTitle}>{group.title}</Text>
                 {group.links.map((link) => (
-                  <Text key={link} style={s.footerLink}>{link}</Text>
+                  <Text key={link} style={s.footerLink}>
+                    {link}
+                  </Text>
                 ))}
               </View>
             ))}
           </View>
-          <View style={[s.footerBottom, { paddingBottom: Math.max(insets.bottom + 16, 16) }]}>
-            <View style={[s.container, isWide && { flexDirection: 'row', justifyContent: 'space-between' }]}>
-              <Text style={s.footerBottomText}>© 2026 Pied Piper (MAY2026-Team-048). All rights reserved.</Text>
-              <Text style={s.footerBottomText}>Built for B.S. in Data Science, IIT Madras.</Text>
+          <View
+            style={[s.footerBottom, { paddingBottom: Math.max(insets.bottom + 16, 16) }]}>
+            <View
+              style={[
+                s.container,
+                isWide && { flexDirection: 'row', justifyContent: 'space-between' },
+              ]}>
+              <Text style={s.footerBottomText}>
+                © 2026 Pied Piper (MAY2026-Team-048). All rights reserved.
+              </Text>
+              <Text style={s.footerBottomText}>
+                Built for B.S. in Data Science, IIT Madras.
+              </Text>
             </View>
           </View>
         </View>
@@ -443,57 +639,173 @@ export default function LandingPage() {
 
 // ─── Data ────────────────────────────────────────────
 
+const AI_FEATURES = [
+  {
+    icon: 'camera-outline',
+    title: 'AI Complaint Generation',
+    desc: 'Residents upload a photo or video. Our AI instantly writes a precise complaint description, so maintenance staff know exactly what to bring before they arrive.',
+    bg: P.mintSoft,
+  },
+  {
+    icon: 'document-text-outline',
+    title: 'AI Complaint Summarizer',
+    desc: 'Long comment threads and status histories? Simplifix condenses every ticket into a crisp summary — helping managers make faster decisions without reading every line.',
+    bg: P.skyPastel,
+  },
+  {
+    icon: 'warning-outline',
+    title: 'Emergency Detection',
+    desc: 'When urgency keywords like "leak," "no power," or "fire" are detected, the system automatically escalates priority and alerts the team — before it becomes a crisis.',
+    bg: P.peachPastel,
+  },
+  {
+    icon: 'grid-outline',
+    title: 'Smart Categorization',
+    desc: 'Plumbing, electrical, civil, cleaning — the AI routes every complaint to the right category and the right specialist automatically, with a confidence score for full transparency.',
+    bg: P.lavenderPastel,
+  },
+];
+
 const FEATURES = [
-  { icon: 'person-circle-outline', title: 'Role-Based Access Control', desc: 'Distinct dashboards for Residents, Managers, and Maintenance Staff. JWT-based security ensures focused workflows.' },
-  { icon: 'sparkles-outline', title: 'Multimodal AI Engine', desc: 'Powered by GPT-4 / Gemini API to analyze images and videos, auto-generate descriptions, and estimate priority.' },
-  { icon: 'pulse-outline', title: 'Real-Time Tracking', desc: 'Complaints move through Pending → Assigned → In Progress → Resolved → Closed. Every stakeholder stays in the loop.' },
-  { icon: 'bar-chart-outline', title: 'Manager Analytics', desc: 'Resolution times, category trends, recurring issues, staff performance — data-driven decisions at a glance.' },
-  { icon: 'notifications-outline', title: 'Smart Notifications', desc: 'Automated alerts for overdue tasks. If a ticket sits idle for 24 hours, workers and managers are notified.' },
-  { icon: 'document-text-outline', title: 'Complete History', desc: 'Full audit trail for every ticket — from submission and AI analysis to resolution and resident rating.' },
+  {
+    icon: 'person-circle-outline',
+    tint: P.mintSoft,
+    title: 'Role-Based Access',
+    desc: 'Tailored dashboards for Residents, Facility Employees, Maintenance Staff, and Facility Managers. Everyone sees exactly what they need.',
+  },
+  {
+    icon: 'pulse-outline',
+    tint: P.skyPastel,
+    title: 'Real-Time Tracking',
+    desc: 'Five-stage pipeline: Pending → Assigned → In Progress → Resolved → Closed. Every stakeholder knows where things stand — without a single phone call.',
+  },
+  {
+    icon: 'notifications-outline',
+    tint: P.peachPastel,
+    title: 'Automated Alerts',
+    desc: 'Status changes trigger instant in-app notifications. Overdue tickets surface automatically past their SLA — no manual chasing required.',
+  },
+  {
+    icon: 'bar-chart-outline',
+    tint: P.sagePastel,
+    title: 'Manager Analytics',
+    desc: 'Resolution times, category trends, staff performance, and satisfaction scores — the data managers need to improve operations week over week.',
+  },
+  {
+    icon: 'chatbubbles-outline',
+    tint: P.lavenderPastel,
+    title: 'In-App AI Assistant',
+    desc: "Residents can ask our AI chat assistant about their complaint status, assigned technician, or cost responsibility — and get an instant, accurate answer.",
+  },
+  {
+    icon: 'shield-checkmark-outline',
+    tint: P.skyPastel,
+    title: 'Full Audit Trail',
+    desc: 'Every assignment, status change, and remark is recorded. Disputes are resolved with facts, not memory.',
+  },
 ];
 
 const STEPS = [
-  { title: 'Snap & Submit', desc: 'The resident uploads an image or video of the maintenance issue through the Simplifix app.' },
-  { title: 'AI Analyzes', desc: 'Our backend triggers a background AI task that generates a description, determines the category, and assigns a priority level.' },
-  { title: 'Manager Reviews', desc: 'The facility manager reviews the AI-processed ticket, verifies the details, and assigns it to the right maintenance worker.' },
-  { title: 'Worker Resolves', desc: 'The assigned worker sees the ticket, performs the repair, updates the status, and uploads proof of completion.' },
-  { title: 'Resident Verifies', desc: 'The resident checks the resolved status, confirms the fix, and provides a rating to officially close the complaint.' },
+  {
+    title: 'Snap & Submit',
+    desc: 'The resident uploads a photo or video — or adds a voice note — directly from their phone.',
+    badge: undefined as string | undefined,
+  },
+  {
+    title: 'AI Analyzes & Categorizes',
+    desc: 'Our AI engine reads the media, writes a detailed description, assigns a category, detects urgency, and scores priority — all in seconds.',
+    badge: 'AI-Powered',
+  },
+  {
+    title: 'Team Reviews & Assigns',
+    desc: 'The facility employee reviews the AI-processed ticket, verifies or overrides the details, and assigns it to the best-suited maintenance worker.',
+    badge: undefined as string | undefined,
+  },
+  {
+    title: 'Worker Resolves',
+    desc: 'The technician arrives prepared, performs the repair, updates the status, and uploads proof of completion.',
+    badge: undefined as string | undefined,
+  },
+  {
+    title: 'Resident Verifies & Rates',
+    desc: 'The resident confirms the fix and submits a rating — officially closing the complaint and feeding data back into the analytics engine.',
+    badge: undefined as string | undefined,
+  },
 ];
 
 const ROLES = [
   {
     icon: 'home-outline',
-    title: 'Resident',
+    title: 'Residents',
+    subtitle: 'For apartment owners & tenants',
     highlight: false,
-    items: ['Submit complaints via image or video', 'Review AI-generated descriptions', 'Track real-time complaint status', 'Verify resolution and rate the work'],
+    items: [
+      'Submit complaints with a photo, video, or voice note',
+      'Review & confirm AI-generated descriptions',
+      'Track status end-to-end in real time',
+      'Know who is assigned and when work begins',
+      'Verify completion and rate the service',
+    ],
   },
   {
     icon: 'desktop-outline',
-    title: 'Facility Manager',
+    title: 'Facility Team',
+    subtitle: 'For managers & employees',
     highlight: true,
-    items: ['Centralized dashboard with all tickets', 'Override AI categories and priorities', 'Assign workers to verified complaints', 'Monitor resolution times and performance'],
+    items: [
+      'Centralized dashboard with all active tickets',
+      'Override AI categories, priority, and cost details',
+      'Smart worker assignment ranked by skill & workload',
+      'Auto-flagged overdue tickets — no manual monitoring',
+      'Analytics, audit trails, and performance reports',
+    ],
   },
   {
     icon: 'construct-outline',
     title: 'Maintenance Staff',
+    subtitle: 'For technicians & workers',
     highlight: false,
-    items: ['Mobile-friendly view of assigned jobs', 'Update status: Assigned → In Progress → Resolved', 'Add closing remarks and images', 'Upload proof of resolution'],
+    items: [
+      'AI complaint summary before arriving on site',
+      'Mobile-friendly view of active assignments',
+      'Update status: Assigned to In Progress to Resolved',
+      'Upload proof-of-work photos and remarks',
+      'Fewer repeat visits with better upfront information',
+    ],
   },
 ];
 
 const FAQS = [
-  { q: 'What is Simplifix?', a: 'Simplifix is an AI-assisted complaint management system designed for residential apartment communities. It streamlines the entire lifecycle of maintenance complaints — from submission through AI-powered triage to resolution and resident verification.' },
-  { q: 'How does the AI analysis work?', a: 'When a resident uploads an image or video, our backend triggers an asynchronous task using Celery and Redis. The media is passed to a multimodal AI (GPT-4 / Gemini) which generates a detailed description, categorizes the issue, and estimates a priority level.' },
-  { q: 'What roles does the platform support?', a: 'Simplifix uses Role-Based Access Control (RBAC) to manage three user types: Residents who submit and track complaints, Facility Managers who review, triage, and assign work, and Maintenance Staff who execute repairs and provide proof of completion.' },
-  { q: 'What technology stack is used?', a: 'The frontend is built with React Native and Expo. The backend uses FastAPI with PostgreSQL, SQLAlchemy, and Alembic. AI integration uses GPT-4 or Google Gemini API. Async processing is handled by Celery with Redis.' },
-  { q: 'Can managers override AI-generated data?', a: 'Yes. While the AI populates the description, category, and priority automatically, managers have full authority to review and manually override any AI-generated tags before assigning a complaint.' },
-  { q: 'Is the app available for both Android and iOS?', a: 'Yes. Simplifix is built with React Native and Expo, enabling cross-platform development for both Android and iOS from a single codebase. It also supports a web target.' },
+  {
+    q: 'What is Simplifix?',
+    a: 'Simplifix is an AI-powered complaint management platform built for residential apartment communities. It covers the entire maintenance lifecycle — from a resident snapping a photo, to AI-powered triage, to worker assignment, resolution, and resident verification.',
+  },
+  {
+    q: 'How does the AI work?',
+    a: 'When a resident uploads media, our system analyzes it using a multimodal AI (GPT-4 / Gemini) to generate a precise complaint description, select the correct maintenance category, and assign a priority level. Urgency keywords like "leak" or "no power" automatically escalate the priority.',
+  },
+  {
+    q: 'What is the AI Summarizer?',
+    a: "The AI Summarizer condenses a complaint's full comment thread, status history, and assignment details into a concise summary. This helps managers quickly understand a ticket's situation without reading through every update.",
+  },
+  {
+    q: "Can managers override the AI's decisions?",
+    a: 'Absolutely. AI suggestions are a starting point, not a final word. Facility employees can review and override the generated description, category, priority, and cost responsibility before assigning any complaint.',
+  },
+  {
+    q: 'What user roles does Simplifix support?',
+    a: 'Simplifix supports four roles: Residents (submit and track complaints), Facility Employees (coordinate and assign), Maintenance Staff (execute repairs), and Facility Managers (monitor analytics and performance). Each role sees a focused, purpose-built interface.',
+  },
+  {
+    q: 'Is Simplifix available on iOS and Android?',
+    a: 'Yes. Simplifix is built with React Native and Expo, making it fully cross-platform across iOS, Android, and web from a single codebase.',
+  },
 ];
 
 const FOOTER_GROUPS = [
-  { title: 'Product', links: ['Features', 'How it Works', 'Who it\'s For', 'FAQ'] },
-  { title: 'Tech Stack', links: ['React Native', 'FastAPI', 'PostgreSQL', 'GPT-4 / Gemini'] },
-  { title: 'Team', links: ['Pied Piper', 'IIT Madras', 'GitHub'] },
+  { title: 'Product', links: ['Features', 'How It Works', "Who It's For", 'FAQ'] },
+  { title: 'Technology', links: ['React Native', 'FastAPI', 'PostgreSQL', 'AI (GPT-4 / Gemini)'] },
+  { title: 'Team', links: ['Pied Piper', 'IIT Madras', 'MAY2026-048'] },
 ];
 
 // ─── Styles ──────────────────────────────────────────
@@ -502,71 +814,141 @@ const s = StyleSheet.create({
   // Layout
   container: {
     width: '100%',
-    maxWidth: 1200,
+    maxWidth: 1160,
     alignSelf: 'center',
     paddingHorizontal: 24,
   },
   section: {
-    paddingVertical: 72,
+    paddingVertical: 80,
   },
 
-  // Hero
-  hero: {
-    minHeight: 500,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
+  // Navbar
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 14,
+    backgroundColor: P.white,
+    borderBottomWidth: 1,
+    borderBottomColor: P.borderLight,
+    zIndex: 10,
   },
-  heroContent: {
-    padding: 28,
-    paddingBottom: 48,
-    maxWidth: 580,
+  navActions: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
   },
+
+  // Logo
   logoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 24,
+    marginBottom: 0,
   },
   logoIconWrap: {
-    backgroundColor: P.white,
-    borderRadius: 999,
-    padding: 5,
+    backgroundColor: P.primaryLight,
+    borderRadius: 10,
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: P.sagePastel,
+  },
+  logoIconWrapFooter: {
+    backgroundColor: 'rgba(12,133,119,0.18)',
+    borderRadius: 10,
+    padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoIconWrapSm: {
-    padding: 6,
-  },
   logoText: {
-    fontSize: 22,
-    fontFamily: 'Manrope_700Bold',
+    fontSize: 20,
+    fontFamily: FontFamily.extraBold,
+    color: P.text,
+    ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
+  },
+  logoTextFooter: {
+    fontSize: 18,
+    fontFamily: FontFamily.extraBold,
     color: P.white,
     ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
   },
+
+  // Hero
+  hero: {
+    minHeight: 520,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  heroContent: {
+    padding: 32,
+    paddingBottom: 52,
+    maxWidth: 600,
+  },
+  heroAiTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(154,219,213,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(154,219,213,0.38)',
+    borderRadius: 50,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  heroAiTagText: {
+    fontSize: 12,
+    fontFamily: FontFamily.semiBold,
+    color: '#9ADBD5',
+    ...(Platform.OS === 'web' ? { letterSpacing: 0.5 } : {}),
+  },
   heroTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontFamily: FontFamily.extraBold,
     color: P.white,
-    lineHeight: 38,
-    marginBottom: 24,
+    lineHeight: 44,
+    marginBottom: 20,
     ...(Platform.OS === 'web' ? { letterSpacing: -1 } : {}),
   },
   heroSub: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.80)',
     lineHeight: 26,
-    marginBottom: 36,
+    marginBottom: 32,
   },
   heroButtons: {
     flexDirection: 'row',
     gap: 12,
     flexWrap: 'wrap',
+    marginBottom: 28,
+  },
+  heroPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  heroPill: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 50,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+  },
+  heroPillText: {
+    fontSize: 12,
+    fontFamily: FontFamily.medium,
+    color: 'rgba(255,255,255,0.80)',
   },
 
   // Buttons
   btn: {
-    paddingVertical: 14,
-    paddingHorizontal: 28,
+    paddingVertical: 13,
+    paddingHorizontal: 24,
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
@@ -577,12 +959,12 @@ const s = StyleSheet.create({
   },
   btnText: {
     fontFamily: FontFamily.bold,
-    fontSize: 15,
+    fontSize: 14,
   },
 
   // Stats
   statsBar: {
-    backgroundColor: P.primary,
+    backgroundColor: P.text,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -593,15 +975,15 @@ const s = StyleSheet.create({
     paddingVertical: 28,
   },
   statNum: {
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: FontFamily.extraBold,
-    color: P.accent,
+    color: '#7DD9D0',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 11,
     fontFamily: FontFamily.semiBold,
-    color: 'rgba(255,255,255,0.65)',
+    color: 'rgba(255,255,255,0.55)',
     textTransform: 'uppercase',
     ...(Platform.OS === 'web' ? { letterSpacing: 1 } : {}),
     textAlign: 'center',
@@ -609,25 +991,26 @@ const s = StyleSheet.create({
 
   // Sections
   eyebrow: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FontFamily.bold,
     textTransform: 'uppercase',
     color: P.primary,
-    backgroundColor: 'rgba(12,45,53,0.08)',
+    backgroundColor: P.primaryLight,
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 50,
     marginBottom: 14,
     overflow: 'hidden',
-    ...(Platform.OS === 'web' ? { letterSpacing: 2 } : {}),
+    ...(Platform.OS === 'web' ? { letterSpacing: 1.5 } : {}),
+    alignSelf: 'center',
   },
   sectionHeading: {
-    fontSize: 28,
+    fontSize: 30,
     fontFamily: FontFamily.extraBold,
-    color: P.primary,
+    color: P.text,
     textAlign: 'center',
     marginBottom: 14,
-    lineHeight: 34,
+    lineHeight: 38,
     ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
   },
   sectionSub: {
@@ -635,154 +1018,264 @@ const s = StyleSheet.create({
     color: P.textMuted,
     textAlign: 'center',
     lineHeight: 26,
-    maxWidth: 600,
-    marginBottom: 36,
+    maxWidth: 580,
+    marginBottom: 40,
   },
 
   // Product cards
   card: {
     backgroundColor: P.white,
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 16,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 16 },
-      android: { elevation: 3 },
-      default: {},
-    }),
+    borderWidth: 1,
+    borderColor: P.border,
   },
   cardImg: {
     width: '100%',
     aspectRatio: 16 / 9,
   },
   cardBody: {
-    padding: 24,
+    padding: 28,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: FontFamily.bold,
-    color: P.primary,
+    color: P.text,
     marginBottom: 10,
+    marginTop: 10,
+    ...(Platform.OS === 'web' ? { letterSpacing: -0.3 } : {}),
   },
   cardDesc: {
     fontSize: 14,
     color: P.textMuted,
-    lineHeight: 22,
+    lineHeight: 23,
+  },
+  cardFeatureRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 16,
+  },
+  cardTag: {
+    backgroundColor: P.primaryLight,
+    borderRadius: 50,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+  },
+  cardTagText: {
+    fontSize: 12,
+    fontFamily: FontFamily.semiBold,
+    color: P.primary,
+  },
+
+  // AI Badge (inline)
+  aiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: P.primaryLight,
+    borderRadius: 50,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    alignSelf: 'flex-start',
+  },
+  aiBadgeText: {
+    fontSize: 11,
+    fontFamily: FontFamily.bold,
+    color: P.primary,
+    ...(Platform.OS === 'web' ? { letterSpacing: 0.5 } : {}),
+  },
+
+  // AI Features grid
+  aiGrid: {
+    gap: 14,
+    justifyContent: 'center',
+  },
+  aiTile: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+    borderRadius: 16,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: P.border,
+  },
+  aiTileIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: P.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: P.border,
+  },
+  aiTileTitle: {
+    fontSize: 15,
+    fontFamily: FontFamily.bold,
+    color: P.text,
+    marginBottom: 5,
+  },
+  aiTileDesc: {
+    fontSize: 13,
+    color: P.textMuted,
+    lineHeight: 20,
   },
 
   // Features grid
   featuresGrid: {
-    gap: 16,
+    gap: 14,
   },
   featureTile: {
-    backgroundColor: P.offWhite,
-    borderRadius: 14,
+    backgroundColor: P.white,
+    borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: P.border,
   },
   featureIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: P.primary,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: P.mintSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   featureTileTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: FontFamily.bold,
-    color: P.primary,
+    color: P.text,
     marginBottom: 6,
   },
   featureTileDesc: {
-    fontSize: 14,
+    fontSize: 13,
     color: P.textMuted,
     lineHeight: 21,
   },
 
   // Steps
   stepsContainer: {
-    marginTop: 40,
+    marginTop: 44,
     width: '100%',
   },
   step: {
     flexDirection: 'row',
     gap: 20,
-    marginBottom: 36,
     alignItems: 'flex-start',
   },
+  stepMarkerCol: {
+    alignItems: 'center',
+    width: 48,
+  },
   stepMarker: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: P.accent,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(154,219,213,0.40)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  stepConnector: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(154,219,213,0.20)',
+    marginTop: 4,
+    marginBottom: 4,
+  },
   stepNum: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: FontFamily.extraBold,
-    color: P.primary,
+    color: P.white,
   },
   stepBody: {
     flex: 1,
-    paddingTop: 4,
+    paddingTop: 8,
+    paddingBottom: 24,
   },
   stepTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: FontFamily.bold,
-    color: P.accent,
-    marginBottom: 4,
+    color: '#9ADBD5',
+    marginBottom: 5,
   },
   stepDesc: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.72)',
+    color: 'rgba(255,255,255,0.65)',
     lineHeight: 22,
+  },
+  stepBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: P.primaryLight,
+    borderRadius: 50,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  stepBadgeText: {
+    fontSize: 10,
+    fontFamily: FontFamily.bold,
+    color: P.primary,
+    ...(Platform.OS === 'web' ? { letterSpacing: 0.5 } : {}),
   },
 
   // Roles
   roleCard: {
     backgroundColor: P.white,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 28,
     borderWidth: 2,
     borderColor: P.border,
   },
   roleCardHighlight: {
-    backgroundColor: P.primary,
-    borderColor: P.primary,
+    backgroundColor: '#1B2E2C',
+    borderColor: '#1B2E2C',
   },
   roleIconWrap: {
-    width: 52,
-    height: 52,
+    width: 50,
+    height: 50,
     borderRadius: 14,
-    backgroundColor: 'rgba(12,45,53,0.06)',
+    backgroundColor: P.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   roleTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontFamily: FontFamily.bold,
-    color: P.primary,
+    color: P.text,
+    marginBottom: 4,
+  },
+  roleSubtitle: {
+    fontSize: 13,
+    color: P.textMuted,
+    fontFamily: FontFamily.medium,
     marginBottom: 16,
   },
   roleListItem: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     marginBottom: 10,
     alignItems: 'flex-start',
   },
-  roleCheck: {
-    fontFamily: FontFamily.bold,
-    color: P.primary,
-    fontSize: 14,
+  roleCheckDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: P.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 1,
+    flexShrink: 0,
   },
   roleItemText: {
-    fontSize: 14,
+    fontSize: 13,
     color: P.textMuted,
     lineHeight: 20,
     flex: 1,
@@ -790,10 +1283,11 @@ const s = StyleSheet.create({
 
   // App showcase
   appMockup: {
-    width: 240,
-    height: 420,
+    width: 220,
+    height: 390,
     borderRadius: 24,
     marginTop: 24,
+    marginBottom: 24,
   },
   techList: {
     flexDirection: 'row',
@@ -801,17 +1295,17 @@ const s = StyleSheet.create({
     gap: 8,
   },
   techPill: {
-    backgroundColor: P.offWhite,
+    backgroundColor: P.white,
     borderWidth: 1,
     borderColor: P.border,
     borderRadius: 50,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
   },
   techPillText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FontFamily.semiBold,
-    color: P.primary,
+    color: P.text,
   },
 
   // FAQ
@@ -827,11 +1321,7 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   faqItemOpen: {
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 2 },
-      default: {},
-    }),
+    borderColor: P.primary,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -840,76 +1330,97 @@ const s = StyleSheet.create({
     padding: 18,
   },
   faqQuestion: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: FontFamily.semiBold,
-    color: P.primary,
+    color: P.text,
     flex: 1,
     marginRight: 12,
+    lineHeight: 20,
+  },
+  faqToggleWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: P.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   faqToggle: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: FontFamily.bold,
-    color: P.accentHover,
+    color: P.primary,
+    lineHeight: 20,
   },
   faqAnswer: {
     paddingHorizontal: 18,
-    paddingBottom: 18,
+    paddingBottom: 20,
     fontSize: 14,
     color: P.textMuted,
     lineHeight: 22,
   },
 
   // CTA
+  ctaIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   ctaTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: FontFamily.extraBold,
-    color: P.primary,
+    color: P.white,
     textAlign: 'center',
     marginBottom: 14,
     ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
+    maxWidth: 520,
   },
   ctaSub: {
-    fontSize: 16,
-    color: 'rgba(12,45,53,0.65)',
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.70)',
     textAlign: 'center',
     lineHeight: 26,
-    maxWidth: 500,
-    marginBottom: 28,
+    maxWidth: 480,
+    marginBottom: 32,
   },
 
   // Footer
   footer: {
-    backgroundColor: P.primary,
-    paddingTop: 48,
+    backgroundColor: P.text,
+    paddingTop: 52,
   },
   footerTagline: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.65)',
+    color: 'rgba(255,255,255,0.55)',
     lineHeight: 22,
-    maxWidth: 280,
+    maxWidth: 300,
   },
   footerGroupTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FontFamily.bold,
     textTransform: 'uppercase',
-    color: P.accent,
+    color: '#7DD9D0',
     marginBottom: 14,
     ...(Platform.OS === 'web' ? { letterSpacing: 1.5 } : {}),
   },
   footerLink: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.65)',
-    marginBottom: 8,
+    color: 'rgba(255,255,255,0.55)',
+    marginBottom: 9,
+    fontFamily: FontFamily.regular,
   },
   footerBottom: {
-    marginTop: 40,
+    marginTop: 44,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: 'rgba(255,255,255,0.07)',
     paddingVertical: 16,
   },
   footerBottomText: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.38)',
     textAlign: 'center',
     marginBottom: 4,
   },
