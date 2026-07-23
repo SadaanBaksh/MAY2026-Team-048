@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
 import { Card } from '@/components/ui/Card';
@@ -113,7 +113,7 @@ export default function ManagerAnalyticsScreen() {
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        <BurgerMenu />
+        {Platform.OS !== 'android' && <BurgerMenu />}
         <View style={styles.headerText}>
           <Text style={styles.title}>Analytics</Text>
           <Text style={styles.subtitle}>
