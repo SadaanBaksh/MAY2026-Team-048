@@ -19,7 +19,7 @@ export default function ManagerProfileScreen() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/landing');
   };
 
   return (

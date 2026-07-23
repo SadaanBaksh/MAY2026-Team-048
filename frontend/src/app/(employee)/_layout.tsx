@@ -33,7 +33,7 @@ export default function EmployeeLayout() {
   const { Colors } = useTheme();
   const isDesktop = useIsDesktop();
 
-  if (!user || user.role !== 'facility_employee') return <Redirect href="/(auth)/login" />;
+  if (!user || user.role !== 'facility_employee') return <Redirect href="/(auth)/landing" />;
   if (user.accountStatus !== 'active') return <Redirect href="/(auth)/pending-approval" />;
 
   if (isDesktop) {

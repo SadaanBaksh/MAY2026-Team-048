@@ -29,7 +29,7 @@ export default function MaintenanceProfileScreen() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/employee-login');
   };
 
   return (

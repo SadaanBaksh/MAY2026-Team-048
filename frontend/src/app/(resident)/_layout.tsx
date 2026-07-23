@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function ResidentLayout() {
   const user = useAuthStore((s) => s.currentUser);
-  if (!user || user.role !== 'resident') return <Redirect href="/(auth)/login" />;
+  if (!user || user.role !== 'resident') return <Redirect href="/(auth)/customer-login" />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

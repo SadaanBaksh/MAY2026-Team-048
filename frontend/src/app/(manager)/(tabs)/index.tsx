@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { AISummaryCard } from '@/components/ui/AISummaryCard';
 import { Card } from '@/components/ui/Card';
 import { DonutChart } from '@/components/ui/DonutChart';
 import { BarChart } from '@/components/ui/BarChart';
@@ -14,6 +15,9 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
+
+const MANAGER_AI_SUMMARY =
+  '3 new complaints arrived today — 2 plumbing issues in Wing A are marked High priority and awaiting worker assignment. 1 electrical fault (Wing C, Unit 402) is overdue by 6 hours. Overall resolution rate is up 12% this week.';
 
 const CHART_PALETTE = [
   '#0c2d35',
@@ -113,6 +117,12 @@ export default function ManagerAnalyticsScreen() {
           </Text>
         </View>
       </View>
+
+      <AISummaryCard
+        summary={MANAGER_AI_SUMMARY}
+        variant="manager"
+        label="Community Digest"
+      />
 
       <View style={styles.statsGrid}>
         <StatCard

@@ -60,9 +60,16 @@ export function BurgerMenu() {
   };
 
   const handleLogout = () => {
+    const role = user?.role;
     closeMenu();
     logout();
-    router.replace('/(auth)/welcome');
+    if (role === 'resident') {
+      router.replace('/(auth)/customer-login');
+    } else if (role === 'maintenance_staff') {
+      router.replace('/(auth)/employee-login');
+    } else {
+      router.replace('/(auth)/landing');
+    }
   };
 
   return (

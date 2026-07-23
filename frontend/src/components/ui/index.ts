@@ -1,3 +1,4 @@
+export * from '@/components/ui/AISummaryCard';
 export * from '@/components/ui/Avatar';
 export * from '@/components/ui/Badge';
 export * from '@/components/ui/BarChart';
