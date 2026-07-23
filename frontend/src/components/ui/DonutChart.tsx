@@ -29,24 +29,43 @@ export function DonutChart({
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
 
+  // victory-pie's own getLabelText reads `datum.label` first, ahead of the `labels` prop —
+  // since our DonutDatum.label already holds the category name, that would always win over
+  // any custom labels function. Remap to x/y and put the display text in `label` instead.
+  const chartData = useMemo(
+    () =>
+      data.map((d) => ({
+        x: d.label,
+        y: d.value,
+        label: String(d.value),
+        color: d.color,
+      })),
+    [data],
+  );
+
   return (
     <View style={styles.wrapper}>
       <View style={{ width: size, height: size }}>
         <VictoryPie
           width={size}
           height={size}
-          data={data}
-          x="label"
-          y="value"
+          data={chartData}
           innerRadius={size / 2 - strokeWidth}
           padAngle={3}
           cornerRadius={6}
-          labels={({ datum }) => String((datum as DonutDatum).value)}
+          labelRadius={size / 2 - strokeWidth / 2}
           style={{
             data: {
-              fill: (args) => (args.datum as DonutDatum | undefined)?.color ?? Colors.primary,
+              fill: (args) => (args.datum as { color?: string } | undefined)?.color ?? Colors.primary,
             },
-            labels: { fill: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+            labels: {
+              fill: '#FFFFFF',
+              fontSize: 12,
+              fontWeight: '600',
+              padding: 0,
+              textAnchor: 'middle',
+              verticalAnchor: 'middle',
+            },
           }}
           animate={{ duration: 1100, easing: 'bounce', onLoad: { duration: 1100 } }}
           padding={0}
