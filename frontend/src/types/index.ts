@@ -23,6 +23,7 @@ export interface BaseUser {
   phone: string;
   role: UserRole;
   avatarColor: string;
+  avatarUri?: string;
   createdAt: string;
   accountStatus: AccountStatus;
 }
