@@ -41,6 +41,8 @@ interface TicketState {
   media: ComplaintMedia[];
   history: ComplaintHistoryEntry[];
   comments: Comment[];
+  /** The newly received emergency that should surface as the employee pull-up alert. */
+  activeEmergencyAlertId: string | null;
 
   submitComplaint: (input: SubmitComplaintInput) => string;
   reviewAndAssign: (
@@ -94,6 +96,7 @@ export const useTicketStore = create<TicketState>()(
       media: COMPLAINT_MEDIA,
       history: COMPLAINT_HISTORY,
       comments: COMMENTS,
+      activeEmergencyAlertId: null,
 
       submitComplaint: (input) => {
         const ticketId = generateId('tkt');
@@ -147,6 +150,8 @@ export const useTicketStore = create<TicketState>()(
             'Complaint submitted by resident.',
             resident?.name ?? 'Resident',
           ),
+          activeEmergencyAlertId:
+            input.priority === 'Emergency' ? ticketId : state.activeEmergencyAlertId,
         }));
 
         const employees = USERS.filter((u) => u.role === 'facility_employee');
@@ -191,6 +196,8 @@ export const useTicketStore = create<TicketState>()(
             `Assigned to ${worker?.name ?? 'maintenance staff'}.`,
             actor.name,
           ),
+          activeEmergencyAlertId:
+            state.activeEmergencyAlertId === ticketId ? null : state.activeEmergencyAlertId,
         }));
 
         const ticket = get().tickets.find((t) => t.ticketId === ticketId);
