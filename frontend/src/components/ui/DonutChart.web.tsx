@@ -1,4 +1,5 @@
 import { ArcElement, Chart as ChartJS, Tooltip } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { useMemo } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { StyleSheet, Text, View } from 'react-native';
@@ -6,7 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 
-ChartJS.register(ArcElement, Tooltip);
+ChartJS.register(ArcElement, Tooltip, ChartDataLabels);
 
 export interface DonutDatum {
   label: string;
@@ -64,6 +65,11 @@ export function DonutChart({
       plugins: {
         legend: { display: false },
         tooltip: { enabled: true },
+        datalabels: {
+          color: '#fff4f4',
+          font: { weight: 700, size: 12 },
+          formatter: (value: number) => String(value),
+        },
       },
     }),
     [cutout],

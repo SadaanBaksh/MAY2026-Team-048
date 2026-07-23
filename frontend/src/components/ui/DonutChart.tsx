@@ -41,12 +41,12 @@ export function DonutChart({
           innerRadius={size / 2 - strokeWidth}
           padAngle={3}
           cornerRadius={6}
-          labels={() => ''}
+          labels={({ datum }) => String((datum as DonutDatum).value)}
           style={{
             data: {
               fill: (args) => (args.datum as DonutDatum | undefined)?.color ?? Colors.primary,
             },
-            labels: { fill: 'transparent', fontSize: 0 },
+            labels: { fill: '#FFFFFF', fontSize: 12, fontWeight: '600' },
           }}
           animate={{ duration: 1100, easing: 'bounce', onLoad: { duration: 1100 } }}
           padding={0}
