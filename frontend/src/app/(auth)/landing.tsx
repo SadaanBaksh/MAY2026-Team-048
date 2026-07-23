@@ -151,7 +151,7 @@ export default function LandingPage() {
   const isDesktop = useIsDesktop();
   const insets = useSafeAreaInsets();
 
-  const goLogin = useCallback(() => router.push('/(auth)/login'), []);
+  const goLogin = useCallback(() => router.push('/(auth)/customer-login'), []);
   const goRegister = useCallback(() => router.push('/(auth)/register'), []);
 
   return (
