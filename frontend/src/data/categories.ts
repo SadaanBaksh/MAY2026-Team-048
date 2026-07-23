@@ -14,6 +14,16 @@ export interface CategoryMeta extends Category {
 
 export const CATEGORIES: CategoryMeta[] = [
   {
+    categoryId: 'cat_emergency',
+    categoryName: 'Emergency Services',
+    icon: 'warning-outline',
+    defaultPriority: 'Emergency',
+    keywords: ['emergency', 'help', 'danger'],
+    descriptionTemplates: [
+      'Emergency assistance requested by a resident. Immediate facility-team attention is required.',
+    ],
+  },
+  {
     categoryId: 'cat_plumbing',
     categoryName: 'Plumbing',
     icon: 'water-outline',

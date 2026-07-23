@@ -4,6 +4,8 @@ import { Chip } from '@/components/ui/Chip';
 import { useTheme } from '@/hooks/useTheme';
 import type { Priority } from '@/types';
 
+// Emergency requests are created through the dedicated emergency flow and cannot be
+// downgraded to a normal service priority here.
 const PRIORITIES: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
 
 export function PriorityPicker({

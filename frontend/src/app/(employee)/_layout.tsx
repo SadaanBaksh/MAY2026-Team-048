@@ -2,6 +2,7 @@ import { Redirect, Slot, Stack } from 'expo-router';
 import { View } from 'react-native';
 
 import { SidebarNav, type SidebarNavItem } from '@/components/shared/SidebarNav';
+import { EmergencyAlertBar } from '@/components/shared/EmergencyAlertBar';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -42,16 +43,20 @@ export default function EmployeeLayout() {
         <SidebarNav title="Simplifix" items={DESKTOP_NAV_ITEMS} />
         <View style={{ flex: 1 }}>
           <Slot />
+          <EmergencyAlertBar />
         </View>
       </View>
     );
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="complaint/[id]" />
-      <Stack.Screen name="notifications" />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="complaint/[id]" />
+        <Stack.Screen name="notifications" />
+      </Stack>
+      <EmergencyAlertBar />
+    </View>
   );
 }

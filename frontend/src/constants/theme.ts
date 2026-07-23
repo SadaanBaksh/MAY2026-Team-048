@@ -53,7 +53,7 @@ interface PriorityColorEntry {
   dot: string;
 }
 export type PriorityColorPalette = Record<
-  'Low' | 'Medium' | 'High' | 'Critical',
+  'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency',
   PriorityColorEntry
 >;
 export type StatusColorPalette = Record<
@@ -160,6 +160,7 @@ export const LightPriorityColors: PriorityColorPalette = {
   Medium: { text: '#2E7BC2', soft: '#E5F1FB', dot: '#2E7BC2' },
   High: { text: '#DB8A1B', soft: '#FBF0DA', dot: '#DB8A1B' },
   Critical: { text: '#B62B4D', soft: '#F9E4EA', dot: '#B62B4D' },
+  Emergency: { text: '#B42318', soft: '#FEE4E2', dot: '#D92D20' },
 };
 
 export const DarkPriorityColors: PriorityColorPalette = {
@@ -167,6 +168,7 @@ export const DarkPriorityColors: PriorityColorPalette = {
   Medium: { text: '#5B9EE0', soft: '#182B3D', dot: '#5B9EE0' },
   High: { text: '#E8A63F', soft: '#3D2F14', dot: '#E8A63F' },
   Critical: { text: '#D65D82', soft: '#3A1B25', dot: '#D65D82' },
+  Emergency: { text: '#FDA29B', soft: '#4A1515', dot: '#F97066' },
 };
 
 export const LightStatusColors: StatusColorPalette = {

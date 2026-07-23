@@ -2,7 +2,7 @@ export type UserRole = 'resident' | 'facility_employee' | 'maintenance_staff' | 
 
 export type AccountStatus = 'active' | 'pending' | 'rejected';
 
-export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type Priority = 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency';
 
 export type TicketStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed';
 

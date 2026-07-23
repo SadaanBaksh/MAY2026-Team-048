@@ -42,6 +42,9 @@ export default function ManagerAnalyticsScreen() {
     const total = tickets.length;
     const pending = tickets.filter((t) => t.status === 'Pending').length;
     const overdue = tickets.filter(isTicketOverdue).length;
+    const emergencyHandled = tickets.filter(
+      (t) => t.priority === 'Emergency' && (t.status === 'Resolved' || t.status === 'Closed'),
+    ).length;
     const resolvedTickets = tickets.filter((t) => t.dateOfResolution);
     const avgResolutionHours = resolvedTickets.length
       ? resolvedTickets.reduce((sum, t) => {
@@ -59,6 +62,7 @@ export default function ManagerAnalyticsScreen() {
       total,
       pending,
       overdue,
+      emergencyHandled,
       avgResolutionHours,
       avgRating,
       ratedCount: ratedTickets.length,
@@ -118,11 +122,7 @@ export default function ManagerAnalyticsScreen() {
         </View>
       </View>
 
-      <AISummaryCard
-        summary={MANAGER_AI_SUMMARY}
-        variant="manager"
-        label="Community Digest"
-      />
+      <AISummaryCard summary={MANAGER_AI_SUMMARY} variant="manager" label="Community Digest" />
 
       <View style={styles.statsGrid}>
         <StatCard
@@ -149,17 +149,19 @@ export default function ManagerAnalyticsScreen() {
           icon="speedometer-outline"
           color={Colors.info}
         />
+        <StatCard
+          label="Emergency Services Handled"
+          value={stats.emergencyHandled}
+          icon="shield-checkmark-outline"
+          color={Colors.danger}
+        />
       </View>
 
       <View style={isDesktop ? styles.chartGrid : styles.chartStack}>
         <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
           <Text style={styles.sectionTitle}>Complaints by Category</Text>
           {categoryData.length > 0 ? (
-            <DonutChart
-              data={categoryData}
-              centerValue={String(stats.total)}
-              centerLabel="Total"
-            />
+            <DonutChart data={categoryData} centerValue={String(stats.total)} centerLabel="Total" />
           ) : (
             <Text style={styles.empty}>No complaint data yet.</Text>
           )}
