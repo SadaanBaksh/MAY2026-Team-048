@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import HouseLogo from '@/assets/images/house_logo-house-white.svg';
+import { SimplifixLogo } from '@/components/ui/SimplifixLogo';
 import { FontFamily } from '@/constants/theme';
 
 // ─── Images ──────────────────────────────────────────
@@ -173,7 +173,9 @@ export default function LandingPage() {
           />
           <View style={[s.heroContent, isDesktop && { maxWidth: 640, paddingVertical: 100 }, { paddingTop: Math.max(insets.top + 16, 28) }]}>
             <View style={s.logoBadge}>
-              <HouseLogo width={28} height={28} />
+              <View style={s.logoIconWrap}>
+                <SimplifixLogo width={50} height={50} />
+              </View>
               <Text style={s.logoText}>Simplifix</Text>
             </View>
             <Text style={[s.heroTitle, isDesktop && { fontSize: 52, lineHeight: 56 }]}>
@@ -409,7 +411,9 @@ export default function LandingPage() {
           <View style={[s.container, isWide && { flexDirection: 'row', gap: 48 }]}>
             <View style={[isWide && { flex: 2 }]}>
               <View style={[s.logoBadge, { marginBottom: 12 }]}>
-                <HouseLogo width={22} height={22} />
+                <View style={[s.logoIconWrap, s.logoIconWrapSm]}>
+                  <SimplifixLogo width={16} height={16} />
+                </View>
                 <Text style={[s.logoText, { fontSize: 18 }]}>Simplifix</Text>
               </View>
               <Text style={s.footerTagline}>
@@ -523,9 +527,19 @@ const s = StyleSheet.create({
     gap: 10,
     marginBottom: 24,
   },
+  logoIconWrap: {
+    backgroundColor: P.white,
+    borderRadius: 999,
+    padding: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoIconWrapSm: {
+    padding: 6,
+  },
   logoText: {
     fontSize: 22,
-    fontFamily: FontFamily.extraBold,
+    fontFamily: 'Manrope_700Bold',
     color: P.white,
     ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
   },

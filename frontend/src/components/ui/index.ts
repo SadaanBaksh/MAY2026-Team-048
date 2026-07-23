@@ -14,6 +14,7 @@ export * from '@/components/ui/Screen';
 export * from '@/components/ui/ScreenHeader';
 export * from '@/components/ui/SearchBar';
 export * from '@/components/ui/SegmentedControl';
+export * from '@/components/ui/SimplifixLogo';
 export * from '@/components/ui/StatCard';
 export * from '@/components/ui/StatusStepper';
 export * from '@/components/ui/TextField';
