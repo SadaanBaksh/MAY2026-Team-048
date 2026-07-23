@@ -13,21 +13,18 @@ export function EmergencyAlertBar() {
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const isDesktop = useIsDesktop();
   const tickets = useTicketStore((s) => s.tickets);
+  const activeEmergencyAlertId = useTicketStore((s) => s.activeEmergencyAlertId);
   const pulse = useRef(new Animated.Value(1)).current;
 
   const emergency = useMemo(
     () =>
-      tickets
-        .filter(
-          (ticket) =>
-            ticket.priority === 'Emergency' &&
-            ticket.status !== 'Resolved' &&
-            ticket.status !== 'Closed',
-        )
-        .sort(
-          (a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime(),
-        )[0],
-    [tickets],
+      tickets.find(
+        (ticket) =>
+          ticket.ticketId === activeEmergencyAlertId &&
+          ticket.priority === 'Emergency' &&
+          ticket.status === 'Pending',
+      ),
+    [activeEmergencyAlertId, tickets],
   );
 
   useEffect(() => {
