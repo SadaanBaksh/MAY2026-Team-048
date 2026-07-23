@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import HouseLogo from '@/assets/images/house_logo-house-white.svg';
+import { SimplifixLogo } from '@/components/shared/SimplifixLogo';
 import { Button } from '@/components/ui/Button';
 import { LightColors, Radius, Spacing, Type } from '@/constants/theme';
 import type { ThemeColors } from '@/hooks/useTheme';
@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.hero}>
           <View style={styles.brandMark}>
-            <HouseLogo width={40} height={40} />
+            <SimplifixLogo width={80} height={80} />
           </View>
           <Text style={styles.brand}>Simplifix</Text>
           <Text style={styles.tagline}>

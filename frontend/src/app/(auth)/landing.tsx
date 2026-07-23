@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import HouseLogo from '@/assets/images/house_logo-house-white.svg';
+import { SimplifixLogo } from '@/components/shared/SimplifixLogo';
 import { FontFamily } from '@/constants/theme';
 
 // ─── Images ──────────────────────────────────────────
@@ -173,7 +173,9 @@ export default function LandingPage() {
           />
           <View style={[s.heroContent, isDesktop && { maxWidth: 640, paddingVertical: 100 }, { paddingTop: Math.max(insets.top + 16, 28) }]}>
             <View style={s.logoBadge}>
-              <HouseLogo width={28} height={28} />
+              <View style={s.logoIconBg}>
+                <SimplifixLogo width={56} height={56} />
+              </View>
               <Text style={s.logoText}>Simplifix</Text>
             </View>
             <Text style={[s.heroTitle, isDesktop && { fontSize: 52, lineHeight: 56 }]}>
@@ -409,7 +411,9 @@ export default function LandingPage() {
           <View style={[s.container, isWide && { flexDirection: 'row', gap: 48 }]}>
             <View style={[isWide && { flex: 2 }]}>
               <View style={[s.logoBadge, { marginBottom: 12 }]}>
-                <HouseLogo width={22} height={22} />
+                <View style={s.logoIconBg}>
+                  <SimplifixLogo width={44} height={44} />
+                </View>
                 <Text style={[s.logoText, { fontSize: 18 }]}>Simplifix</Text>
               </View>
               <Text style={s.footerTagline}>
@@ -521,11 +525,23 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 24,
+    marginBottom: 24
+  },
+  logoIconBg: {
+    backgroundColor: 'rgba(255,255,255,1)',
+    borderRadius: 50,
+    padding: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 10 },
+      android: { elevation: 5 },
+      default: {},
+    }),
   },
   logoText: {
-    fontSize: 22,
-    fontFamily: FontFamily.extraBold,
+    fontSize: 25,
+    fontFamily: 'Manrope_800ExtraBold',
     color: P.white,
     ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
   },

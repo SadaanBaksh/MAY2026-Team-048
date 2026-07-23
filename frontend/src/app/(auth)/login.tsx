@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import HouseLogo from '@/assets/images/house_logo-house-white.svg';
+import { SimplifixLogo } from '@/components/shared/SimplifixLogo';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -72,7 +72,7 @@ export default function LoginScreen() {
           <Card style={[styles.card, isDesktop && styles.cardDesktop]}>
             <View style={styles.brandRow}>
               <View style={styles.brandMark}>
-                <HouseLogo width={18} height={18} />
+                <SimplifixLogo width={44} height={44} />
               </View>
               <Text style={styles.brandName}>Simplifix</Text>
             </View>
@@ -225,10 +225,10 @@ const getStyles = (Colors: ThemeColors) =>
       gap: Spacing.xs,
     },
     brandMark: {
-      width: 32,
-      height: 32,
+      width: 44,
+      height: 44,
       borderRadius: Radius.md,
-      backgroundColor: Colors.primary,
+      // backgroundColor: Colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },

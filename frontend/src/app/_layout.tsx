@@ -6,6 +6,7 @@ import {
   Archivo_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/archivo';
+import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -25,6 +26,7 @@ export default function RootLayout() {
     Archivo_600SemiBold,
     Archivo_700Bold,
     Archivo_800ExtraBold,
+    Manrope_800ExtraBold,
   });
 
   useEffect(() => {
