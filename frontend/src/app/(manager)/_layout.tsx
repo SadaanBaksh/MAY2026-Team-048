@@ -39,7 +39,7 @@ export default function ManagerLayout() {
   const { Colors } = useTheme();
   const isDesktop = useIsDesktop();
 
-  if (!user || user.role !== 'facility_manager') return <Redirect href="/(auth)/employee-login" />;
+  if (!user || user.role !== 'facility_manager') return <Redirect href="/(auth)/landing" />;
 
   if (isDesktop) {
     return (

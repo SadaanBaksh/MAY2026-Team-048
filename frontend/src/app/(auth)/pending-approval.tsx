@@ -20,7 +20,13 @@ export default function PendingApprovalScreen() {
   const handleLogout = () => {
     const role = currentUser?.role;
     logout();
-    router.replace(role === 'resident' ? '/(auth)/customer-login' : '/(auth)/employee-login');
+    if (role === 'resident') {
+      router.replace('/(auth)/customer-login');
+    } else if (role === 'maintenance_staff') {
+      router.replace('/(auth)/employee-login');
+    } else {
+      router.replace('/(auth)/landing');
+    }
   };
 
   return (
