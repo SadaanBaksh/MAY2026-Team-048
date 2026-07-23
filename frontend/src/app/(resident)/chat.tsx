@@ -135,7 +135,7 @@ export default function ResidentChatScreen() {
       />
       <KeyboardAvoidingView
         style={styles.keyboard}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
         <Screen scroll={false} padded={false} edges={['bottom']} style={styles.screen}>
