@@ -2,11 +2,11 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import HouseLogo from '@/assets/images/house_logo-house-white.svg';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { SimplifixLogo } from '@/components/ui/SimplifixLogo';
 import { TextField } from '@/components/ui/TextField';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -129,7 +129,7 @@ export default function RegisterScreen() {
           <Card style={[styles.card, isDesktop && styles.cardDesktop]}>
             <View style={styles.brandRow}>
               <View style={styles.brandMark}>
-                <HouseLogo width={18} height={18} />
+                <SimplifixLogo width={50} height={50} />
               </View>
               <Text style={styles.brandName}>Simplifix</Text>
             </View>
@@ -287,10 +287,6 @@ const getStyles = (Colors: ThemeColors) =>
       gap: Spacing.xs,
     },
     brandMark: {
-      width: 32,
-      height: 32,
-      borderRadius: Radius.md,
-      backgroundColor: Colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },
