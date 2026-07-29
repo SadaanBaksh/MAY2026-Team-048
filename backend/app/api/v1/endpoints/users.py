@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.enums import UserRole
 from app.models.user import User
@@ -19,8 +19,11 @@ def read_current_user(current_user: User = Depends(get_current_user)) -> User:
 def list_users(
     role: UserRole | None = None,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.facility_employee, UserRole.facility_manager)),
+    _: User = Depends(get_current_user),
 ) -> list[User]:
+    # Any authenticated user can list the directory (matches the previous mock
+    # behavior, where every role saw the full roster client-side) — needed by
+    # residents/staff/employees/managers alike to resolve names on ticket screens.
     query = db.query(User)
     if role is not None:
         query = query.filter(User.role == role)
@@ -58,7 +61,19 @@ def update_user(
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+
+    if "email" in updates and updates["email"] != user.email:
+        email_taken = (
+            db.query(User).filter(User.email == updates["email"], User.id != user_id).first()
+        )
+        if email_taken is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An account with this email already exists",
+            )
+
+    for field, value in updates.items():
         setattr(user, field, value)
 
     db.commit()

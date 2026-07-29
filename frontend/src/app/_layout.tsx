@@ -15,6 +15,7 @@ import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useTheme } from '@/hooks/useTheme';
+import { useAuthStore } from '@/store/authStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,12 +29,18 @@ export default function RootLayout() {
     Archivo_800ExtraBold,
     Manrope_700Bold,
   });
+  const isSessionHydrated = useAuthStore((s) => s.isHydrated);
+  const hydrateSession = useAuthStore((s) => s.hydrateSession);
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    hydrateSession();
+  }, [hydrateSession]);
 
-  if (!fontsLoaded) return null;
+  useEffect(() => {
+    if (fontsLoaded && isSessionHydrated) SplashScreen.hideAsync();
+  }, [fontsLoaded, isSessionHydrated]);
+
+  if (!fontsLoaded || !isSessionHydrated) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

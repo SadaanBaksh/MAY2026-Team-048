@@ -33,6 +33,7 @@ services:
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
+      - ./scripts:/app/scripts
 
 volumes:
   postgres_data:

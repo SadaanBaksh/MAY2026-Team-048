@@ -68,6 +68,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Keep the selected role valid for whichever pair of options the current
   // breakpoint shows (e.g. resizing from desktop down to mobile width).
@@ -75,7 +76,7 @@ export default function RegisterScreen() {
     setRole(isDesktop ? 'facility_manager' : 'resident');
   }, [isDesktop]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !phone.trim() || !password) {
       setError('Please fill in every field to continue.');
       return;
@@ -96,21 +97,27 @@ export default function RegisterScreen() {
       setError('Passwords do not match.');
       return;
     }
-    const result = register({
-      name,
-      email,
-      phone,
-      role,
-      building,
-      unitNumber,
-      title,
-      specialization,
-    });
-    if (!result.success) {
-      setError(result.error ?? 'Unable to create account.');
-      return;
+    setSubmitting(true);
+    try {
+      const result = await register({
+        name,
+        email,
+        phone,
+        role,
+        password,
+        building,
+        unitNumber,
+        title,
+        specialization,
+      });
+      if (!result.success) {
+        setError(result.error ?? 'Unable to create account.');
+        return;
+      }
+      router.replace('/');
+    } finally {
+      setSubmitting(false);
     }
-    router.replace('/');
   };
 
   const copy = ROLE_COPY[role];
@@ -233,7 +240,14 @@ export default function RegisterScreen() {
                 onChangeText={setConfirmPassword}
               />
               {!!error && <Text style={styles.error}>{error}</Text>}
-              <Button label="Create Account" onPress={handleSubmit} fullWidth size="lg" />
+              <Button
+                label="Create Account"
+                onPress={handleSubmit}
+                loading={submitting}
+                disabled={submitting}
+                fullWidth
+                size="lg"
+              />
             </View>
           </Card>
 
