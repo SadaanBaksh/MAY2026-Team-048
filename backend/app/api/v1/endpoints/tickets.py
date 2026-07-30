@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import ensure_ticket_access, get_current_user, require_roles
 from app.db.session import get_db
 from app.models.enums import Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
@@ -80,10 +80,7 @@ def get_ticket(
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
-    if current_user.role == UserRole.resident and ticket.resident_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your ticket")
-    if current_user.role == UserRole.maintenance_staff and ticket.worker_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not assigned to you")
+    ensure_ticket_access(ticket, current_user)
 
     return ticket
 
@@ -143,11 +140,12 @@ def update_ticket(
 def get_ticket_history(
     ticket_id: str,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> list[TicketHistory]:
     ticket = db.get(Ticket, ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    ensure_ticket_access(ticket, current_user)
     return (
         db.query(TicketHistory)
         .filter(TicketHistory.ticket_id == ticket_id)

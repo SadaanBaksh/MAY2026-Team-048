@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.enums import UserRole
+from app.models.ticket import Ticket
 from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -43,3 +44,12 @@ def require_roles(*allowed_roles: UserRole) -> Callable[[User], User]:
         return current_user
 
     return dependency
+
+
+def ensure_ticket_access(ticket: Ticket, current_user: User) -> None:
+    """Restrict a ticket (and its history/comments) to the resident who filed it,
+    the worker assigned to it, or facility staff — mirrors GET /tickets/{id}."""
+    if current_user.role == UserRole.resident and ticket.resident_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your ticket")
+    if current_user.role == UserRole.maintenance_staff and ticket.worker_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not assigned to you")

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import ensure_ticket_access, get_current_user
 from app.db.session import get_db
 from app.models.comment import Comment
 from app.models.ticket import Ticket
@@ -15,11 +15,12 @@ router = APIRouter()
 def list_comments(
     ticket_id: str,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> list[Comment]:
     ticket = db.get(Ticket, ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    ensure_ticket_access(ticket, current_user)
     return (
         db.query(Comment)
         .filter(Comment.ticket_id == ticket_id)
@@ -40,6 +41,7 @@ def create_comment(
     ticket = db.get(Ticket, ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    ensure_ticket_access(ticket, current_user)
 
     comment = Comment(ticket_id=ticket_id, user_id=current_user.id, message=payload.message)
     db.add(comment)
