@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as v from 'valibot';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { AppUser } from '@/types';
+import { emailSchema, firstIssueMessage, phoneSchema } from '@/utils/validation';
 
 export function EditProfileModal({
   visible,
@@ -62,12 +64,14 @@ export function EditProfileModal({
       setError('Name is required.');
       return;
     }
-    if (!email.trim().includes('@')) {
-      setError('Enter a valid email address.');
+    const emailError = firstIssueMessage(v.safeParse(emailSchema, email));
+    if (emailError) {
+      setError(emailError);
       return;
     }
-    if (!phone.trim()) {
-      setError('Phone number is required.');
+    const phoneError = firstIssueMessage(v.safeParse(phoneSchema, phone));
+    if (phoneError) {
+      setError(phoneError);
       return;
     }
     onSave({ name: name.trim(), email: email.trim(), phone: phone.trim(), avatarUri });

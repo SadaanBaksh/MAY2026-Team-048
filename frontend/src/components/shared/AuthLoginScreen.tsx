@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import * as v from 'valibot';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -21,6 +22,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type RoleColorMap, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import type { AppUser, UserRole } from '@/types';
+import { emailSchema, firstIssueMessage } from '@/utils/validation';
 
 export interface DemoAccountItem {
   role: UserRole;
@@ -87,8 +89,13 @@ export function AuthLoginScreen({
   };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError('Enter your email and password to continue.');
+    const emailError = firstIssueMessage(v.safeParse(emailSchema, email));
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+    if (!password.trim()) {
+      setError('Enter your password to continue.');
       return;
     }
     setSubmitting(true);
