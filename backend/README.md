@@ -36,7 +36,10 @@ backend/
 ├─ pytest.ini
 ├─ .env.example
 ├─ Dockerfile
-└─ docker-compose.yml
+├─ docker-compose.yml   # local dev only
+├─ SETUP.md
+├─ S3_SETUP.md
+└─ RENDER_DEPLOY.md
 ```
 
 ## Setup
@@ -121,6 +124,14 @@ test database, an authenticated `client` per role (`resident_user`/`employee_use
 
 ### is this a feature or a bug?
 One test `(test_resident_cannot_close_before_resolved)` documents a real gap rather than papering over it: the backend lets a resident jump a ticket straight to `Closed` from any status, not just `Resolved` — there's no server-side check enforcing the intended order. Wasn't in scope to fix while writing tests, but flagging it since it's a real permission gap, not just a style nit.
+
+## Deployment
+
+Local development (`docker compose up --build`, per `SETUP.md`) is the default and stays that way
+regardless of anything below — it doesn't depend on any of this. When you're ready to put the
+backend + a real Postgres somewhere live, see **[RENDER_DEPLOY.md](./RENDER_DEPLOY.md)** — a
+step-by-step guide to deploying on Render. It's purely additive: no second `docker-compose.yml`,
+no changes to how local dev works.
 
 ## Not Yet Implemented
 

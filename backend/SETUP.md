@@ -219,6 +219,8 @@ curl http://localhost:8000/health
 - Want to test photo/voice note uploads on tickets? See [S3_SETUP.md](./S3_SETUP.md) to set up AWS S3.
 - Run the automated test suite: see the **Testing** section in [README.md](./README.md#testing) —
   it runs against an in-memory database, no Docker/Postgres needed just for tests.
+- Ready to put the backend + a real Postgres somewhere live? See
+  [RENDER_DEPLOY.md](./RENDER_DEPLOY.md) — purely additive, doesn't change local dev at all.
 - Changed a model? Generate a new migration:
   ```bash
   alembic revision --autogenerate -m "describe your change"
