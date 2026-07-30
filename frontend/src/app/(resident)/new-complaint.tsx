@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ApiError, createTicket, uploadFile } from '@/api/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { IconCircle } from '@/components/ui/IconCircle';
@@ -18,10 +19,12 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
-import type { MediaType, Priority } from '@/types';
+import type { Priority } from '@/types';
 import { analyzeComplaint, type AIAnalysisResult } from '@/utils/mockAI';
 
 type Step = 'capture' | 'analyzing' | 'review' | 'done';
+
+const MAX_PHOTOS = 5;
 
 function buildTitle(categoryName: string, note: string): string {
   const trimmed = note.trim();
@@ -33,12 +36,11 @@ function buildTitle(categoryName: string, note: string): string {
 export default function NewComplaintScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
-  const user = useAuthStore((s) => s.currentUser)!;
-  const submitComplaint = useTicketStore((s) => s.submitComplaint);
+  const token = useAuthStore((s) => s.token);
+  const addTicketFromApi = useTicketStore((s) => s.addTicketFromApi);
 
   const [step, setStep] = useState<Step>('capture');
-  const [mediaUri, setMediaUri] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<MediaType | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [permissionError, setPermissionError] = useState('');
 
@@ -52,6 +54,8 @@ export default function NewComplaintScreen() {
   const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState<Priority>('Medium');
   const [newTicketId, setNewTicketId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const pulse = useMemo(() => new Animated.Value(0.4), []);
 
@@ -78,6 +82,10 @@ export default function NewComplaintScreen() {
   }, [step, pulse]);
 
   const pickFromLibrary = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      setPermissionError(`You can attach up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
     setPermissionError('');
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -85,17 +93,21 @@ export default function NewComplaintScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
+      mediaTypes: ['images'],
       quality: 0.7,
-      videoMaxDuration: 30,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photos.length,
     });
-    if (!result.canceled && result.assets[0]) {
-      setMediaUri(result.assets[0].uri);
-      setMediaType(result.assets[0].type === 'video' ? 'Video' : 'Image');
+    if (!result.canceled && result.assets.length > 0) {
+      setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
     }
   };
 
   const takePhoto = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      setPermissionError(`You can attach up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
     setPermissionError('');
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
@@ -104,9 +116,12 @@ export default function NewComplaintScreen() {
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (!result.canceled && result.assets[0]) {
-      setMediaUri(result.assets[0].uri);
-      setMediaType(result.assets[0].type === 'video' ? 'Video' : 'Image');
+      setPhotos((prev) => [...prev, result.assets[0].uri]);
     }
+  };
+
+  const removePhoto = (uri: string) => {
+    setPhotos((prev) => prev.filter((p) => p !== uri));
   };
 
   const handleRecordVoiceNote = async () => {
@@ -143,11 +158,11 @@ export default function NewComplaintScreen() {
   };
 
   const handleAnalyze = async () => {
-    if (!mediaUri || !mediaType) return;
+    if (photos.length === 0) return;
     setStep('analyzing');
     const result = await analyzeComplaint({
       note,
-      hasVideo: mediaType === 'Video',
+      hasVideo: false,
       hasVoiceNote: !!voiceNoteUri,
     });
     setAiResult(result);
@@ -157,24 +172,41 @@ export default function NewComplaintScreen() {
     setStep('review');
   };
 
-  const handleSubmit = () => {
-    if (!mediaUri || !mediaType || !aiResult) return;
-    const category = getCategoryById(categoryId);
-    const ticketId = submitComplaint({
-      residentId: user.userId,
-      categoryId,
-      title: buildTitle(category.categoryName, note),
-      aiDescription: description,
-      aiConfidence: aiResult.confidence,
-      priority,
-      mediaUrl: mediaUri,
-      mediaType,
-      residentNote: note,
-      voiceNoteUrl: voiceNoteUri,
-      voiceNoteDurationSec,
-    });
-    setNewTicketId(ticketId);
-    setStep('done');
+  const handleSubmit = async () => {
+    if (photos.length === 0 || !aiResult || !token || submitting) return;
+    setSubmitError('');
+    setSubmitting(true);
+    try {
+      const category = getCategoryById(categoryId);
+      const photoUrls = await Promise.all(
+        photos.map(async (uri) => (await uploadFile(token, uri, 'photo')).url),
+      );
+      const voiceNoteUrl = voiceNoteUri
+        ? (await uploadFile(token, voiceNoteUri, 'voice_note')).url
+        : null;
+
+      const apiTicket = await createTicket(token, {
+        title: buildTitle(category.categoryName, note),
+        category_id: categoryId,
+        resident_note: note,
+        photo_urls: photoUrls,
+        voice_note_url: voiceNoteUrl,
+        voice_note_duration_sec: voiceNoteDurationSec,
+        ai_description: description,
+        ai_confidence: aiResult.confidence,
+        priority,
+      });
+
+      const ticketId = addTicketFromApi(apiTicket);
+      setNewTicketId(ticketId);
+      setStep('done');
+    } catch (err) {
+      setSubmitError(
+        err instanceof ApiError ? err.message : 'Could not submit your complaint. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleBack = () => {
@@ -250,13 +282,22 @@ export default function NewComplaintScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {step === 'capture' && (
           <>
-            <Text style={styles.label}>Add a photo or video</Text>
-            {mediaUri && mediaType ? (
-              <MediaThumb uri={mediaUri} mediaType={mediaType} height={220} />
+            <Text style={styles.label}>Add photos ({photos.length}/{MAX_PHOTOS})</Text>
+            {photos.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+                {photos.map((uri) => (
+                  <View key={uri} style={styles.photoItem}>
+                    <MediaThumb uri={uri} mediaType="Image" height={120} radius={Radius.md} />
+                    <Pressable style={styles.removeBadge} onPress={() => removePhoto(uri)}>
+                      <Ionicons name="close" size={14} color={Colors.white} />
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
             ) : (
               <View style={styles.placeholder}>
                 <Ionicons name="image-outline" size={32} color={Colors.inkTertiary} />
-                <Text style={styles.placeholderText}>No media attached yet</Text>
+                <Text style={styles.placeholderText}>No photos attached yet</Text>
               </View>
             )}
 
@@ -325,15 +366,21 @@ export default function NewComplaintScreen() {
               icon="sparkles-outline"
               fullWidth
               size="lg"
-              disabled={!mediaUri}
+              disabled={photos.length === 0}
               onPress={handleAnalyze}
             />
           </>
         )}
 
-        {step === 'review' && aiResult && mediaUri && mediaType && (
+        {step === 'review' && aiResult && photos.length > 0 && (
           <>
-            <MediaThumb uri={mediaUri} mediaType={mediaType} height={200} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+              {photos.map((uri) => (
+                <View key={uri} style={styles.photoItem}>
+                  <MediaThumb uri={uri} mediaType="Image" height={140} radius={Radius.md} />
+                </View>
+              ))}
+            </ScrollView>
             {!!note && <Text style={styles.noteEcho}>“{note}”</Text>}
             {!!voiceNoteUri && (
               <VoiceNotePlayer uri={voiceNoteUri} durationSec={voiceNoteDurationSec} />
@@ -352,11 +399,13 @@ export default function NewComplaintScreen() {
               Review the AI-generated details above. You can edit the description, category, or
               priority before sending it to the facility team.
             </Text>
+            {!!submitError && <Text style={styles.error}>{submitError}</Text>}
             <Button
-              label="Submit Complaint"
+              label={submitting ? 'Submitting…' : 'Submit Complaint'}
               icon="send"
               fullWidth
               size="lg"
+              disabled={submitting}
               onPress={handleSubmit}
             />
           </>
@@ -396,6 +445,24 @@ const getStyles = (Colors: ThemeColors) =>
     placeholderText: {
       ...Type.caption,
       color: Colors.inkTertiary,
+    },
+    photoRow: {
+      flexDirection: 'row',
+    },
+    photoItem: {
+      width: 120,
+      marginRight: Spacing.sm,
+    },
+    removeBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(18,20,28,0.65)',
     },
     mediaActions: {
       flexDirection: 'row',

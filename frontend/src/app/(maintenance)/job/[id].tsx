@@ -1,12 +1,14 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ApiError, uploadFile } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
 import { MediaThumb } from '@/components/shared/MediaThumb';
+import { TicketMediaGallery } from '@/components/shared/TicketMediaGallery';
 import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
@@ -30,15 +32,28 @@ export default function MaintenanceJobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const media = useTicketStore((s) => s.media);
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
   const startProgress = useTicketStore((s) => s.startProgress);
   const resolveTicket = useTicketStore((s) => s.resolveTicket);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const addComment = useTicketStore((s) => s.addComment);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+    }, [token, refreshTickets]),
+  );
 
   const [remarks, setRemarks] = useState('');
   const [proofUri, setProofUri] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState('');
 
   const ticket = tickets.find((t) => t.ticketId === id);
 
@@ -61,6 +76,7 @@ export default function MaintenanceJobDetailScreen() {
       : null;
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
+  const ticketMedia = media.filter((m) => m.ticketId === ticket.ticketId);
 
   const capturedProof = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -79,16 +95,40 @@ export default function MaintenanceJobDetailScreen() {
     if (!result.canceled && result.assets[0]) setProofUri(result.assets[0].uri);
   };
 
-  const handleStart = () =>
-    startProgress(ticket.ticketId, { name: user.name, role: 'Maintenance Staff' });
+  const handleStart = async () => {
+    if (!token || starting) return;
+    setStartError('');
+    setStarting(true);
+    try {
+      await startProgress(token, ticket.ticketId, { name: user.name, role: 'Maintenance Staff' });
+    } catch (err) {
+      setStartError(
+        err instanceof ApiError ? err.message : 'Could not start the job. Please try again.',
+      );
+    } finally {
+      setStarting(false);
+    }
+  };
 
-  const handleResolve = () => {
-    if (!remarks.trim() || !proofUri) return;
-    resolveTicket(
-      ticket.ticketId,
-      { remarks: remarks.trim(), proofUrl: proofUri },
-      { name: user.name, role: 'Maintenance Staff' },
-    );
+  const handleResolve = async () => {
+    if (!remarks.trim() || !proofUri || !token || resolving) return;
+    setResolveError('');
+    setResolving(true);
+    try {
+      const { url } = await uploadFile(token, proofUri, 'photo');
+      await resolveTicket(
+        token,
+        ticket.ticketId,
+        { remarks: remarks.trim(), proofUrl: url },
+        { name: user.name, role: 'Maintenance Staff' },
+      );
+    } catch (err) {
+      setResolveError(
+        err instanceof ApiError ? err.message : 'Could not submit the resolution. Please try again.',
+      );
+    } finally {
+      setResolving(false);
+    }
   };
 
   return (
@@ -99,9 +139,7 @@ export default function MaintenanceJobDetailScreen() {
         showBack
       />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && (
-          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />
-        )}
+        <TicketMediaGallery media={ticketMedia} height={200} />
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -151,13 +189,17 @@ export default function MaintenanceJobDetailScreen() {
         )}
 
         {ticket.status === 'Assigned' && (
-          <Button
-            label="Start Work"
-            icon="play-circle-outline"
-            fullWidth
-            size="lg"
-            onPress={handleStart}
-          />
+          <View style={styles.section}>
+            {!!startError && <Text style={styles.error}>{startError}</Text>}
+            <Button
+              label={starting ? 'Starting…' : 'Start Work'}
+              icon="play-circle-outline"
+              fullWidth
+              size="lg"
+              disabled={starting}
+              onPress={handleStart}
+            />
+          </View>
         )}
 
         {ticket.status === 'In_Progress' && (
@@ -194,12 +236,13 @@ export default function MaintenanceJobDetailScreen() {
                 style={styles.flexButton}
               />
             </View>
+            {!!resolveError && <Text style={styles.error}>{resolveError}</Text>}
             <Button
-              label="Mark Resolved"
+              label={resolving ? 'Submitting…' : 'Mark Resolved'}
               icon="checkmark-done-outline"
               fullWidth
               size="lg"
-              disabled={!remarks.trim() || !proofUri}
+              disabled={!remarks.trim() || !proofUri || resolving}
               onPress={handleResolve}
             />
           </Card>
@@ -286,6 +329,10 @@ const getStyles = (Colors: ThemeColors) =>
     body: {
       ...Type.body,
       color: Colors.ink,
+    },
+    error: {
+      ...Type.caption,
+      color: Colors.danger,
     },
     personCard: {
       flexDirection: 'row',

@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import CostResponsibility, MediaType, Priority, TicketStatus
+from app.schemas.ticket_media import TicketMediaRead
 
 
 class TicketBase(BaseModel):
@@ -19,9 +20,11 @@ class TicketCreate(TicketBase):
     priority: Priority | None = None
     ai_description: str | None = None
     ai_confidence: float | None = None
+    photo_urls: list[str] = []
 
 
 class TicketUpdate(BaseModel):
+    category_id: str | None = None
     worker_id: str | None = None
     priority: Priority | None = None
     status: TicketStatus | None = None
@@ -50,3 +53,4 @@ class TicketRead(TicketBase):
     resident_rating: int | None
     resident_feedback: str | None
     is_overdue: bool
+    media: list[TicketMediaRead] = []

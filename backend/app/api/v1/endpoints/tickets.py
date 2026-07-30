@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import ensure_ticket_access, get_current_user, require_roles
 from app.db.session import get_db
-from app.models.enums import Priority, TicketStatus, UserRole
+from app.models.enums import MediaType, Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
 from app.models.ticket_history import TicketHistory
+from app.models.ticket_media import TicketMedia
 from app.models.user import User
 from app.schemas.ticket import TicketCreate, TicketRead, TicketUpdate
 from app.schemas.ticket_history import TicketHistoryRead
@@ -47,14 +48,22 @@ def create_ticket(
     current_user: User = Depends(get_current_user),
 ) -> Ticket:
     ticket = Ticket(
-        **payload.model_dump(exclude={"priority", "ai_description", "ai_confidence"}),
+        **payload.model_dump(
+            exclude={"priority", "ai_description", "ai_confidence", "photo_urls"}
+        ),
         resident_id=current_user.id,
         priority=payload.priority or Priority.Medium,
         ai_description=payload.ai_description or "",
         ai_confidence=payload.ai_confidence or 0.0,
     )
+    if payload.photo_urls and not ticket.image_url:
+        ticket.image_url = payload.photo_urls[0]
+        ticket.media_type = ticket.media_type or MediaType.Image
     db.add(ticket)
     db.flush()
+
+    for url in payload.photo_urls:
+        db.add(TicketMedia(ticket_id=ticket.id, media_url=url, media_type=MediaType.Image))
 
     db.add(
         TicketHistory(
@@ -99,11 +108,16 @@ def update_ticket(
     updates = payload.model_dump(exclude_unset=True)
 
     if current_user.role == UserRole.resident:
-        allowed = {"resident_rating", "resident_feedback"}
+        allowed = {"resident_rating", "resident_feedback", "status"}
         if not set(updates).issubset(allowed) or ticket.resident_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Residents can only rate and give feedback on their own tickets",
+            )
+        if "status" in updates and updates["status"] != TicketStatus.Closed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Residents can only close a resolved ticket",
             )
     elif current_user.role == UserRole.maintenance_staff:
         allowed = {"status", "resolution_remarks", "resolution_proof_url"}
@@ -119,7 +133,7 @@ def update_ticket(
         setattr(ticket, field, value)
 
     if new_status is not None and new_status != old_status:
-        if new_status in (TicketStatus.Resolved, TicketStatus.Closed):
+        if new_status == TicketStatus.Resolved:
             ticket.date_of_resolution = datetime.now(timezone.utc)
         db.add(
             TicketHistory(

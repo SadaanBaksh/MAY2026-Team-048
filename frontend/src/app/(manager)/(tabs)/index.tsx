@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -36,7 +37,15 @@ export default function ManagerAnalyticsScreen() {
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const isDesktop = useIsDesktop();
   const user = useAuthStore((s) => s.currentUser)!;
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+    }, [token, refreshTickets]),
+  );
 
   const stats = useMemo(() => {
     const total = tickets.length;

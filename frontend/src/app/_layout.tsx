@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { useTicketStore } from '@/store/ticketStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,10 +32,16 @@ export default function RootLayout() {
   });
   const isSessionHydrated = useAuthStore((s) => s.isHydrated);
   const hydrateSession = useAuthStore((s) => s.hydrateSession);
+  const token = useAuthStore((s) => s.token);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
 
   useEffect(() => {
     hydrateSession();
   }, [hydrateSession]);
+
+  useEffect(() => {
+    if (token) refreshTickets(token);
+  }, [token, refreshTickets]);
 
   useEffect(() => {
     if (fontsLoaded && isSessionHydrated) SplashScreen.hideAsync();

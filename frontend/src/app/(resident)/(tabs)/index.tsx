@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, type Href } from 'expo-router';
-import { useMemo } from 'react';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -24,7 +24,15 @@ export default function ResidentHomeScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser) as Resident;
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+    }, [token, refreshTickets]),
+  );
 
   const apartment = APARTMENTS.find((a) => a.apartmentId === user.apartmentId);
 

@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     comments,
     notifications,
     tickets,
+    uploads,
     users,
 )
 
@@ -19,3 +20,4 @@ api_router.include_router(categories.router, prefix="/categories", tags=["catego
 api_router.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
 api_router.include_router(comments.router, prefix="/tickets", tags=["comments"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(uploads.router, prefix="/uploads", tags=["uploads"])

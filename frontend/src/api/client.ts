@@ -1,6 +1,14 @@
 import { Platform } from 'react-native';
 
-import type { AccountStatus, AppUser, UserRole } from '@/types';
+import type {
+  AccountStatus,
+  AppUser,
+  CostResponsibility,
+  MediaType,
+  Priority,
+  TicketStatus,
+  UserRole,
+} from '@/types';
 
 export interface ApiUser {
   id: string;
@@ -161,4 +169,151 @@ export async function updateUser(
   patch: UpdateUserPayload,
 ): Promise<ApiUser> {
   return apiFetch<ApiUser>(`/api/v1/users/${userId}`, { method: 'PATCH', token, json: patch });
+}
+
+export type UploadKind = 'photo' | 'voice_note';
+
+const UPLOAD_MIME_BY_EXTENSION: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  m4a: 'audio/m4a',
+  mp3: 'audio/mpeg',
+  aac: 'audio/aac',
+};
+
+export async function uploadFile(
+  token: string,
+  localUri: string,
+  kind: UploadKind,
+): Promise<{ url: string }> {
+  const filename = localUri.split('/').pop() ?? `${kind}-${Date.now()}`;
+  const extension = /\.(\w+)$/.exec(filename)?.[1]?.toLowerCase();
+  const type =
+    (extension && UPLOAD_MIME_BY_EXTENSION[extension]) ??
+    (kind === 'photo' ? 'image/jpeg' : 'audio/m4a');
+
+  const formData = new FormData();
+  if (Platform.OS === 'web') {
+    // On web, `uri` is a blob:/data: URL and the DOM FormData only accepts a real Blob/File —
+    // passing the {uri, name, type} descriptor gets silently stringified to "[object Object]".
+    const blob = await (await fetch(localUri)).blob();
+    formData.append('file', blob, filename);
+  } else {
+    // React Native's fetch accepts this file-descriptor shape for FormData, which isn't
+    // representable by the DOM Blob type FormData.append() expects.
+    formData.append('file', { uri: localUri, name: filename, type } as unknown as Blob);
+  }
+  formData.append('kind', kind);
+
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/uploads/`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await extractErrorMessage(response));
+  }
+
+  return (await response.json()) as { url: string };
+}
+
+export interface ApiTicketMedia {
+  id: string;
+  ticket_id: string;
+  media_url: string;
+  media_type: MediaType;
+  uploaded_at: string;
+}
+
+export interface CreateTicketPayload {
+  title: string;
+  category_id: string;
+  resident_note?: string;
+  voice_note_url?: string | null;
+  voice_note_duration_sec?: number | null;
+  photo_urls?: string[];
+  priority?: Priority | null;
+  ai_description?: string | null;
+  ai_confidence?: number | null;
+}
+
+export interface ApiTicket {
+  id: string;
+  resident_id: string;
+  worker_id: string | null;
+  category_id: string;
+  title: string;
+  resident_note: string;
+  image_url: string | null;
+  media_type: MediaType | null;
+  voice_note_url: string | null;
+  voice_note_duration_sec: number | null;
+  ai_description: string;
+  ai_confidence: number;
+  priority: Priority;
+  status: TicketStatus;
+  cost_responsibility: CostResponsibility;
+  date_of_request: string;
+  date_of_resolution: string | null;
+  resolution_remarks: string | null;
+  resolution_proof_url: string | null;
+  resident_rating: number | null;
+  resident_feedback: string | null;
+  is_overdue: boolean;
+  media: ApiTicketMedia[];
+}
+
+export async function createTicket(
+  token: string,
+  payload: CreateTicketPayload,
+): Promise<ApiTicket> {
+  return apiFetch<ApiTicket>('/api/v1/tickets/', { method: 'POST', token, json: payload });
+}
+
+export async function fetchTickets(token: string): Promise<ApiTicket[]> {
+  return apiFetch<ApiTicket[]>('/api/v1/tickets/', { token });
+}
+
+export interface ApiTicketHistoryEntry {
+  id: string;
+  ticket_id: string;
+  old_status: TicketStatus | null;
+  new_status: TicketStatus;
+  remarks: string;
+  changed_at: string;
+  actor_id: string | null;
+}
+
+export async function fetchTicketHistory(
+  token: string,
+  ticketId: string,
+): Promise<ApiTicketHistoryEntry[]> {
+  return apiFetch<ApiTicketHistoryEntry[]>(`/api/v1/tickets/${ticketId}/history`, { token });
+}
+
+export interface UpdateTicketPayload {
+  category_id?: string | null;
+  worker_id?: string | null;
+  priority?: Priority | null;
+  status?: TicketStatus | null;
+  cost_responsibility?: CostResponsibility | null;
+  resolution_remarks?: string | null;
+  resolution_proof_url?: string | null;
+  resident_rating?: number | null;
+  resident_feedback?: string | null;
+}
+
+export async function updateTicket(
+  token: string,
+  ticketId: string,
+  payload: UpdateTicketPayload,
+): Promise<ApiTicket> {
+  return apiFetch<ApiTicket>(`/api/v1/tickets/${ticketId}`, {
+    method: 'PATCH',
+    token,
+    json: payload,
+  });
 }

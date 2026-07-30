@@ -216,6 +216,7 @@ curl http://localhost:8000/health
   3. Click "Authorize" in Swagger and paste the token to call protected endpoints like
      `POST /api/v1/tickets/`.
 - See [README.md](./README.md) for the project structure and data model overview.
+- Want to test photo/voice note uploads on tickets? See [S3_SETUP.md](./S3_SETUP.md) to set up AWS S3.
 - Changed a model? Generate a new migration:
   ```bash
   alembic revision --autogenerate -m "describe your change"

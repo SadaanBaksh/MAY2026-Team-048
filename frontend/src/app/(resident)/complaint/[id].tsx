@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
 import { MediaThumb } from '@/components/shared/MediaThumb';
+import { TicketMediaGallery } from '@/components/shared/TicketMediaGallery';
 import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
@@ -30,14 +32,25 @@ export default function ResidentComplaintDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const media = useTicketStore((s) => s.media);
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
   const verifyAndClose = useTicketStore((s) => s.verifyAndClose);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const addComment = useTicketStore((s) => s.addComment);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+    }, [token, refreshTickets]),
+  );
 
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
 
   const ticket = tickets.find((t) => t.ticketId === id);
 
@@ -54,10 +67,21 @@ export default function ResidentComplaintDetailScreen() {
   const worker = ticket.workerId ? users.find((u) => u.userId === ticket.workerId) : null;
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
+  const ticketMedia = media.filter((m) => m.ticketId === ticket.ticketId);
 
-  const handleVerify = () => {
-    if (rating === 0) return;
-    verifyAndClose(ticket.ticketId, { rating, feedback });
+  const handleVerify = async () => {
+    if (rating === 0 || !token || verifying) return;
+    setVerifyError('');
+    setVerifying(true);
+    try {
+      await verifyAndClose(token, ticket.ticketId, { rating, feedback });
+    } catch (err) {
+      setVerifyError(
+        err instanceof ApiError ? err.message : 'Could not submit your feedback. Please try again.',
+      );
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
@@ -68,9 +92,7 @@ export default function ResidentComplaintDetailScreen() {
         showBack
       />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && (
-          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={220} />
-        )}
+        <TicketMediaGallery media={ticketMedia} height={220} />
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -159,10 +181,11 @@ export default function ResidentComplaintDetailScreen() {
                 style={styles.feedbackInput}
                 multiline
               />
+              {!!verifyError && <Text style={styles.error}>{verifyError}</Text>}
               <Button
-                label="Verify & Close Complaint"
+                label={verifying ? 'Submitting…' : 'Verify & Close Complaint'}
                 fullWidth
-                disabled={rating === 0}
+                disabled={rating === 0 || verifying}
                 onPress={handleVerify}
               />
             </Card>
@@ -235,6 +258,10 @@ const getStyles = (Colors: ThemeColors) =>
     body: {
       ...Type.body,
       color: Colors.ink,
+    },
+    error: {
+      ...Type.caption,
+      color: Colors.danger,
     },
     workerCard: {
       flexDirection: 'row',

@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -25,8 +25,16 @@ export default function EmployeeDashboardScreen() {
   const { Colors } = useTheme();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
   const submitComplaint = useTicketStore((s) => s.submitComplaint);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+    }, [token, refreshTickets]),
+  );
 
   const sorted = useMemo(
     () =>
