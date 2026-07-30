@@ -217,6 +217,8 @@ curl http://localhost:8000/health
      `POST /api/v1/tickets/`.
 - See [README.md](./README.md) for the project structure and data model overview.
 - Want to test photo/voice note uploads on tickets? See [S3_SETUP.md](./S3_SETUP.md) to set up AWS S3.
+- Run the automated test suite: see the **Testing** section in [README.md](./README.md#testing) —
+  it runs against an in-memory database, no Docker/Postgres needed just for tests.
 - Changed a model? Generate a new migration:
   ```bash
   alembic revision --autogenerate -m "describe your change"

@@ -30,7 +30,10 @@ backend/
 ├─ alembic/             # migrations (env.py + versions/)
 ├─ scripts/
 │  └─ seed_categories.py
+├─ tests/               # pytest suite (see Testing below)
 ├─ requirements.txt
+├─ requirements-dev.txt # requirements.txt + pytest/httpx, for running the test suite
+├─ pytest.ini
 ├─ .env.example
 ├─ Dockerfile
 └─ docker-compose.yml
@@ -82,10 +85,47 @@ The initial migration (`alembic/versions/`) already creates all tables described
 - `POST /api/v1/auth/login` — OAuth2 password flow, returns a JWT bearer token.
 - Protected endpoints read the token via `Authorization: Bearer <token>`.
 
+## Testing
+
+The test suite (`tests/`) uses **pytest** against every endpoint, running against an in-memory
+SQLite database — no Docker/Postgres required just to run tests. Real AWS calls are mocked out
+(`mock_s3` fixture), and the rate limiter is disabled by default (autouse fixture) so unrelated
+tests don't trip on each other's request counts.
+
+```bash
+cd backend
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+
+pip install -r requirements-dev.txt
+pytest                              # run everything
+pytest -v                           # verbose, one line per test
+pytest tests/test_tickets.py        # just one file
+pytest --cov=app --cov-report=term-missing   # with a coverage report
+```
+
+If you already have the `SETUP.md` dev environment running via Docker, you can instead run tests
+inside the container: `docker compose exec api pip install -r requirements-dev.txt && docker
+compose exec api pytest`.
+
+Test layout mirrors `app/api/v1/endpoints/` — one file per router (`test_auth.py`,
+`test_tickets.py`, etc.) — plus `test_security.py` for the password-hashing/JWT helpers and
+`test_health.py` for the `/health` check. `tests/conftest.py` has the shared fixtures: the SQLite
+test database, an authenticated `client` per role (`resident_user`/`employee_user`/
+`maintenance_user`/`manager_user` + `auth_headers(user)`), and factory fixtures (`make_user`,
+`make_apartment`, `make_category`) for building test data.
+
+### is this a feature or a bug?
+One test `(test_resident_cannot_close_before_resolved)` documents a real gap rather than papering over it: the backend lets a resident jump a ticket straight to `Closed` from any status, not just `Resolved` — there's no server-side check enforcing the intended order. Wasn't in scope to fix while writing tests, but flagging it since it's a real permission gap, not just a style nit.
+
 ## Not Yet Implemented
 
 This is a skeleton. Still to add as the project grows:
-- Cloudinary media upload integration (currently `image_url`/`media_url` are plain strings)
 - Gemini AI-assisted complaint description/category/priority suggestion
 - Pagination/filtering beyond the basic role-based scoping and `status` filter on tickets
-- Automated tests
+- Real-time chat between resident/staff/employee on a ticket
+- Frontend (Jest) test coverage — this backend suite doesn't cover the Expo app
