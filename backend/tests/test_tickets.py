@@ -499,3 +499,54 @@ def test_close_with_rating_notifies_worker(
 
     worker_notifications = _notifications(client, auth_headers, maintenance_user)
     assert any(n["title"] == "Resident feedback received" for n in worker_notifications)
+
+
+# --- worker rating -------------------------------------------------------------
+
+
+def _assign_resolve_close(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category, rating
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+    return client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": rating},
+        headers=auth_headers(resident_user),
+    )
+
+
+def test_closing_ticket_updates_worker_rating(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    _assign_resolve_close(
+        client, auth_headers, resident_user, employee_user, maintenance_user, category, rating=4
+    )
+
+    response = client.get(f"/api/v1/users/{maintenance_user.id}", headers=auth_headers(employee_user))
+    assert response.status_code == 200
+    assert response.json()["rating"] == 4.0
+
+
+def test_worker_rating_is_averaged_across_tickets(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    _assign_resolve_close(
+        client, auth_headers, resident_user, employee_user, maintenance_user, category, rating=5
+    )
+    _assign_resolve_close(
+        client, auth_headers, resident_user, employee_user, maintenance_user, category, rating=3
+    )
+
+    response = client.get(f"/api/v1/users/{maintenance_user.id}", headers=auth_headers(employee_user))
+    assert response.status_code == 200
+    assert response.json()["rating"] == 4.0

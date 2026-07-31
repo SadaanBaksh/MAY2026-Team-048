@@ -13,33 +13,17 @@ import {
 } from '@/api/client';
 import { TICKETS, USERS } from '@/data/seed';
 import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore } from '@/store/notificationStore';
 import type {
   Comment,
   ComplaintHistoryEntry,
   ComplaintMedia,
   CostResponsibility,
-  MediaType,
   Priority,
   Ticket,
   TicketStatus,
 } from '@/types';
 import { isoNow } from '@/utils/date';
 import { generateId } from '@/utils/id';
-
-export interface SubmitComplaintInput {
-  residentId: string;
-  categoryId: string;
-  title: string;
-  aiDescription: string;
-  aiConfidence: number;
-  priority: Priority;
-  mediaUrl: string | null;
-  mediaType: MediaType | null;
-  residentNote: string;
-  voiceNoteUrl: string | null;
-  voiceNoteDurationSec: number | null;
-}
 
 export interface Actor {
   name: string;
@@ -51,10 +35,7 @@ interface TicketState {
   media: ComplaintMedia[];
   history: ComplaintHistoryEntry[];
   comments: Comment[];
-  /** The newly received emergency that should surface as the employee pull-up alert. */
-  activeEmergencyAlertId: string | null;
 
-  submitComplaint: (input: SubmitComplaintInput) => string;
   /** Records a ticket that was already created (with uploaded media) via the backend API. */
   addTicketFromApi: (apiTicket: ApiTicket) => string;
   /** Fetches the caller's tickets from the backend, merging them into local state. */
@@ -157,7 +138,7 @@ function mapApiCommentToComment(apiComment: ApiComment): Comment {
 
 // IDs of the hardcoded demo dataset (`data/seed.ts`), used only to strip that dataset back out
 // of anything already persisted to AsyncStorage from before the app was backend-driven — see the
-// `migrate` below. Real tickets (from the API or `generateId('tkt')`) never collide with these.
+// `migrate` below. Real tickets (from the API) never collide with these.
 const SEED_TICKET_IDS = new Set(TICKETS.map((t) => t.ticketId));
 
 function mapApiTicketMedia(apiTicket: ApiTicket): ComplaintMedia[] {
@@ -187,82 +168,6 @@ export const useTicketStore = create<TicketState>()(
         media: [],
         history: [],
         comments: [],
-        activeEmergencyAlertId: null,
-
-        submitComplaint: (input) => {
-          const ticketId = generateId('tkt');
-          const ticket: Ticket = {
-            ticketId,
-            residentId: input.residentId,
-            workerId: null,
-            categoryId: input.categoryId,
-            imageUrl: input.mediaUrl,
-            mediaType: input.mediaType,
-            residentNote: input.residentNote,
-            voiceNoteUrl: input.voiceNoteUrl,
-            voiceNoteDurationSec: input.voiceNoteDurationSec,
-            aiDescription: input.aiDescription,
-            aiConfidence: input.aiConfidence,
-            priority: input.priority,
-            status: 'Pending',
-            costResponsibility: 'Pending Review',
-            dateOfRequest: isoNow(),
-            dateOfResolution: null,
-            resolutionRemarks: null,
-            resolutionProofUrl: null,
-            residentRating: null,
-            residentFeedback: null,
-            isOverdue: false,
-            title: input.title,
-          };
-
-          const resident = USERS.find((u) => u.userId === input.residentId);
-
-          set((state) => ({
-            tickets: [ticket, ...state.tickets],
-            media:
-              input.mediaUrl && input.mediaType
-                ? [
-                    ...state.media,
-                    {
-                      mediaId: generateId('media'),
-                      ticketId,
-                      mediaUrl: input.mediaUrl,
-                      mediaType: input.mediaType,
-                      uploadedAt: isoNow(),
-                    },
-                  ]
-                : state.media,
-            history: pushHistory(
-              state,
-              ticketId,
-              null,
-              'Pending',
-              'Complaint submitted by resident.',
-              resident?.name ?? 'Resident',
-            ),
-            activeEmergencyAlertId:
-              input.priority === 'Emergency' ? ticketId : state.activeEmergencyAlertId,
-          }));
-
-          const employees = USERS.filter((u) => u.role === 'facility_employee');
-          employees.forEach((emp) => {
-            useNotificationStore.getState().addNotification({
-              userId: emp.userId,
-              ticketId,
-              title:
-                input.priority === 'Emergency'
-                  ? 'Emergency service request'
-                  : 'New complaint submitted',
-              message:
-                input.priority === 'Emergency'
-                  ? `${resident?.name ?? 'A resident'} needs emergency assistance: ${input.title}`
-                  : `${resident?.name ?? 'A resident'} reported: ${input.title}`,
-            });
-          });
-
-          return ticketId;
-        },
 
         addTicketFromApi: (apiTicket) => {
           const ticket = mapApiTicketToTicket(apiTicket);
@@ -280,8 +185,6 @@ export const useTicketStore = create<TicketState>()(
               'Complaint submitted by resident.',
               resident?.name ?? 'Resident',
             ),
-            activeEmergencyAlertId:
-              ticket.priority === 'Emergency' ? ticket.ticketId : state.activeEmergencyAlertId,
           }));
 
           return ticket.ticketId;
@@ -289,16 +192,12 @@ export const useTicketStore = create<TicketState>()(
 
         refreshTickets: async (token) => {
           const apiTickets = await fetchTickets(token);
-          const mapped = apiTickets.map(mapApiTicketToTicket);
-          const mappedMedia = apiTickets.flatMap(mapApiTicketMedia);
-          const apiIds = new Set(mapped.map((t) => t.ticketId));
-
-          // Merge rather than replace: locally-only tickets (e.g. from the emergency flow,
-          // which never reaches the backend) would otherwise be wiped out on every refresh.
-          set((state) => ({
-            tickets: [...mapped, ...state.tickets.filter((t) => !apiIds.has(t.ticketId))],
-            media: [...mappedMedia, ...state.media.filter((m) => !apiIds.has(m.ticketId))],
-          }));
+          // Every ticket now comes from the backend (no more local-only submission path), so
+          // this is a plain replace — no merge logic needed to protect anything local-only.
+          set({
+            tickets: apiTickets.map(mapApiTicketToTicket),
+            media: apiTickets.flatMap(mapApiTicketMedia),
+          });
         },
 
         refreshTicketHistory: async (token, ticketId) => {
@@ -329,11 +228,6 @@ export const useTicketStore = create<TicketState>()(
           });
           applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
-
-          set((state) => ({
-            activeEmergencyAlertId:
-              state.activeEmergencyAlertId === ticketId ? null : state.activeEmergencyAlertId,
-          }));
         },
 
         updateCostResponsibility: async (token, ticketId, costResponsibility) => {
@@ -387,21 +281,25 @@ export const useTicketStore = create<TicketState>()(
     {
       name: 'simplifix-tickets',
       storage: createJSONStorage(() => AsyncStorage),
-      // Bumped to strip the hardcoded demo dataset (`data/seed.ts`) out of AsyncStorage: the
-      // store used to seed `tickets`/`media`/`history` with it directly, so every real account
-      // was showing fabricated complaints (e.g. "Aditi Sharma") that don't belong to them,
-      // alongside comments persisted locally before comments moved to the backend. Filtering by
-      // ID rather than wiping outright preserves real local-only tickets from the emergency flow
-      // (`submitComplaint`), which never sync to the backend and would otherwise be lost too.
-      version: 2,
+      // Bumped (v2) to strip the hardcoded demo dataset (`data/seed.ts`) out of AsyncStorage:
+      // the store used to seed `tickets`/`media`/`history` with it directly, so every real
+      // account was showing fabricated complaints (e.g. "Aditi Sharma") that don't belong to
+      // them, alongside comments persisted locally before comments moved to the backend.
+      // Bumped again (v3) once the last local-only ticket path (the employee dashboard's demo
+      // emergency button, and the old pre-backend emergency flow) was removed — any `tkt_`-
+      // prefixed ticket still sitting in AsyncStorage at this point is guaranteed stale, since
+      // every ticket ID now comes from the backend (a plain UUID) instead.
+      version: 3,
       migrate: (persistedState) => {
         const state = persistedState as TicketState;
+        const isStale = (ticketId: string) =>
+          SEED_TICKET_IDS.has(ticketId) || ticketId.startsWith('tkt_');
         return {
           ...state,
           comments: [],
-          tickets: state.tickets.filter((t) => !SEED_TICKET_IDS.has(t.ticketId)),
-          media: state.media.filter((m) => !SEED_TICKET_IDS.has(m.ticketId)),
-          history: state.history.filter((h) => !SEED_TICKET_IDS.has(h.ticketId)),
+          tickets: state.tickets.filter((t) => !isStale(t.ticketId)),
+          media: state.media.filter((m) => !isStale(m.ticketId)),
+          history: state.history.filter((h) => !isStale(h.ticketId)),
         };
       },
       // Comments are always fetched fresh from the backend, so don't persist them at all —

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import ensure_ticket_access, get_current_user, notify_user, require_roles
@@ -212,6 +213,21 @@ def update_ticket(
                 )
         elif new_status == TicketStatus.Closed and "resident_rating" in updates:
             if ticket.worker_id:
+                # Recompute the worker's displayed rating (`User.rating`) as the average of
+                # `resident_rating` across every ticket they've been rated on — this field was
+                # otherwise only ever set once at registration (to 0.0) and never updated again.
+                # Flush first so this ticket's own just-set `resident_rating` (still pending in
+                # the session, not yet visible to a fresh SELECT) is included in the average.
+                db.flush()
+                avg_rating = (
+                    db.query(func.avg(Ticket.resident_rating))
+                    .filter(Ticket.worker_id == ticket.worker_id, Ticket.resident_rating.isnot(None))
+                    .scalar()
+                )
+                worker = db.get(User, ticket.worker_id)
+                if worker is not None and avg_rating is not None:
+                    worker.rating = round(float(avg_rating), 2)
+
                 notify_user(
                     db,
                     user_id=ticket.worker_id,
