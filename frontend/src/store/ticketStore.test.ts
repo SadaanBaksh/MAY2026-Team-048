@@ -9,7 +9,6 @@ import {
   type ApiTicketHistoryEntry,
 } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Resident } from '@/types';
 
@@ -108,108 +107,9 @@ function residentFixture(overrides: Partial<Resident> = {}): Resident {
 
 describe('useTicketStore', () => {
   beforeEach(() => {
-    useTicketStore.setState({
-      tickets: [],
-      media: [],
-      history: [],
-      comments: [],
-      activeEmergencyAlertId: null,
-    });
+    useTicketStore.setState({ tickets: [], media: [], history: [], comments: [] });
     useAuthStore.setState({ currentUser: null, token: null, users: [], isHydrated: false });
-    useNotificationStore.setState({ notifications: [] });
     jest.clearAllMocks();
-  });
-
-  describe('submitComplaint', () => {
-    const baseInput = {
-      residentId: RESIDENT_ID,
-      categoryId: 'cat_plumbing',
-      title: 'Leaky faucet',
-      aiDescription: 'Plumbing issue',
-      aiConfidence: 0.9,
-      priority: 'Medium' as const,
-      mediaUrl: null,
-      mediaType: null,
-      residentNote: 'Drips constantly',
-      voiceNoteUrl: null,
-      voiceNoteDurationSec: null,
-    };
-
-    it('creates a Pending ticket, prepended to the list, with sensible defaults', () => {
-      const ticketId = useTicketStore.getState().submitComplaint(baseInput);
-
-      expect(ticketId).toMatch(/^tkt_/);
-      const { tickets } = useTicketStore.getState();
-      expect(tickets).toHaveLength(1);
-      expect(tickets[0]).toMatchObject({
-        ticketId,
-        residentId: RESIDENT_ID,
-        workerId: null,
-        status: 'Pending',
-        costResponsibility: 'Pending Review',
-        dateOfRequest: NOW,
-        dateOfResolution: null,
-        isOverdue: false,
-      });
-    });
-
-    it('records a media entry only when a mediaUrl/mediaType are provided', () => {
-      useTicketStore
-        .getState()
-        .submitComplaint({ ...baseInput, mediaUrl: 'https://cdn/img.jpg', mediaType: 'Image' });
-      expect(useTicketStore.getState().media).toHaveLength(1);
-      expect(useTicketStore.getState().media[0]).toMatchObject({
-        mediaUrl: 'https://cdn/img.jpg',
-        mediaType: 'Image',
-      });
-
-      useTicketStore.getState().submitComplaint(baseInput);
-      expect(useTicketStore.getState().media).toHaveLength(1); // unchanged — no media this time
-    });
-
-    it('adds a "Pending" history entry attributing the resident by name', () => {
-      useTicketStore.getState().submitComplaint(baseInput);
-      const { history } = useTicketStore.getState();
-      expect(history).toHaveLength(1);
-      expect(history[0]).toMatchObject({
-        oldStatus: null,
-        newStatus: 'Pending',
-        remarks: 'Complaint submitted by resident.',
-        actorName: RESIDENT_NAME,
-        changedAt: NOW,
-      });
-    });
-
-    it('falls back to "Resident" in the history entry when the resident is not in the roster', () => {
-      useTicketStore.getState().submitComplaint({ ...baseInput, residentId: 'unknown_user' });
-      expect(useTicketStore.getState().history[0].actorName).toBe('Resident');
-    });
-
-    it('sets activeEmergencyAlertId only for Emergency-priority complaints', () => {
-      useTicketStore.getState().submitComplaint({ ...baseInput, priority: 'Low' });
-      expect(useTicketStore.getState().activeEmergencyAlertId).toBeNull();
-
-      const emergencyId = useTicketStore
-        .getState()
-        .submitComplaint({ ...baseInput, priority: 'Emergency' });
-      expect(useTicketStore.getState().activeEmergencyAlertId).toBe(emergencyId);
-    });
-
-    it('notifies every facility_employee, with an emergency-specific message for Emergency priority', () => {
-      useTicketStore.getState().submitComplaint({ ...baseInput, priority: 'Emergency' });
-
-      const { notifications } = useNotificationStore.getState();
-      expect(notifications).toHaveLength(2); // two facility_employee seed users
-      expect(notifications.every((n) => n.title === 'Emergency service request')).toBe(true);
-      expect(notifications[0].message).toContain(RESIDENT_NAME);
-      expect(notifications[0].message).toContain('emergency assistance');
-    });
-
-    it('uses a plain "New complaint submitted" notification for non-emergency priorities', () => {
-      useTicketStore.getState().submitComplaint({ ...baseInput, priority: 'Low' });
-      const { notifications } = useNotificationStore.getState();
-      expect(notifications.every((n) => n.title === 'New complaint submitted')).toBe(true);
-    });
   });
 
   describe('addTicketFromApi', () => {
@@ -241,32 +141,59 @@ describe('useTicketStore', () => {
       });
     });
 
-    it('sets activeEmergencyAlertId when the incoming ticket is an Emergency', () => {
-      const apiTicket = buildApiTicket({ id: 'tkt_srv2', priority: 'Emergency' });
-      const ticketId = useTicketStore.getState().addTicketFromApi(apiTicket);
-      expect(useTicketStore.getState().activeEmergencyAlertId).toBe(ticketId);
+    it('prepends the new ticket ahead of existing ones', () => {
+      useTicketStore.setState({ tickets: [mapFixtureTicket(buildApiTicket({ id: 'tkt_old' }))] });
+      useTicketStore.getState().addTicketFromApi(buildApiTicket({ id: 'tkt_new' }));
+
+      expect(useTicketStore.getState().tickets.map((t) => t.ticketId)).toEqual([
+        'tkt_new',
+        'tkt_old',
+      ]);
+    });
+
+    it('falls back to "Resident" in the history entry when the resident is not in the seed roster', () => {
+      const apiTicket = buildApiTicket({ id: 'tkt_srv3', resident_id: 'unknown_user' });
+      useTicketStore.getState().addTicketFromApi(apiTicket);
+      expect(useTicketStore.getState().history[0].actorName).toBe('Resident');
     });
   });
 
   describe('refreshTickets', () => {
-    it('replaces tickets that exist on the backend but preserves local-only ones', async () => {
+    it('replaces tickets and media entirely with the backend-authoritative list', async () => {
       useTicketStore.setState({
-        tickets: [
+        tickets: [mapFixtureTicket(buildApiTicket({ id: 'tkt_stale', title: 'Stale title' }))],
+        media: [
           {
-            ...mapFixtureTicket(buildApiTicket({ id: 'tkt_api1', title: 'Stale title' })),
+            mediaId: 'med_stale',
+            ticketId: 'tkt_stale',
+            mediaUrl: 'https://cdn/stale.jpg',
+            mediaType: 'Image',
+            uploadedAt: NOW,
           },
-          { ...mapFixtureTicket(buildApiTicket({ id: 'tkt_local_only', title: 'Emergency draft' })) },
         ],
       });
-      mockFetchTickets.mockResolvedValue([buildApiTicket({ id: 'tkt_api1', title: 'Fresh title' })]);
+      mockFetchTickets.mockResolvedValue([
+        buildApiTicket({
+          id: 'tkt_fresh',
+          title: 'Fresh title',
+          media: [
+            {
+              id: 'med_fresh',
+              ticket_id: 'tkt_fresh',
+              media_url: 'https://cdn/fresh.jpg',
+              media_type: 'Image',
+              uploaded_at: NOW,
+            },
+          ],
+        }),
+      ]);
 
       await useTicketStore.getState().refreshTickets('tok');
 
       expect(mockFetchTickets).toHaveBeenCalledWith('tok');
-      const { tickets } = useTicketStore.getState();
-      expect(tickets).toHaveLength(2);
-      expect(tickets.find((t) => t.ticketId === 'tkt_api1')?.title).toBe('Fresh title');
-      expect(tickets.find((t) => t.ticketId === 'tkt_local_only')).toBeDefined();
+      const { tickets, media } = useTicketStore.getState();
+      expect(tickets).toEqual([expect.objectContaining({ ticketId: 'tkt_fresh' })]);
+      expect(media).toEqual([expect.objectContaining({ mediaId: 'med_fresh' })]);
     });
   });
 
@@ -306,8 +233,7 @@ describe('useTicketStore', () => {
       mockFetchTicketHistory.mockResolvedValue([]);
     });
 
-    it('reviewAndAssign PATCHes the assignment fields, applies the result, and clears a matching emergency alert', async () => {
-      useTicketStore.setState({ activeEmergencyAlertId: 'tkt_api1' });
+    it('reviewAndAssign PATCHes the assignment fields and applies the result', async () => {
       mockUpdateTicket.mockResolvedValue(
         buildApiTicket({ status: 'Assigned', worker_id: 'w1', priority: 'High' }),
       );
@@ -329,24 +255,7 @@ describe('useTicketStore', () => {
       const state = useTicketStore.getState();
       expect(state.tickets[0].status).toBe('Assigned');
       expect(state.tickets[0].workerId).toBe('w1');
-      expect(state.activeEmergencyAlertId).toBeNull();
       expect(mockFetchTicketHistory).toHaveBeenCalledWith('tok', 'tkt_api1');
-    });
-
-    it('reviewAndAssign leaves an unrelated active emergency alert untouched', async () => {
-      useTicketStore.setState({ activeEmergencyAlertId: 'tkt_other' });
-      mockUpdateTicket.mockResolvedValue(buildApiTicket({ status: 'Assigned' }));
-
-      await useTicketStore
-        .getState()
-        .reviewAndAssign(
-          'tok',
-          'tkt_api1',
-          { categoryId: 'cat_plumbing', priority: 'High', workerId: 'w1', costResponsibility: 'Owner' },
-          { name: 'Neha', role: 'facility_employee' },
-        );
-
-      expect(useTicketStore.getState().activeEmergencyAlertId).toBe('tkt_other');
     });
 
     it('updateCostResponsibility PATCHes only cost_responsibility and applies the result', async () => {

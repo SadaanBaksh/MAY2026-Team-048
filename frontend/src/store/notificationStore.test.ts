@@ -6,9 +6,6 @@ jest.mock('@/api/client', () => ({
   markNotificationRead: jest.fn(),
 }));
 
-jest.mock('@/utils/id', () => ({ generateId: (prefix: string) => `${prefix}_test` }));
-jest.mock('@/utils/date', () => ({ isoNow: () => '2026-07-31T12:00:00.000Z' }));
-
 const mockFetchNotifications = fetchNotifications as jest.MockedFunction<
   typeof fetchNotifications
 >;
@@ -33,38 +30,6 @@ describe('useNotificationStore', () => {
   beforeEach(() => {
     useNotificationStore.setState({ notifications: [] });
     jest.clearAllMocks();
-  });
-
-  describe('addNotification', () => {
-    it('prepends a new notification with generated id, unread state and current timestamp', () => {
-      useNotificationStore.getState().addNotification({
-        userId: 'usr_1',
-        ticketId: 'tkt_1',
-        title: 'New complaint',
-        message: 'Resident reported a leak',
-      });
-
-      expect(useNotificationStore.getState().notifications).toEqual([
-        {
-          userId: 'usr_1',
-          ticketId: 'tkt_1',
-          title: 'New complaint',
-          message: 'Resident reported a leak',
-          notificationId: 'ntf_test',
-          isRead: false,
-          createdAt: '2026-07-31T12:00:00.000Z',
-        },
-      ]);
-    });
-
-    it('adds newest notifications to the front of the list', () => {
-      const { addNotification } = useNotificationStore.getState();
-      addNotification({ userId: 'u1', title: 'First', message: 'first' });
-      addNotification({ userId: 'u1', title: 'Second', message: 'second' });
-
-      const titles = useNotificationStore.getState().notifications.map((n) => n.title);
-      expect(titles).toEqual(['Second', 'First']);
-    });
   });
 
   describe('markRead', () => {
@@ -139,29 +104,22 @@ describe('useNotificationStore', () => {
   });
 
   describe('refreshNotifications', () => {
-    it('replaces notifications matching backend ids and preserves local-only ones', async () => {
+    it('replaces local state entirely with the mapped backend response', async () => {
       useNotificationStore.setState({
         notifications: [
           {
-            notificationId: 'ntf_api1',
+            notificationId: 'ntf_stale',
             userId: 'usr_1',
             title: 'Stale',
             message: 'stale',
             isRead: false,
             createdAt: 'old',
           },
-          {
-            notificationId: 'ntf_local',
-            userId: 'usr_1',
-            title: 'Local only',
-            message: 'local',
-            isRead: false,
-            createdAt: 'x',
-          },
         ],
       });
       mockFetchNotifications.mockResolvedValue([
         buildApiNotification({ id: 'ntf_api1', title: 'Fresh' }),
+        buildApiNotification({ id: 'ntf_api2', title: 'Also fresh' }),
       ]);
 
       await useNotificationStore.getState().refreshNotifications('tok');
@@ -169,8 +127,18 @@ describe('useNotificationStore', () => {
       expect(mockFetchNotifications).toHaveBeenCalledWith('tok');
       const { notifications } = useNotificationStore.getState();
       expect(notifications).toHaveLength(2);
-      expect(notifications.find((n) => n.notificationId === 'ntf_api1')?.title).toBe('Fresh');
-      expect(notifications.find((n) => n.notificationId === 'ntf_local')).toBeDefined();
+      expect(notifications.find((n) => n.notificationId === 'ntf_stale')).toBeUndefined();
+      expect(notifications.map((n) => n.title)).toEqual(['Fresh', 'Also fresh']);
+    });
+
+    it('maps a null ticket_id to undefined', async () => {
+      mockFetchNotifications.mockResolvedValue([
+        buildApiNotification({ id: 'ntf_no_ticket', ticket_id: null }),
+      ]);
+
+      await useNotificationStore.getState().refreshNotifications('tok');
+
+      expect(useNotificationStore.getState().notifications[0].ticketId).toBeUndefined();
     });
   });
 
@@ -196,11 +164,11 @@ describe('useNotificationStore', () => {
       expect(useNotificationStore.getState().notifications[0].isRead).toBe(true);
     });
 
-    it('keeps the optimistic local read state even if the backend call fails (local-only notifications)', async () => {
+    it('keeps the optimistic local read state even if the backend call fails', async () => {
       useNotificationStore.setState({
         notifications: [
           {
-            notificationId: 'local-only',
+            notificationId: 'a',
             userId: 'u1',
             title: 'A',
             message: '',
@@ -212,7 +180,7 @@ describe('useNotificationStore', () => {
       mockMarkNotificationRead.mockRejectedValue(new Error('404'));
 
       await expect(
-        useNotificationStore.getState().markNotificationReadAction('tok', 'local-only'),
+        useNotificationStore.getState().markNotificationReadAction('tok', 'a'),
       ).resolves.toBeUndefined();
 
       expect(useNotificationStore.getState().notifications[0].isRead).toBe(true);
