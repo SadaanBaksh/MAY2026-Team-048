@@ -138,5 +138,8 @@ no changes to how local dev works.
 This is a skeleton. Still to add as the project grows:
 - Gemini AI-assisted complaint description/category/priority suggestion
 - Pagination/filtering beyond the basic role-based scoping and `status` filter on tickets
-- Real-time chat between resident/staff/employee on a ticket
 - Frontend (Jest) test coverage — this backend suite doesn't cover the Expo app
+
+Ticket comment threads (resident/staff/employee) now work end-to-end via the frontend's
+`app/comments/[ticketId].tsx` screen, polling this API every ~8s while open — not WebSocket-based
+real-time push, which would need backend changes this repo doesn't have yet.
