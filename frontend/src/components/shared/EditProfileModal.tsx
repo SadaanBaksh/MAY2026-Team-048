@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as v from 'valibot';
 
+import { ApiError } from '@/api/client';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
@@ -21,7 +22,12 @@ export function EditProfileModal({
   visible: boolean;
   onClose: () => void;
   user: AppUser;
-  onSave: (update: { name: string; email: string; phone: string; avatarUri?: string }) => void;
+  onSave: (update: {
+    name: string;
+    email: string;
+    phone: string;
+    avatarUri?: string;
+  }) => void | Promise<void>;
 }) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
@@ -31,6 +37,7 @@ export function EditProfileModal({
   const [phone, setPhone] = useState(user.phone);
   const [avatarUri, setAvatarUri] = useState(user.avatarUri);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -59,7 +66,7 @@ export function EditProfileModal({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       setError('Name is required.');
       return;
@@ -74,8 +81,24 @@ export function EditProfileModal({
       setError(phoneError);
       return;
     }
-    onSave({ name: name.trim(), email: email.trim(), phone: toCanonicalPhone(phone), avatarUri });
-    onClose();
+    if (submitting) return;
+    setError('');
+    setSubmitting(true);
+    try {
+      await onSave({
+        name: name.trim(),
+        email: email.trim(),
+        phone: toCanonicalPhone(phone),
+        avatarUri,
+      });
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : 'Could not save your changes. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -111,8 +134,21 @@ export function EditProfileModal({
           {!!error && <Text style={styles.error}>{error}</Text>}
 
           <View style={styles.actions}>
-            <Button label="Cancel" variant="outline" onPress={onClose} style={styles.actionBtn} />
-            <Button label="Save" variant="primary" onPress={handleSave} style={styles.actionBtn} />
+            <Button
+              label="Cancel"
+              variant="outline"
+              onPress={onClose}
+              disabled={submitting}
+              style={styles.actionBtn}
+            />
+            <Button
+              label={submitting ? 'Saving…' : 'Save'}
+              variant="primary"
+              onPress={handleSave}
+              loading={submitting}
+              disabled={submitting}
+              style={styles.actionBtn}
+            />
           </View>
         </Pressable>
       </Pressable>
