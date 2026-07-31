@@ -54,6 +54,9 @@ interface AuthState {
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
   refreshUsers: () => Promise<void>;
+  /** Refetches the logged-in user's own record — e.g. picks up a rating recomputed
+   * server-side by someone else's action (a resident closing a rated ticket). */
+  refreshCurrentUser: () => Promise<void>;
   hydrateSession: () => Promise<void>;
 }
 
@@ -149,6 +152,13 @@ export const useAuthStore = create<AuthState>()(
         if (!token) return;
         const apiUsers = await listUsers(token);
         set({ users: apiUsers.map(apiUserToAppUser) });
+      },
+
+      refreshCurrentUser: async () => {
+        const { token } = get();
+        if (!token) return;
+        const apiUser = await getCurrentUser(token);
+        set({ currentUser: apiUserToAppUser(apiUser) });
       },
 
       hydrateSession: async () => {

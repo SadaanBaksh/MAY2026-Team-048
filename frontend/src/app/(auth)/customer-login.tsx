@@ -9,12 +9,12 @@ const DEMO_ACCOUNTS: DemoAccountItem[] = [
 export default function CustomerLoginScreen() {
   return (
     <AuthLoginScreen
-      headerTitle="Customer Log In"
-      title="Customer Login"
+      headerTitle="Resident Log In"
+      title="Resident Login"
       subtitle="Log in to your resident account to submit and track maintenance complaints."
       emailPlaceholder="you@example.com"
-      buttonLabel="Log In as Customer"
-      demoDividerText="or explore a customer demo account"
+      buttonLabel="Log In as Resident"
+      demoDividerText="or explore a resident demo account"
       demoAccounts={DEMO_ACCOUNTS}
       validateRole={(user) =>
         user.role !== 'resident'
