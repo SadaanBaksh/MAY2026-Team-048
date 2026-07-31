@@ -14,7 +14,13 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import type { UserRole } from '@/types';
-import { emailSchema, firstIssueMessage, passwordSchema, phoneSchema } from '@/utils/validation';
+import {
+  emailSchema,
+  firstIssueMessage,
+  passwordSchema,
+  phoneSchema,
+  toCanonicalPhone,
+} from '@/utils/validation';
 
 const REGISTER_CARD_MAX_WIDTH = 480;
 
@@ -119,7 +125,7 @@ export default function RegisterScreen() {
       const result = await register({
         name,
         email,
-        phone,
+        phone: toCanonicalPhone(phone),
         role,
         password,
         building,

@@ -10,7 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { AppUser } from '@/types';
-import { emailSchema, firstIssueMessage, phoneSchema } from '@/utils/validation';
+import { emailSchema, firstIssueMessage, phoneSchema, toCanonicalPhone } from '@/utils/validation';
 
 export function EditProfileModal({
   visible,
@@ -74,7 +74,7 @@ export function EditProfileModal({
       setError(phoneError);
       return;
     }
-    onSave({ name: name.trim(), email: email.trim(), phone: phone.trim(), avatarUri });
+    onSave({ name: name.trim(), email: email.trim(), phone: toCanonicalPhone(phone), avatarUri });
     onClose();
   };
 

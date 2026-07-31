@@ -5,7 +5,7 @@ def _resident_payload(email: str = "resident@example.com") -> dict:
     return {
         "name": "Resident One",
         "email": email,
-        "phone": "+1 555-010-0100",
+        "phone": "+91 98765 43100",
         "role": "resident",
         "password": "Testpass123",
         "building": "Wing A",
@@ -37,7 +37,7 @@ def test_register_facility_employee_defaults_to_pending(client):
     payload = {
         "name": "Employee One",
         "email": "employee@example.com",
-        "phone": "+1 555-010-0101",
+        "phone": "+91 98765 43101",
         "role": "facility_employee",
         "password": "Testpass123",
         "title": "Facility Coordinator",
@@ -53,7 +53,7 @@ def test_register_maintenance_staff_defaults_to_pending(client):
     payload = {
         "name": "Staff One",
         "email": "staff@example.com",
-        "phone": "+1 555-010-0102",
+        "phone": "+91 98765 43102",
         "role": "maintenance_staff",
         "password": "Testpass123",
         "specialization": "Plumbing",
@@ -69,7 +69,7 @@ def test_register_facility_manager_defaults_to_active(client):
     payload = {
         "name": "Manager One",
         "email": "manager@example.com",
-        "phone": "+1 555-010-0103",
+        "phone": "+91 98765 43103",
         "role": "facility_manager",
         "password": "Testpass123",
     }
@@ -134,6 +134,33 @@ def test_register_accepts_phone_with_country_code(client):
     assert response.status_code == 201
 
 
+def test_register_accepts_phone_with_leading_zero(client):
+    payload = _resident_payload()
+    payload["phone"] = "09876543211"
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 201
+
+
+def test_register_rejects_phone_starting_below_six(client):
+    payload = _resident_payload()
+    payload["phone"] = "5876543210"
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_register_rejects_phone_with_double_prefix(client):
+    payload = _resident_payload()
+    payload["phone"] = "0919876543210"  # both leading 0 and 91 - not a valid combination
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+
+
 def test_register_rejects_overlong_email(client):
     payload = _resident_payload()
     payload["email"] = f"{'a' * 250}@example.com"  # well over 254 chars total
@@ -149,6 +176,29 @@ def test_register_duplicate_email_fails(client):
     assert first.status_code == 201
 
     second = client.post("/api/v1/auth/register", json=payload)
+
+    assert second.status_code == 400
+
+
+def test_register_duplicate_phone_fails(client):
+    first = client.post("/api/v1/auth/register", json=_resident_payload())
+    assert first.status_code == 201
+
+    second_payload = _resident_payload(email="second-resident@example.com")
+    second = client.post("/api/v1/auth/register", json=second_payload)
+
+    assert second.status_code == 400
+
+
+def test_register_duplicate_phone_fails_across_equivalent_formats(client):
+    first = client.post("/api/v1/auth/register", json=_resident_payload())
+    assert first.status_code == 201
+
+    # Same 10-digit number as the default "+91 98765 43100", just written without the prefix —
+    # must still be caught, since a client bypassing the frontend (Postman/curl) could send it.
+    second_payload = _resident_payload(email="second-resident@example.com")
+    second_payload["phone"] = "9876543100"
+    second = client.post("/api/v1/auth/register", json=second_payload)
 
     assert second.status_code == 400
 

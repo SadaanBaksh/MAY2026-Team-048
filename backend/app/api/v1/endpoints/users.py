@@ -5,7 +5,7 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.enums import UserRole
 from app.models.user import User
-from app.schemas.user import UserRead, UserUpdate
+from app.schemas.user import UserRead, UserUpdate, normalize_phone
 
 router = APIRouter()
 
@@ -71,6 +71,18 @@ def update_user(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="An account with this email already exists",
+            )
+
+    if "phone" in updates and normalize_phone(updates["phone"]) != normalize_phone(user.phone):
+        target_phone = normalize_phone(updates["phone"])
+        phone_taken = any(
+            normalize_phone(phone) == target_phone
+            for (phone,) in db.query(User.phone).filter(User.id != user_id).all()
+        )
+        if phone_taken:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An account with this phone number already exists",
             )
 
     for field, value in updates.items():

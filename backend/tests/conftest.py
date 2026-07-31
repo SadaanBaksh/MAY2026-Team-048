@@ -102,7 +102,7 @@ def make_user(db_session, make_apartment):
         defaults = dict(
             name="Test User",
             email=f"user-{uuid.uuid4().hex[:8]}@example.com",
-            phone="+1 555-0100",
+            phone=f"+91 9{str(uuid.uuid4().int)[:9]}",
             role=role,
             hashed_password=hash_password("Testpass123"),
             account_status=AccountStatus.active,

@@ -5,19 +5,31 @@ from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from app.models.enums import AccountStatus, UserRole
 
-# Matches the frontend's phoneSchema (utils/validation.ts): an optional 1-3 digit country code
-# followed by exactly 10 digits for the local number. Checked against digits-only, not raw
-# length, so formatting characters (spaces, dashes, parens, a leading +) don't affect the count.
-PHONE_DIGITS_PATTERN = re.compile(r"^(?:\d{1,3})?\d{10}$")
+# Matches the frontend's phoneSchema (utils/validation.ts): Indian mobile numbers, exactly 10
+# digits, optionally prefixed with either the 91 country code (with or without a leading +) or
+# a single trunk "0" — not both at once — first digit of the 10-digit number must be 6-9.
+# Checked against digits-only, not raw length, so formatting characters (spaces, dashes,
+# parens, a leading +) don't affect the match.
+PHONE_DIGITS_PATTERN = re.compile(r"^(?:91|0)?[6-9]\d{9}$")
 
 
 def _validate_phone(value: str) -> str:
     digits = re.sub(r"\D", "", value)
     if not PHONE_DIGITS_PATTERN.match(digits):
         raise ValueError(
-            "Phone number must have exactly 10 digits (plus an optional country code)."
+            "Enter a valid 10-digit Indian mobile number (starting 6-9, optional 0 or 91 prefix)."
         )
     return value
+
+
+def normalize_phone(value: str) -> str:
+    """Bare 10-digit core of a phone number, stripping formatting and the optional 91/0 prefix.
+    Used to catch duplicates submitted in different (but equivalent) accepted formats — e.g.
+    "9876543210", "+91 98765 43210", and "09876543210" all normalize to the same 10 digits.
+    Only meaningful for values that already pass `_validate_phone` (a guaranteed 10-13 digit
+    string), so taking the last 10 digits always isolates the right part regardless of prefix.
+    """
+    return re.sub(r"\D", "", value)[-10:]
 
 
 # 254 is the practical RFC 5321 max for a full email address, and safely under the `email`

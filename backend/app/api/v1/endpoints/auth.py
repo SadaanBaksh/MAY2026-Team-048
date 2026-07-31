@@ -11,7 +11,7 @@ from app.models.apartment import Apartment
 from app.models.enums import AccountStatus, UserRole
 from app.models.user import User
 from app.schemas.token import Token
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, normalize_phone
 
 router = APIRouter()
 
@@ -51,6 +51,18 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="An account with this email already exists",
+        )
+
+    # Compares normalized digits, not raw strings, so "9876543210", "+91 98765 43210", and
+    # "09876543210" (all equivalent per phoneSchema) can't be used to dodge this check.
+    target_phone = normalize_phone(payload.phone)
+    phone_taken = any(
+        normalize_phone(phone) == target_phone for (phone,) in db.query(User.phone).all()
+    )
+    if phone_taken:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this phone number already exists",
         )
 
     apartment_id = (

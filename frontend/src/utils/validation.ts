@@ -10,10 +10,11 @@ export const emailSchema = v.pipe(
   v.maxLength(254, 'Email must be 254 characters or fewer.'),
 );
 
-// Total string length doesn't say much about a phone number — "+91 98765 4321098765" is 20
-// characters but has way more than 10 actual digits. Validate the digit count itself: an
-// optional 1-3 digit country code followed by exactly 10 digits for the local number.
-const PHONE_DIGITS_PATTERN = /^(?:\d{1,3})?\d{10}$/;
+// Indian mobile numbers: exactly 10 digits, optionally prefixed with either the 91 country
+// code (with or without a leading +) or a single trunk "0" — not both at once — first digit
+// of the 10-digit number must be 6-9. Checked against the digits-only string (formatting
+// stripped first) so "+91 98765 43210", "+91-98765-43210", and "09876543210" are all handled.
+const PHONE_DIGITS_PATTERN = /^(?:91|0)?[6-9]\d{9}$/;
 
 export const phoneSchema = v.pipe(
   v.string(),
@@ -22,9 +23,20 @@ export const phoneSchema = v.pipe(
   v.regex(/^\+?[\d\s()-]+$/, 'Enter a valid phone number.'),
   v.check(
     (value) => PHONE_DIGITS_PATTERN.test(value.replace(/\D/g, '')),
-    'Phone number must have exactly 10 digits (plus an optional country code).',
+    'Enter a valid 10-digit Indian mobile number (starting 6-9, optional 0 or 91 prefix).',
   ),
 );
+
+/**
+ * Converts any phoneSchema-valid input into the canonical storage/display format
+ * "+91 98765 43210", regardless of which accepted prefix (none, 0, 91, +91) or formatting
+ * (spaces, dashes) was typed. Only call this after `phoneSchema` has already validated the
+ * value — it assumes a guaranteed 10-13 digit structure and just takes the last 10 digits.
+ */
+export function toCanonicalPhone(value: string): string {
+  const core = value.replace(/\D/g, '').slice(-10);
+  return `+91 ${core.slice(0, 5)} ${core.slice(5)}`;
+}
 
 // bcrypt (used server-side) hard-caps input at 72 bytes and throws if exceeded — this has
 // already crashed registration once (see backend/SETUP.md's troubleshooting table). 72

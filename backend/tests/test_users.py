@@ -101,6 +101,33 @@ def test_update_email_conflict(client, auth_headers, resident_user, employee_use
     assert response.status_code == 400
 
 
+def test_update_phone_conflict(client, auth_headers, make_user):
+    resident = make_user(role=UserRole.resident, phone="+91 98765 43201")
+    other = make_user(role=UserRole.resident, phone="+91 98765 43202")
+
+    response = client.patch(
+        f"/api/v1/users/{resident.id}",
+        json={"phone": other.phone},
+        headers=auth_headers(resident),
+    )
+
+    assert response.status_code == 400
+
+
+def test_update_phone_conflict_across_equivalent_formats(client, auth_headers, make_user):
+    resident = make_user(role=UserRole.resident, phone="+91 98765 43201")
+    other = make_user(role=UserRole.resident, phone="+91 98765 43202")
+
+    # Same 10-digit number as `other`, just written without the +91 prefix.
+    response = client.patch(
+        f"/api/v1/users/{resident.id}",
+        json={"phone": "9876543202"},
+        headers=auth_headers(resident),
+    )
+
+    assert response.status_code == 400
+
+
 def test_update_user_not_found(client, auth_headers, manager_user):
     response = client.patch(
         "/api/v1/users/does-not-exist",
