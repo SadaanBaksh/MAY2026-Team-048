@@ -30,7 +30,6 @@ export default function ResidentComplaintDetailScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
   const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
@@ -39,12 +38,13 @@ export default function ResidentComplaintDetailScreen() {
   const comments = useTicketStore((s) => s.comments);
   const verifyAndClose = useTicketStore((s) => s.verifyAndClose);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
-  const addComment = useTicketStore((s) => s.addComment);
+  const refreshComments = useTicketStore((s) => s.refreshComments);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
-    }, [token, refreshTickets]),
+      if (token && id) refreshComments(token, id);
+    }, [token, id, refreshTickets, refreshComments]),
   );
 
   const [rating, setRating] = useState(0);
@@ -212,18 +212,7 @@ export default function ResidentComplaintDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitleLg}>Messages</Text>
           <Card>
-            <CommentsThread
-              comments={ticketComments}
-              currentUserId={user.userId}
-              onSend={(message) =>
-                addComment(ticket.ticketId, {
-                  userId: user.userId,
-                  authorName: user.name,
-                  authorRole: user.role,
-                  message,
-                })
-              }
-            />
+            <CommentsThread comments={ticketComments} ticketId={ticket.ticketId} />
           </Card>
         </View>
       </Screen>

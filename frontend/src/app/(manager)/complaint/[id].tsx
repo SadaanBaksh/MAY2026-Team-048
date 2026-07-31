@@ -27,7 +27,6 @@ export default function ManagerComplaintAuditScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
   const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
@@ -35,11 +34,13 @@ export default function ManagerComplaintAuditScreen() {
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const refreshComments = useTicketStore((s) => s.refreshComments);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
-    }, [token, refreshTickets]),
+      if (token && id) refreshComments(token, id);
+    }, [token, id, refreshTickets, refreshComments]),
   );
 
   const ticket = tickets.find((t) => t.ticketId === id);
@@ -152,7 +153,7 @@ export default function ManagerComplaintAuditScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitleLg}>Messages</Text>
           <Card>
-            <CommentsThread comments={ticketComments} currentUserId={user.userId} readOnly />
+            <CommentsThread comments={ticketComments} ticketId={ticket.ticketId} />
           </Card>
         </View>
       </Screen>

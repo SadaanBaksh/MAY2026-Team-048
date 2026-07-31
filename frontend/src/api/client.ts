@@ -317,3 +317,27 @@ export async function updateTicket(
     json: payload,
   });
 }
+
+export interface ApiComment {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  message: string;
+  posted_at: string;
+}
+
+export async function fetchComments(token: string, ticketId: string): Promise<ApiComment[]> {
+  return apiFetch<ApiComment[]>(`/api/v1/tickets/${ticketId}/comments`, { token });
+}
+
+export async function postComment(
+  token: string,
+  ticketId: string,
+  message: string,
+): Promise<ApiComment> {
+  return apiFetch<ApiComment>(`/api/v1/tickets/${ticketId}/comments`, {
+    method: 'POST',
+    token,
+    json: { message },
+  });
+}

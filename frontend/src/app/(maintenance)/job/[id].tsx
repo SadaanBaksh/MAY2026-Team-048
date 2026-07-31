@@ -40,12 +40,13 @@ export default function MaintenanceJobDetailScreen() {
   const startProgress = useTicketStore((s) => s.startProgress);
   const resolveTicket = useTicketStore((s) => s.resolveTicket);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
-  const addComment = useTicketStore((s) => s.addComment);
+  const refreshComments = useTicketStore((s) => s.refreshComments);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
-    }, [token, refreshTickets]),
+      if (token && id) refreshComments(token, id);
+    }, [token, id, refreshTickets, refreshComments]),
   );
 
   const [remarks, setRemarks] = useState('');
@@ -283,18 +284,7 @@ export default function MaintenanceJobDetailScreen() {
             Need another visit or replacement parts? Let the team know here.
           </Text>
           <Card>
-            <CommentsThread
-              comments={ticketComments}
-              currentUserId={user.userId}
-              onSend={(message) =>
-                addComment(ticket.ticketId, {
-                  userId: user.userId,
-                  authorName: user.name,
-                  authorRole: user.role,
-                  message,
-                })
-              }
-            />
+            <CommentsThread comments={ticketComments} ticketId={ticket.ticketId} />
           </Card>
         </View>
       </Screen>

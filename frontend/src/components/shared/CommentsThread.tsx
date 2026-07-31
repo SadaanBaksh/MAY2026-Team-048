@@ -9,20 +9,18 @@ import type { Comment } from '@/types';
 
 export interface CommentsThreadProps {
   comments: Comment[];
-  currentUserId: string;
-  onSend?: (message: string) => void;
-  readOnly?: boolean;
+  ticketId: string;
 }
 
-export function CommentsThread({ comments }: CommentsThreadProps) {
+export function CommentsThread({ comments, ticketId }: CommentsThreadProps) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const count = comments.length;
 
   return (
-    <Pressable 
-      style={({ pressed }) => [styles.wrapper, pressed && { opacity: 0.8 }]} 
-      onPress={() => router.push('/test-chat')}
+    <Pressable
+      style={({ pressed }) => [styles.wrapper, pressed && { opacity: 0.8 }]}
+      onPress={() => router.push(`/comments/${ticketId}`)}
     >
       <View style={styles.iconBox}>
         <Ionicons name="chatbubbles" size={24} color={Colors.primary} />

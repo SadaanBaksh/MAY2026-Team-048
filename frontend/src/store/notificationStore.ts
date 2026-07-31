@@ -16,10 +16,14 @@ interface NotificationState {
   markAllRead: (userId: string) => void;
 }
 
+// IDs of the hardcoded demo dataset (`data/seed.ts`), used only to strip that dataset back out
+// of anything already persisted to AsyncStorage — see the `migrate` below.
+const SEED_NOTIFICATION_IDS = new Set(NOTIFICATIONS.map((n) => n.notificationId));
+
 export const useNotificationStore = create<NotificationState>()(
   persist(
     (set) => ({
-      notifications: NOTIFICATIONS,
+      notifications: [],
 
       addNotification: (input) =>
         set((state) => ({
@@ -46,6 +50,20 @@ export const useNotificationStore = create<NotificationState>()(
     {
       name: 'simplifix-notifications',
       storage: createJSONStorage(() => AsyncStorage),
+      // Bumped to strip the hardcoded demo notifications (`data/seed.ts`) out of AsyncStorage —
+      // every real account was seeing fabricated notifications (e.g. about "Aditi Sharma"'s
+      // complaints) that don't belong to them. Filtered by ID rather than wiped outright so real
+      // notifications generated locally by ticketStore actions since install aren't lost.
+      version: 1,
+      migrate: (persistedState) => {
+        const state = persistedState as NotificationState;
+        return {
+          ...state,
+          notifications: state.notifications.filter(
+            (n) => !SEED_NOTIFICATION_IDS.has(n.notificationId),
+          ),
+        };
+      },
     },
   ),
 );

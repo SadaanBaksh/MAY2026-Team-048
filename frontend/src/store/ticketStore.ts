@@ -2,8 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { fetchTicketHistory, fetchTickets, updateTicket, type ApiTicket } from '@/api/client';
-import { COMMENTS, COMPLAINT_HISTORY, COMPLAINT_MEDIA, TICKETS, USERS } from '@/data/seed';
+import {
+  fetchComments,
+  fetchTicketHistory,
+  fetchTickets,
+  postComment,
+  updateTicket,
+  type ApiComment,
+  type ApiTicket,
+} from '@/api/client';
+import { TICKETS, USERS } from '@/data/seed';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import type {
@@ -53,6 +61,8 @@ interface TicketState {
   refreshTickets: (token: string) => Promise<void>;
   /** Fetches the server-authoritative history for one ticket. */
   refreshTicketHistory: (token: string, ticketId: string) => Promise<void>;
+  /** Fetches the server-authoritative comment thread for one ticket. */
+  refreshComments: (token: string, ticketId: string) => Promise<void>;
   reviewAndAssign: (
     token: string,
     ticketId: string,
@@ -81,10 +91,8 @@ interface TicketState {
     ticketId: string,
     changes: { rating: number; feedback: string },
   ) => Promise<void>;
-  addComment: (
-    ticketId: string,
-    input: { userId: string; authorName: string; authorRole: string; message: string },
-  ) => void;
+  /** Posts a new comment to the backend and appends it to local state. */
+  postCommentAction: (token: string, ticketId: string, message: string) => Promise<void>;
 }
 
 function pushHistory(
@@ -134,6 +142,24 @@ function mapApiTicketToTicket(apiTicket: ApiTicket): Ticket {
   };
 }
 
+function mapApiCommentToComment(apiComment: ApiComment): Comment {
+  const author = useAuthStore.getState().users.find((u) => u.userId === apiComment.user_id);
+  return {
+    commentId: apiComment.id,
+    ticketId: apiComment.ticket_id,
+    userId: apiComment.user_id,
+    authorName: author?.name ?? 'Unknown user',
+    authorRole: author?.role ?? 'resident',
+    message: apiComment.message,
+    postedAt: apiComment.posted_at,
+  };
+}
+
+// IDs of the hardcoded demo dataset (`data/seed.ts`), used only to strip that dataset back out
+// of anything already persisted to AsyncStorage from before the app was backend-driven — see the
+// `migrate` below. Real tickets (from the API or `generateId('tkt')`) never collide with these.
+const SEED_TICKET_IDS = new Set(TICKETS.map((t) => t.ticketId));
+
 function mapApiTicketMedia(apiTicket: ApiTicket): ComplaintMedia[] {
   return apiTicket.media.map((m) => ({
     mediaId: m.id,
@@ -157,10 +183,10 @@ export const useTicketStore = create<TicketState>()(
       };
 
       return {
-        tickets: TICKETS,
-        media: COMPLAINT_MEDIA,
-        history: COMPLAINT_HISTORY,
-        comments: COMMENTS,
+        tickets: [],
+        media: [],
+        history: [],
+        comments: [],
         activeEmergencyAlertId: null,
 
         submitComplaint: (input) => {
@@ -411,26 +437,44 @@ export const useTicketStore = create<TicketState>()(
           }
         },
 
-        addComment: (ticketId, input) =>
+        refreshComments: async (token, ticketId) => {
+          const apiComments = await fetchComments(token, ticketId);
+          const mapped = apiComments.map(mapApiCommentToComment);
           set((state) => ({
-            comments: [
-              ...state.comments,
-              {
-                commentId: generateId('cmt'),
-                ticketId,
-                userId: input.userId,
-                authorName: input.authorName,
-                authorRole: input.authorRole as Comment['authorRole'],
-                message: input.message,
-                postedAt: isoNow(),
-              },
-            ],
-          })),
+            comments: [...state.comments.filter((c) => c.ticketId !== ticketId), ...mapped],
+          }));
+        },
+
+        postCommentAction: async (token, ticketId, message) => {
+          const apiComment = await postComment(token, ticketId, message);
+          const comment = mapApiCommentToComment(apiComment);
+          set((state) => ({ comments: [...state.comments, comment] }));
+        },
       };
     },
     {
       name: 'simplifix-tickets',
       storage: createJSONStorage(() => AsyncStorage),
+      // Bumped to strip the hardcoded demo dataset (`data/seed.ts`) out of AsyncStorage: the
+      // store used to seed `tickets`/`media`/`history` with it directly, so every real account
+      // was showing fabricated complaints (e.g. "Aditi Sharma") that don't belong to them,
+      // alongside comments persisted locally before comments moved to the backend. Filtering by
+      // ID rather than wiping outright preserves real local-only tickets from the emergency flow
+      // (`submitComplaint`), which never sync to the backend and would otherwise be lost too.
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as TicketState;
+        return {
+          ...state,
+          comments: [],
+          tickets: state.tickets.filter((t) => !SEED_TICKET_IDS.has(t.ticketId)),
+          media: state.media.filter((m) => !SEED_TICKET_IDS.has(m.ticketId)),
+          history: state.history.filter((h) => !SEED_TICKET_IDS.has(h.ticketId)),
+        };
+      },
+      // Comments are always fetched fresh from the backend, so don't persist them at all —
+      // otherwise stale/local-only messages would keep reappearing on next launch.
+      partialize: (state) => ({ ...state, comments: [] }),
     },
   ),
 );
