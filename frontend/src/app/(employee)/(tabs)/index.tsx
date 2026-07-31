@@ -15,6 +15,7 @@ import { APARTMENTS } from '@/data/seed';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
 
@@ -29,11 +30,13 @@ export default function EmployeeDashboardScreen() {
   const tickets = useTicketStore((s) => s.tickets);
   const submitComplaint = useTicketStore((s) => s.submitComplaint);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
-    }, [token, refreshTickets]),
+      if (token) refreshNotifications(token);
+    }, [token, refreshTickets, refreshNotifications]),
   );
 
   const sorted = useMemo(

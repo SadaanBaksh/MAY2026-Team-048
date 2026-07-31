@@ -1,4 +1,5 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 
 import { NotificationsList } from '@/components/shared/NotificationsList';
@@ -9,10 +10,18 @@ import { useNotificationStore } from '@/store/notificationStore';
 
 export default function EmployeeNotificationsScreen() {
   const user = useAuthStore((s) => s.currentUser)!;
+  const token = useAuthStore((s) => s.token);
   const notifications = useNotificationStore((s) => s.notifications).filter(
     (n) => n.userId === user.userId,
   );
-  const markRead = useNotificationStore((s) => s.markRead);
+  const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
+  const markNotificationReadAction = useNotificationStore((s) => s.markNotificationReadAction);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshNotifications(token);
+    }, [token, refreshNotifications]),
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -21,7 +30,7 @@ export default function EmployeeNotificationsScreen() {
         <NotificationsList
           notifications={notifications}
           onPressItem={(n) => {
-            markRead(n.notificationId);
+            if (token) markNotificationReadAction(token, n.notificationId);
             if (n.ticketId) router.push(`/(employee)/complaint/${n.ticketId}`);
           }}
         />

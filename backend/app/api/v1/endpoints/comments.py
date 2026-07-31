@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import ensure_ticket_access, get_current_user
+from app.api.deps import ensure_ticket_access, get_current_user, notify_user
 from app.db.session import get_db
 from app.models.comment import Comment
 from app.models.ticket import Ticket
@@ -45,6 +45,17 @@ def create_comment(
 
     comment = Comment(ticket_id=ticket_id, user_id=current_user.id, message=payload.message)
     db.add(comment)
+
+    recipients = {ticket.resident_id, ticket.worker_id} - {current_user.id, None}
+    for recipient_id in recipients:
+        notify_user(
+            db,
+            user_id=recipient_id,
+            ticket_id=ticket.id,
+            title="New message",
+            message=f'{current_user.name} commented on "{ticket.title}": {payload.message}',
+        )
+
     db.commit()
     db.refresh(comment)
     return comment

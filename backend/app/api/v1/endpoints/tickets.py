@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import ensure_ticket_access, get_current_user, require_roles
+from app.api.deps import ensure_ticket_access, get_current_user, notify_user, require_roles
 from app.db.session import get_db
 from app.models.enums import MediaType, Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
@@ -74,6 +74,23 @@ def create_ticket(
             actor_id=current_user.id,
         )
     )
+
+    if ticket.priority == Priority.Emergency:
+        employee_title = "Emergency service request"
+        employee_message = f"{current_user.name} needs emergency assistance: {ticket.title}"
+    else:
+        employee_title = "New complaint submitted"
+        employee_message = f"{current_user.name} reported: {ticket.title}"
+    employees = db.query(User).filter(User.role == UserRole.facility_employee).all()
+    for employee in employees:
+        notify_user(
+            db,
+            user_id=employee.id,
+            ticket_id=ticket.id,
+            title=employee_title,
+            message=employee_message,
+        )
+
     db.commit()
     db.refresh(ticket)
     return ticket
@@ -144,6 +161,66 @@ def update_ticket(
                 actor_id=current_user.id,
             )
         )
+
+        if new_status == TicketStatus.Assigned:
+            worker = db.get(User, ticket.worker_id) if ticket.worker_id else None
+            if worker is not None:
+                notify_user(
+                    db,
+                    user_id=worker.id,
+                    ticket_id=ticket.id,
+                    title="New assignment",
+                    message=f"You have been assigned: {ticket.title}.",
+                )
+            notify_user(
+                db,
+                user_id=ticket.resident_id,
+                ticket_id=ticket.id,
+                title="Complaint assigned",
+                message=(
+                    f"{worker.name if worker else 'A technician'} has been assigned to your "
+                    "complaint."
+                ),
+            )
+        elif new_status == TicketStatus.In_Progress:
+            notify_user(
+                db,
+                user_id=ticket.resident_id,
+                ticket_id=ticket.id,
+                title="Work started",
+                message=f"{current_user.name} has started work on: {ticket.title}.",
+            )
+        elif new_status == TicketStatus.Resolved:
+            notify_user(
+                db,
+                user_id=ticket.resident_id,
+                ticket_id=ticket.id,
+                title="Complaint resolved",
+                message=(
+                    f'Your complaint "{ticket.title}" has been marked resolved. Please verify '
+                    "and rate."
+                ),
+            )
+            employees = db.query(User).filter(User.role == UserRole.facility_employee).all()
+            for employee in employees:
+                notify_user(
+                    db,
+                    user_id=employee.id,
+                    ticket_id=ticket.id,
+                    title="Work completed",
+                    message=f"{current_user.name} completed: {ticket.title}.",
+                )
+        elif new_status == TicketStatus.Closed and "resident_rating" in updates:
+            if ticket.worker_id:
+                notify_user(
+                    db,
+                    user_id=ticket.worker_id,
+                    ticket_id=ticket.id,
+                    title="Resident feedback received",
+                    message=(
+                        f"You were rated {updates['resident_rating']}/5 for: {ticket.title}."
+                    ),
+                )
 
     db.commit()
     db.refresh(ticket)

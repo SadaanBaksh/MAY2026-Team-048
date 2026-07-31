@@ -341,3 +341,27 @@ export async function postComment(
     json: { message },
   });
 }
+
+export interface ApiNotification {
+  id: string;
+  user_id: string;
+  ticket_id: string | null;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export async function fetchNotifications(token: string): Promise<ApiNotification[]> {
+  return apiFetch<ApiNotification[]>('/api/v1/notifications/me', { token });
+}
+
+export async function markNotificationRead(
+  token: string,
+  notificationId: string,
+): Promise<ApiNotification> {
+  return apiFetch<ApiNotification>(`/api/v1/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    token,
+  });
+}

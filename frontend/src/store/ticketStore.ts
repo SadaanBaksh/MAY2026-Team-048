@@ -284,22 +284,6 @@ export const useTicketStore = create<TicketState>()(
               ticket.priority === 'Emergency' ? ticket.ticketId : state.activeEmergencyAlertId,
           }));
 
-          const employees = USERS.filter((u) => u.role === 'facility_employee');
-          employees.forEach((emp) => {
-            useNotificationStore.getState().addNotification({
-              userId: emp.userId,
-              ticketId: ticket.ticketId,
-              title:
-                ticket.priority === 'Emergency'
-                  ? 'Emergency service request'
-                  : 'New complaint submitted',
-              message:
-                ticket.priority === 'Emergency'
-                  ? `${resident?.name ?? 'A resident'} needs emergency assistance: ${ticket.title}`
-                  : `${resident?.name ?? 'A resident'} reported: ${ticket.title}`,
-            });
-          });
-
           return ticket.ticketId;
         },
 
@@ -336,9 +320,6 @@ export const useTicketStore = create<TicketState>()(
         },
 
         reviewAndAssign: async (token, ticketId, changes, actor) => {
-          const users = useAuthStore.getState().users;
-          const worker = users.find((u) => u.userId === changes.workerId);
-
           const apiTicket = await updateTicket(token, ticketId, {
             category_id: changes.categoryId,
             worker_id: changes.workerId,
@@ -346,28 +327,13 @@ export const useTicketStore = create<TicketState>()(
             cost_responsibility: changes.costResponsibility,
             status: 'Assigned',
           });
-          const ticket = applyUpdatedTicket(apiTicket);
+          applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
 
           set((state) => ({
             activeEmergencyAlertId:
               state.activeEmergencyAlertId === ticketId ? null : state.activeEmergencyAlertId,
           }));
-
-          if (worker) {
-            useNotificationStore.getState().addNotification({
-              userId: worker.userId,
-              ticketId,
-              title: 'New assignment',
-              message: `You have been assigned: ${ticket.title}.`,
-            });
-          }
-          useNotificationStore.getState().addNotification({
-            userId: ticket.residentId,
-            ticketId,
-            title: 'Complaint assigned',
-            message: `${worker?.name ?? 'A technician'} has been assigned to your complaint.`,
-          });
         },
 
         updateCostResponsibility: async (token, ticketId, costResponsibility) => {
@@ -379,15 +345,8 @@ export const useTicketStore = create<TicketState>()(
 
         startProgress: async (token, ticketId, actor) => {
           const apiTicket = await updateTicket(token, ticketId, { status: 'In_Progress' });
-          const ticket = applyUpdatedTicket(apiTicket);
+          applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
-
-          useNotificationStore.getState().addNotification({
-            userId: ticket.residentId,
-            ticketId,
-            title: 'Work started',
-            message: `${actor.name} has started work on: ${ticket.title}.`,
-          });
         },
 
         resolveTicket: async (token, ticketId, changes, actor) => {
@@ -396,26 +355,8 @@ export const useTicketStore = create<TicketState>()(
             resolution_remarks: changes.remarks,
             resolution_proof_url: changes.proofUrl,
           });
-          const ticket = applyUpdatedTicket(apiTicket);
+          applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
-
-          useNotificationStore.getState().addNotification({
-            userId: ticket.residentId,
-            ticketId,
-            title: 'Complaint resolved',
-            message: `Your complaint "${ticket.title}" has been marked resolved. Please verify and rate.`,
-          });
-          const employees = useAuthStore.getState().users.filter(
-            (u) => u.role === 'facility_employee',
-          );
-          employees.forEach((emp) => {
-            useNotificationStore.getState().addNotification({
-              userId: emp.userId,
-              ticketId,
-              title: 'Work completed',
-              message: `${actor.name} completed: ${ticket.title}.`,
-            });
-          });
         },
 
         verifyAndClose: async (token, ticketId, changes) => {
@@ -424,17 +365,8 @@ export const useTicketStore = create<TicketState>()(
             resident_rating: changes.rating,
             resident_feedback: changes.feedback,
           });
-          const ticket = applyUpdatedTicket(apiTicket);
+          applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
-
-          if (ticket.workerId) {
-            useNotificationStore.getState().addNotification({
-              userId: ticket.workerId,
-              ticketId,
-              title: 'Resident feedback received',
-              message: `You were rated ${changes.rating}/5 for: ${ticket.title}.`,
-            });
-          }
         },
 
         refreshComments: async (token, ticketId) => {

@@ -380,3 +380,122 @@ def test_ticket_history_not_found(client, auth_headers, resident_user):
         "/api/v1/tickets/does-not-exist/history", headers=auth_headers(resident_user)
     )
     assert response.status_code == 404
+
+
+# --- notifications -------------------------------------------------------------
+
+
+def _notifications(client, auth_headers, user) -> list[dict]:
+    response = client.get("/api/v1/notifications/me", headers=auth_headers(user))
+    assert response.status_code == 200
+    return response.json()
+
+
+def test_create_ticket_notifies_employees(client, auth_headers, resident_user, employee_user, category):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+
+    notifications = _notifications(client, auth_headers, employee_user)
+
+    assert len(notifications) == 1
+    assert notifications[0]["title"] == "New complaint submitted"
+    assert notifications[0]["ticket_id"] == ticket["id"]
+
+
+def test_create_emergency_ticket_uses_emergency_wording(
+    client, auth_headers, resident_user, employee_user, category
+):
+    _create_ticket(client, auth_headers, resident_user, category, priority="Emergency")
+
+    notifications = _notifications(client, auth_headers, employee_user)
+
+    assert notifications[0]["title"] == "Emergency service request"
+
+
+def test_assign_ticket_notifies_worker_and_resident(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+    assert response.status_code == 200
+
+    worker_notifications = _notifications(client, auth_headers, maintenance_user)
+    assert any(n["title"] == "New assignment" for n in worker_notifications)
+
+    resident_notifications = _notifications(client, auth_headers, resident_user)
+    assert any(n["title"] == "Complaint assigned" for n in resident_notifications)
+
+
+def test_start_progress_notifies_resident(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "In_Progress"},
+        headers=auth_headers(maintenance_user),
+    )
+    assert response.status_code == 200
+
+    resident_notifications = _notifications(client, auth_headers, resident_user)
+    assert any(n["title"] == "Work started" for n in resident_notifications)
+
+
+def test_resolve_ticket_notifies_resident_and_employees(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+    assert response.status_code == 200
+
+    resident_notifications = _notifications(client, auth_headers, resident_user)
+    assert any(n["title"] == "Complaint resolved" for n in resident_notifications)
+
+    employee_notifications = _notifications(client, auth_headers, employee_user)
+    assert any(n["title"] == "Work completed" for n in employee_notifications)
+
+
+def test_close_with_rating_notifies_worker(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": 5, "resident_feedback": "Great!"},
+        headers=auth_headers(resident_user),
+    )
+    assert response.status_code == 200
+
+    worker_notifications = _notifications(client, auth_headers, maintenance_user)
+    assert any(n["title"] == "Resident feedback received" for n in worker_notifications)
