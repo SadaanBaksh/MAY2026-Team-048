@@ -31,12 +31,20 @@ describe('emailSchema', () => {
 });
 
 describe('phoneSchema', () => {
-  it('accepts a plain 10-digit number', () => {
-    expect(v.safeParse(phoneSchema, '1234567890').success).toBe(true);
+  it('accepts a plain 10-digit number starting 6-9', () => {
+    expect(v.safeParse(phoneSchema, '9876543210').success).toBe(true);
   });
 
-  it('accepts a number with country code, spaces, parens and dashes', () => {
-    expect(v.safeParse(phoneSchema, '+1 (234) 567-8900').success).toBe(true);
+  it('accepts a number with the 91 country code, spaces and a leading +', () => {
+    expect(v.safeParse(phoneSchema, '+91 98765 43210').success).toBe(true);
+  });
+
+  it('accepts a number with the 91 country code and no +', () => {
+    expect(v.safeParse(phoneSchema, '91 98765 43210').success).toBe(true);
+  });
+
+  it('accepts a number with a leading trunk 0', () => {
+    expect(v.safeParse(phoneSchema, '09876543211').success).toBe(true);
   });
 
   it('rejects an empty string', () => {
@@ -49,6 +57,18 @@ describe('phoneSchema', () => {
 
   it('rejects letters', () => {
     expect(v.safeParse(phoneSchema, 'abcdefghij').success).toBe(false);
+  });
+
+  it('rejects a number whose first digit is below 6', () => {
+    expect(v.safeParse(phoneSchema, '5876543210').success).toBe(false);
+  });
+
+  it('rejects a non-Indian country code like +1', () => {
+    expect(v.safeParse(phoneSchema, '+1 (234) 567-8900').success).toBe(false);
+  });
+
+  it('rejects both a leading 0 and a 91 prefix at once', () => {
+    expect(v.safeParse(phoneSchema, '0919876543210').success).toBe(false);
   });
 });
 
