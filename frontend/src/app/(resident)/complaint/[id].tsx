@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -39,12 +39,14 @@ export default function ResidentComplaintDetailScreen() {
   const verifyAndClose = useTicketStore((s) => s.verifyAndClose);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshComments = useTicketStore((s) => s.refreshComments);
+  const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token && id) refreshComments(token, id);
-    }, [token, id, refreshTickets, refreshComments]),
+      if (token && id) refreshTicketHistory(token, id);
+    }, [token, id, refreshTickets, refreshComments, refreshTicketHistory]),
   );
 
   const [rating, setRating] = useState(0);
@@ -137,9 +139,14 @@ export default function ResidentComplaintDetailScreen() {
                 <Text style={styles.workerSpec}>{worker.specialization}</Text>
               )}
             </View>
-            <View style={styles.callIcon}>
+            <Pressable
+              style={styles.callIcon}
+              onPress={() => Linking.openURL(`tel:${worker.phone}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`Call ${worker.name}`}
+            >
               <Ionicons name="call-outline" size={16} color={Colors.primary} />
-            </View>
+            </Pressable>
           </Card>
         )}
 

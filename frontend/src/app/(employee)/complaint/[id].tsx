@@ -43,12 +43,14 @@ export default function EmployeeComplaintDetailScreen() {
   const reviewAndAssign = useTicketStore((s) => s.reviewAndAssign);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshComments = useTicketStore((s) => s.refreshComments);
+  const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token && id) refreshComments(token, id);
-    }, [token, id, refreshTickets, refreshComments]),
+      if (token && id) refreshTicketHistory(token, id);
+    }, [token, id, refreshTickets, refreshComments, refreshTicketHistory]),
   );
 
   const ticket = tickets.find((t) => t.ticketId === id);

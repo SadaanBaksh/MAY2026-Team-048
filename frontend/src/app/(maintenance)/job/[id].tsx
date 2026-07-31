@@ -41,12 +41,14 @@ export default function MaintenanceJobDetailScreen() {
   const resolveTicket = useTicketStore((s) => s.resolveTicket);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshComments = useTicketStore((s) => s.refreshComments);
+  const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token && id) refreshComments(token, id);
-    }, [token, id, refreshTickets, refreshComments]),
+      if (token && id) refreshTicketHistory(token, id);
+    }, [token, id, refreshTickets, refreshComments, refreshTicketHistory]),
   );
 
   const [remarks, setRemarks] = useState('');
