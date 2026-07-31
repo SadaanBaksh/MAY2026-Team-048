@@ -59,3 +59,23 @@ def test_create_apartment_allowed_for_manager(client, auth_headers, manager_user
     )
 
     assert response.status_code == 201
+
+
+def test_create_apartment_rejects_overlong_building(client, auth_headers, manager_user):
+    response = client.post(
+        "/api/v1/apartments/",
+        json={"building": "W" * 101, "unit_number": "404"},
+        headers=auth_headers(manager_user),
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_apartment_rejects_overlong_unit_number(client, auth_headers, manager_user):
+    response = client.post(
+        "/api/v1/apartments/",
+        json={"building": "Wing D", "unit_number": "4" * 51},
+        headers=auth_headers(manager_user),
+    )
+
+    assert response.status_code == 422

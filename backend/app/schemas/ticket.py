@@ -1,9 +1,27 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.enums import CostResponsibility, MediaType, Priority, TicketStatus
 from app.schemas.ticket_media import TicketMediaRead
+
+# Matches the `tickets.title` column's `String(200)` limit (models/ticket.py) — without this,
+# an overlong title hits a raw Postgres length-constraint error (500) instead of a clean 422.
+TITLE_MAX_LENGTH = 200
+
+# `resident_note` / `resolution_remarks` / `resident_feedback` are unbounded `Text` columns in
+# the DB, so there's no length-constraint crash risk — but nothing stopped a client submitting an
+# arbitrarily large blob either. Capped at a generous but sane size to close that off.
+FREE_TEXT_MAX_LENGTH = 4000
+
+
+def _max_length_validator(field_label: str, max_length: int):
+    def _validate(value: str | None) -> str | None:
+        if value is not None and len(value) > max_length:
+            raise ValueError(f"{field_label} must be {max_length} characters or fewer.")
+        return value
+
+    return _validate
 
 
 class TicketBase(BaseModel):
@@ -22,6 +40,16 @@ class TicketCreate(TicketBase):
     ai_confidence: float | None = None
     photo_urls: list[str] = []
 
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str) -> str:
+        return _max_length_validator("Title", TITLE_MAX_LENGTH)(value)
+
+    @field_validator("resident_note")
+    @classmethod
+    def validate_resident_note(cls, value: str) -> str:
+        return _max_length_validator("Note", FREE_TEXT_MAX_LENGTH)(value)
+
 
 class TicketUpdate(BaseModel):
     category_id: str | None = None
@@ -31,8 +59,20 @@ class TicketUpdate(BaseModel):
     cost_responsibility: CostResponsibility | None = None
     resolution_remarks: str | None = None
     resolution_proof_url: str | None = None
-    resident_rating: int | None = None
+    # A resident-submitted rating with no bounds could previously be any integer at all (e.g.
+    # 999999), which would silently corrupt the worker-rating average computed in tickets.py.
+    resident_rating: int | None = Field(default=None, ge=1, le=5)
     resident_feedback: str | None = None
+
+    @field_validator("resolution_remarks")
+    @classmethod
+    def validate_resolution_remarks(cls, value: str | None) -> str | None:
+        return _max_length_validator("Resolution remarks", FREE_TEXT_MAX_LENGTH)(value)
+
+    @field_validator("resident_feedback")
+    @classmethod
+    def validate_resident_feedback(cls, value: str | None) -> str | None:
+        return _max_length_validator("Feedback", FREE_TEXT_MAX_LENGTH)(value)
 
 
 class TicketRead(TicketBase):

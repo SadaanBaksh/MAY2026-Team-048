@@ -5,7 +5,7 @@ def _resident_payload(email: str = "resident@example.com") -> dict:
     return {
         "name": "Resident One",
         "email": email,
-        "phone": "+1 555-0100",
+        "phone": "+1 555-010-0100",
         "role": "resident",
         "password": "Testpass123",
         "building": "Wing A",
@@ -37,7 +37,7 @@ def test_register_facility_employee_defaults_to_pending(client):
     payload = {
         "name": "Employee One",
         "email": "employee@example.com",
-        "phone": "+1 555-0101",
+        "phone": "+1 555-010-0101",
         "role": "facility_employee",
         "password": "Testpass123",
         "title": "Facility Coordinator",
@@ -53,7 +53,7 @@ def test_register_maintenance_staff_defaults_to_pending(client):
     payload = {
         "name": "Staff One",
         "email": "staff@example.com",
-        "phone": "+1 555-0102",
+        "phone": "+1 555-010-0102",
         "role": "maintenance_staff",
         "password": "Testpass123",
         "specialization": "Plumbing",
@@ -69,7 +69,7 @@ def test_register_facility_manager_defaults_to_active(client):
     payload = {
         "name": "Manager One",
         "email": "manager@example.com",
-        "phone": "+1 555-0103",
+        "phone": "+1 555-010-0103",
         "role": "facility_manager",
         "password": "Testpass123",
     }
@@ -78,6 +78,69 @@ def test_register_facility_manager_defaults_to_active(client):
 
     assert response.status_code == 201
     assert response.json()["account_status"] == "active"
+
+
+def test_register_rejects_overlong_password(client):
+    payload = _resident_payload()
+    payload["password"] = "a" * 73  # bcrypt's hard limit is 72 bytes
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_register_accepts_password_at_max_length(client):
+    payload = _resident_payload()
+    payload["password"] = "a" * 72
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 201
+
+
+def test_register_rejects_overlong_name(client):
+    payload = _resident_payload()
+    payload["name"] = "N" * 151
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_register_rejects_phone_with_too_many_digits(client):
+    payload = _resident_payload()
+    payload["phone"] = "+91 98765 4321098765"  # way more than 10 digits
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_register_rejects_phone_with_too_few_digits(client):
+    payload = _resident_payload()
+    payload["phone"] = "12345"
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_register_accepts_phone_with_country_code(client):
+    payload = _resident_payload()
+    payload["phone"] = "+91 98765 43210"
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 201
+
+
+def test_register_rejects_overlong_email(client):
+    payload = _resident_payload()
+    payload["email"] = f"{'a' * 250}@example.com"  # well over 254 chars total
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
 
 
 def test_register_duplicate_email_fails(client):

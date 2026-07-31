@@ -32,6 +32,16 @@ def test_create_comment(client, auth_headers, resident_user, ticket):
     assert body["user_id"] == resident_user.id
 
 
+def test_create_comment_rejects_overlong_message(client, auth_headers, resident_user, ticket):
+    response = client.post(
+        f"/api/v1/tickets/{ticket['id']}/comments",
+        json={"message": "x" * 4001},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 422
+
+
 def test_list_comments_ordered(client, auth_headers, resident_user, employee_user, ticket):
     client.post(
         f"/api/v1/tickets/{ticket['id']}/comments",

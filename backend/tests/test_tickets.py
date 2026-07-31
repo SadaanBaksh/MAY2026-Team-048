@@ -65,6 +65,15 @@ def test_create_ticket_with_photo_urls_creates_media_rows(
     assert {m["media_url"] for m in body["media"]} == set(photo_urls)
 
 
+def test_create_ticket_rejects_overlong_title(client, auth_headers, resident_user, category):
+    response = client.post(
+        "/api/v1/tickets/",
+        json=_ticket_payload(category.id, title="T" * 201),
+        headers=auth_headers(resident_user),
+    )
+    assert response.status_code == 422
+
+
 def test_create_ticket_creates_pending_history_row(
     client, auth_headers, resident_user, category
 ):
@@ -550,3 +559,51 @@ def test_worker_rating_is_averaged_across_tickets(
     response = client.get(f"/api/v1/users/{maintenance_user.id}", headers=auth_headers(employee_user))
     assert response.status_code == 200
     assert response.json()["rating"] == 4.0
+
+
+def test_resident_rating_rejects_out_of_range_high(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": 999999},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 422
+
+
+def test_resident_rating_rejects_out_of_range_low(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": 0},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 422
