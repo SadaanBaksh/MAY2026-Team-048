@@ -164,10 +164,10 @@ CREATE DATABASE simplifix OWNER simplifix;
 
 ```bash
 cd backend
-python -m venv .venv
+py -3.13 -m venv .venv
 
 # Windows
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 # macOS/Linux
 source .venv/bin/activate
 

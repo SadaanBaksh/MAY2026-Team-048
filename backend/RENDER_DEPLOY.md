@@ -64,11 +64,70 @@ If it crashes here, check Troubleshooting below before digging further.
 
 ## 6. Seed categories (one-time)
 
-Same as local setup, just run it on Render instead: web service → **Shell** tab →
+If you're on a **paid** Render plan, the web service's **Shell** tab works the same as local setup:
 
 ```bash
 python -m scripts.seed_categories
 ```
+
+**On the free tier, the Shell tab isn't available.** Instead, run the script locally, pointed at
+Render's Postgres via its **External Database URL** (from the Postgres instance's dashboard — not
+the Internal one, which only works from inside Render's network). The script
+(`scripts/seed_categories.py`) is idempotent and reads its target purely from `DATABASE_URL`, so
+this is safe and doesn't need any code changes:
+
+```bash
+# from backend/, with your local venv active. macOS/Linux/Git Bash:
+DATABASE_URL="postgresql+psycopg2://<external URL, with +psycopg2 added>" python -m scripts.seed_categories
+```
+```powershell
+# Windows PowerShell:
+$env:DATABASE_URL = "postgresql+psycopg2://<external URL, with +psycopg2 added>"
+python -m scripts.seed_categories
+```
+
+Same `+psycopg2` gotcha as step 4 applies to the external URL too. One-time — no need to repeat
+unless the database gets wiped.
+
+## 6.5. Create the demo accounts (if the app's "demo login" buttons need to work)
+
+The frontend's demo-login shortcuts (`DEMO_CREDENTIALS` in `frontend/src/store/authStore.ts`)
+assume four specific users already exist — `demo.resident@simplifix.app`,
+`demo.employee@simplifix.app`, `demo.staff@simplifix.app`, `demo.manager@simplifix.app`, all with
+password `Demo@1234`. **Nothing seeds these automatically** — they only exist on a fresh database
+if you create them. Register all four against your Render URL (Swagger UI at `/docs` is the
+simplest way — `POST /api/v1/auth/register` once per role), or via script:
+
+```powershell
+$base = "https://<your-service>.onrender.com"
+$pw = "Demo@1234"
+$accounts = @(
+  @{ name="Demo Resident"; email="demo.resident@simplifix.app"; phone="+1 555-0100"; role="resident"; password=$pw; building="Wing A"; unit_number="101" },
+  @{ name="Demo Employee"; email="demo.employee@simplifix.app"; phone="+1 555-0101"; role="facility_employee"; password=$pw; title="Facility Coordinator" },
+  @{ name="Demo Staff"; email="demo.staff@simplifix.app"; phone="+1 555-0102"; role="maintenance_staff"; password=$pw; specialization="General Maintenance" },
+  @{ name="Demo Manager"; email="demo.manager@simplifix.app"; phone="+1 555-0103"; role="facility_manager"; password=$pw }
+)
+foreach ($acct in $accounts) {
+  try { Invoke-RestMethod -Method Post -Uri "$base/api/v1/auth/register" -ContentType "application/json" -Body ($acct | ConvertTo-Json) }
+  catch { Write-Host "Skipped $($acct.email): $($_.Exception.Message)" }
+}
+```
+
+`facility_employee`/`maintenance_staff` register as `pending` (only `resident`/`facility_manager`
+go straight to `active` — see `ACTIVE_ON_REGISTER` in `auth.py`), so approve those two right after,
+using the manager account you just created:
+
+```powershell
+$token = (Invoke-RestMethod -Method Post -Uri "$base/api/v1/auth/login" -ContentType "application/x-www-form-urlencoded" -Body "username=demo.manager%40simplifix.app&password=$pw").access_token
+$headers = @{ Authorization = "Bearer $token" }
+$users = Invoke-RestMethod -Uri "$base/api/v1/users/" -Headers $headers
+$users | Where-Object { $_.email -in @("demo.employee@simplifix.app","demo.staff@simplifix.app") } | ForEach-Object {
+  Invoke-RestMethod -Method Patch -Uri "$base/api/v1/users/$($_.id)" -Headers $headers -ContentType "application/json" -Body '{"account_status":"active"}'
+}
+```
+
+One-time, same as seeding categories — skip this entirely if you don't care about the demo-login
+shortcuts and will just register real accounts through the app instead.
 
 ## 7. Verify
 
@@ -101,3 +160,5 @@ If you want to test the Expo app against the live backend instead of your local 
 | Requests from the Expo **web** build fail with a CORS error in the browser console | Add that origin (e.g. `http://localhost:8081` or wherever `expo start --web` is serving from) to `BACKEND_CORS_ORIGINS`, comma-separated, and redeploy. Native/device requests aren't affected by this at all. |
 | First request after a while is very slow (~30-60s), then fine | Expected on Render's free tier — the service spins down after 15 minutes of inactivity and cold-starts on the next request. Not a bug; worth knowing about before a live demo (hit `/health` a minute beforehand to warm it up). |
 | `python -m scripts.seed_categories` isn't found in the Shell tab | Make sure you're in `/app` (the Dockerfile's `WORKDIR`) — Render's Shell should already drop you there by default. |
+| Web service → Shell tab says it's unavailable / greyed out | Free-tier limitation, not a bug — see the free-tier instructions in step 6 (run the script locally against the External Database URL instead). |
+| Render dashboard says "No repositories found" even after granting GitHub access to the repo | Render's cached view of the GitHub App installation is often stale. Disconnect and reconnect GitHub from Render's **Account/Team Settings → Git Providers** (not just editing access on GitHub's side), and choose "All repositories" when reconnecting. If deploying under a Render **Team**, the GitHub connection must be authorized at the Team level, not just your personal account. |
