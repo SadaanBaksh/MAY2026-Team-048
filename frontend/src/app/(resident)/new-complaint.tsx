@@ -173,7 +173,11 @@ export default function NewComplaintScreen() {
   };
 
   const handleAnalyze = async () => {
-    if ((!photos.length && !voiceNoteUri && !note.trim()) || !token) return;
+    if (!photos.length && !voiceNoteUri && !note.trim()) return;
+    if (!token) {
+      setSubmitError('Your session has expired. Please sign in again.');
+      return;
+    }
     setStep('analyzing');
     setSubmitError('');
     try {

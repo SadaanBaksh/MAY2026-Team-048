@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
 from app.core.gemini import GeminiError, generate_json, generate_multimodal_json, media_part
-from app.core.limiter import limiter
+from app.core.limiter import limiter, rate_limit_key_for_user
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.enums import UserRole
@@ -48,7 +48,7 @@ def _ai_error(exc: GeminiError) -> HTTPException:
 
 
 @router.post("/analyze-complaint", response_model=ComplaintAnalysisRead)
-@limiter.limit("6/minute")
+@limiter.limit("6/minute", key_func=rate_limit_key_for_user)
 def analyze_complaint(
     request: Request,
     payload: ComplaintAnalysisRequest,
@@ -79,7 +79,7 @@ def analyze_complaint(
 
 
 @router.post("/resident-chat", response_model=ResidentChatRead)
-@limiter.limit("15/minute")
+@limiter.limit("15/minute", key_func=rate_limit_key_for_user)
 def resident_chat(
     request: Request,
     payload: ResidentChatRequest,
