@@ -2,6 +2,7 @@
 
 import base64
 import json
+import logging
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -9,6 +10,8 @@ from urllib.request import Request, urlopen
 from fastapi import HTTPException, status
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiError(Exception):
@@ -60,8 +63,15 @@ def _response_text(response: dict) -> str:
         parts = response["candidates"][0]["content"]["parts"]
         text = "".join(part.get("text", "") for part in parts).strip()
     except (KeyError, IndexError, TypeError) as exc:
+        finish_reason = None
+        try:
+            finish_reason = response["candidates"][0].get("finishReason")
+        except (KeyError, IndexError, TypeError):
+            pass
+        logger.warning("Gemini response missing text (finishReason=%s): %s", finish_reason, response)
         raise GeminiError("The AI service returned an incomplete response.") from exc
     if not text:
+        logger.warning("Gemini returned an empty response: %s", response)
         raise GeminiError("The AI service returned an empty response.")
     return text
 
@@ -84,9 +94,11 @@ def generate_json(*, prompt: str, schema: dict, max_output_tokens: int) -> dict:
             },
         }
     )
+    text = _response_text(response)
     try:
-        return json.loads(_response_text(response))
+        return json.loads(text)
     except json.JSONDecodeError as exc:
+        logger.warning("Gemini returned non-JSON text despite responseSchema: %r", text)
         raise GeminiError("The AI service returned an invalid response. Please try again.") from exc
 
 
@@ -135,7 +147,10 @@ def generate_multimodal_json(*, prompt: str, media: list[dict], schema: dict) ->
             "contents": [{"role": "user", "parts": [{"text": prompt}, *media]}],
             "generationConfig": {
                 "temperature": 0.1,
-                "maxOutputTokens": 300,
+                # A bit more headroom than generate_json's callers use: the model tends to
+                # write closer to the prompt's "max 80 words" limit than a hard token cap
+                # would suggest, and a truncated ai_description cuts the JSON off mid-string.
+                "maxOutputTokens": 500,
                 "responseMimeType": "application/json",
                 "responseSchema": schema,
                 # See the matching comment in generate_json — disable thinking so the small
@@ -144,7 +159,9 @@ def generate_multimodal_json(*, prompt: str, media: list[dict], schema: dict) ->
             },
         }
     )
+    text = _response_text(response)
     try:
-        return json.loads(_response_text(response))
+        return json.loads(text)
     except json.JSONDecodeError as exc:
+        logger.warning("Gemini returned non-JSON text despite responseSchema: %r", text)
         raise GeminiError("The AI service returned an invalid response. Please try again.") from exc
