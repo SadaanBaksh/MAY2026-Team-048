@@ -44,13 +44,14 @@ Implemented frontend capabilities include:
 - Demo login accounts for quick role switching
 - Mock complaint, user, worker, notification, and analytics data
 - Zustand stores persisted with `AsyncStorage`
-- Local mock AI helpers for complaint generation behavior
+- Server-backed Gemini complaint analysis and resident support chat
 - Resident complaint creation and tracking flows
 - Employee triage and assignment flows
 - Maintenance job update flows
 - Manager analytics, history, and performance views
 
-No environment variables or API keys are currently required.
+The frontend needs no API key. To enable AI features, add `GEMINI_API_KEY` to `backend/.env`;
+keep it server-side and never use an `EXPO_PUBLIC_` variable for it.
 
 ## Setup
 

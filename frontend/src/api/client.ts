@@ -273,6 +273,53 @@ export async function createTicket(
   return apiFetch<ApiTicket>('/api/v1/tickets/', { method: 'POST', token, json: payload });
 }
 
+export interface ComplaintAnalysisPayload {
+  resident_note: string;
+  photo_urls?: string[];
+  voice_note_url?: string | null;
+}
+
+export interface ComplaintAnalysisResponse {
+  ai_description: string;
+  category_id: string;
+  priority: Priority;
+  confidence: number;
+}
+
+/** Calls the server-side Gemini gateway; the Gemini key never reaches the client. */
+export async function analyzeComplaint(
+  token: string,
+  payload: ComplaintAnalysisPayload,
+): Promise<ComplaintAnalysisResponse> {
+  return apiFetch<ComplaintAnalysisResponse>('/api/v1/ai/analyze-complaint', {
+    method: 'POST',
+    token,
+    json: payload,
+  });
+}
+
+export interface ResidentChatMessage {
+  role: 'resident' | 'assistant';
+  text: string;
+}
+
+export interface ResidentChatResponse {
+  reply: string;
+  related_ticket_id: string | null;
+  suggestions: string[];
+}
+
+export async function askResidentAssistant(
+  token: string,
+  payload: { message: string; history: ResidentChatMessage[] },
+): Promise<ResidentChatResponse> {
+  return apiFetch<ResidentChatResponse>('/api/v1/ai/resident-chat', {
+    method: 'POST',
+    token,
+    json: payload,
+  });
+}
+
 export async function fetchTickets(token: string): Promise<ApiTicket[]> {
   return apiFetch<ApiTicket[]>('/api/v1/tickets/', { token });
 }

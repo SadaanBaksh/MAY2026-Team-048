@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     apartments,
+    ai,
     auth,
     categories,
     comments,
@@ -21,3 +22,4 @@ api_router.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
 api_router.include_router(comments.router, prefix="/tickets", tags=["comments"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(uploads.router, prefix="/uploads", tags=["uploads"])
+api_router.include_router(ai.router, prefix="/ai", tags=["ai"])

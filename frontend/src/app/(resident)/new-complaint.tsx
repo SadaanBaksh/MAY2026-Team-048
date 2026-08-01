@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ApiError, createTicket, uploadFile } from '@/api/client';
+import { analyzeComplaint, ApiError, createTicket, uploadFile } from '@/api/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { IconCircle } from '@/components/ui/IconCircle';
@@ -20,9 +20,15 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Priority } from '@/types';
-import { analyzeComplaint, type AIAnalysisResult } from '@/utils/mockAI';
 
 type Step = 'capture' | 'analyzing' | 'review' | 'done';
+
+interface AIAnalysisResult {
+  categoryId: string;
+  aiDescription: string;
+  priority: Priority;
+  confidence: number;
+}
 
 const MAX_PHOTOS = 5;
 
@@ -50,6 +56,10 @@ export default function NewComplaintScreen() {
   const voiceActionInFlight = useRef(false);
 
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
+  // Upload once before analysis, then reuse the same URLs when the resident submits. This keeps
+  // the model input private to the server and avoids paying for an extra upload/call on submit.
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[] | null>(null);
+  const [uploadedVoiceNoteUrl, setUploadedVoiceNoteUrl] = useState<string | null | undefined>(undefined);
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState<Priority>('Medium');
@@ -100,6 +110,7 @@ export default function NewComplaintScreen() {
     });
     if (!result.canceled && result.assets.length > 0) {
       setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
+      setUploadedPhotoUrls(null);
     }
   };
 
@@ -117,11 +128,13 @@ export default function NewComplaintScreen() {
     const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (!result.canceled && result.assets[0]) {
       setPhotos((prev) => [...prev, result.assets[0].uri]);
+      setUploadedPhotoUrls(null);
     }
   };
 
   const removePhoto = (uri: string) => {
     setPhotos((prev) => prev.filter((p) => p !== uri));
+    setUploadedPhotoUrls(null);
   };
 
   const handleRecordVoiceNote = async () => {
@@ -146,6 +159,7 @@ export default function NewComplaintScreen() {
       if (recording) {
         setVoiceNoteUri(recording.uri);
         setVoiceNoteDurationSec(recording.durationSec);
+        setUploadedVoiceNoteUrl(undefined);
       }
     } finally {
       voiceActionInFlight.current = false;
@@ -155,21 +169,47 @@ export default function NewComplaintScreen() {
   const handleDeleteVoiceNote = () => {
     setVoiceNoteUri(null);
     setVoiceNoteDurationSec(null);
+    setUploadedVoiceNoteUrl(undefined);
   };
 
   const handleAnalyze = async () => {
-    if (photos.length === 0) return;
+    if ((!photos.length && !voiceNoteUri && !note.trim()) || !token) return;
     setStep('analyzing');
-    const result = await analyzeComplaint({
-      note,
-      hasVideo: false,
-      hasVoiceNote: !!voiceNoteUri,
-    });
-    setAiResult(result);
-    setDescription(result.aiDescription);
-    setCategoryId(result.categoryId);
-    setPriority(result.priority);
-    setStep('review');
+    setSubmitError('');
+    try {
+      const photoUrls =
+        uploadedPhotoUrls ??
+        (await Promise.all(photos.map(async (uri) => (await uploadFile(token, uri, 'photo')).url)));
+      const voiceNoteUrl =
+        uploadedVoiceNoteUrl !== undefined
+          ? uploadedVoiceNoteUrl
+          : voiceNoteUri
+            ? (await uploadFile(token, voiceNoteUri, 'voice_note')).url
+            : null;
+      setUploadedPhotoUrls(photoUrls);
+      setUploadedVoiceNoteUrl(voiceNoteUrl);
+
+      const result = await analyzeComplaint(token, {
+        resident_note: note,
+        photo_urls: photoUrls,
+        voice_note_url: voiceNoteUrl,
+      });
+      setAiResult({
+        aiDescription: result.ai_description,
+        categoryId: result.category_id,
+        priority: result.priority,
+        confidence: result.confidence,
+      });
+      setDescription(result.ai_description);
+      setCategoryId(result.category_id);
+      setPriority(result.priority);
+      setStep('review');
+    } catch (err) {
+      setSubmitError(
+        err instanceof ApiError ? err.message : 'Could not analyze the complaint. Please try again.',
+      );
+      setStep('capture');
+    }
   };
 
   const handleSubmit = async () => {
@@ -178,12 +218,8 @@ export default function NewComplaintScreen() {
     setSubmitting(true);
     try {
       const category = getCategoryById(categoryId);
-      const photoUrls = await Promise.all(
-        photos.map(async (uri) => (await uploadFile(token, uri, 'photo')).url),
-      );
-      const voiceNoteUrl = voiceNoteUri
-        ? (await uploadFile(token, voiceNoteUri, 'voice_note')).url
-        : null;
+      const photoUrls = uploadedPhotoUrls ?? [];
+      const voiceNoteUrl = uploadedVoiceNoteUrl ?? null;
 
       const apiTicket = await createTicket(token, {
         title: buildTitle(category.categoryName, note),
@@ -366,13 +402,14 @@ export default function NewComplaintScreen() {
               icon="sparkles-outline"
               fullWidth
               size="lg"
-              disabled={photos.length === 0}
+              disabled={!photos.length && !voiceNoteUri && !note.trim()}
               onPress={handleAnalyze}
             />
+            {!!submitError && <Text style={styles.error}>{submitError}</Text>}
           </>
         )}
 
-        {step === 'review' && aiResult && photos.length > 0 && (
+        {step === 'review' && aiResult && (
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
               {photos.map((uri) => (

@@ -59,6 +59,19 @@ docker compose exec api python -m scripts.seed_categories   # one-time
 
 API docs are then available at http://localhost:8000/docs.
 
+## Gemini AI features
+
+Complaint analysis and the resident assistant are served from `/api/v1/ai`. Add a Gemini API key
+to `backend/.env` (not the frontend):
+
+```env
+GEMINI_API_KEY=your-key-here
+GEMINI_MODEL=gemini-2.5-flash-lite
+```
+
+The default model keeps short classification and chat requests economical. The API rate-limits
+complaint analysis to 6 requests/minute and resident chat to 15 requests/minute per client.
+
 ## Migrations
 
 ```bash
