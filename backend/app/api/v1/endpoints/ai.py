@@ -20,22 +20,24 @@ from app.schemas.ai import (
 router = APIRouter()
 
 _ANALYSIS_SCHEMA = {
-    "type": "object",
+    # `responseSchema` in the v1beta generateContent endpoint uses Gemini's legacy
+    # Schema enum values (uppercase), rather than ordinary JSON Schema's lowercase ones.
+    "type": "OBJECT",
     "properties": {
-        "ai_description": {"type": "string"},
-        "category_id": {"type": "string"},
-        "priority": {"type": "string", "enum": ["Low", "Medium", "High", "Critical", "Emergency"]},
-        "confidence": {"type": "number"},
+        "ai_description": {"type": "STRING"},
+        "category_id": {"type": "STRING"},
+        "priority": {"type": "STRING", "enum": ["Low", "Medium", "High", "Critical", "Emergency"]},
+        "confidence": {"type": "NUMBER"},
     },
     "required": ["ai_description", "category_id", "priority", "confidence"],
 }
 
 _CHAT_SCHEMA = {
-    "type": "object",
+    "type": "OBJECT",
     "properties": {
-        "reply": {"type": "string"},
-        "related_ticket_id": {"type": ["string", "null"]},
-        "suggestions": {"type": "array", "items": {"type": "string"}},
+        "reply": {"type": "STRING"},
+        "related_ticket_id": {"type": "STRING", "nullable": True},
+        "suggestions": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
     "required": ["reply", "related_ticket_id", "suggestions"],
 }

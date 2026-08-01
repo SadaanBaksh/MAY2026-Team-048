@@ -36,10 +36,21 @@ def _request_json(payload: dict) -> dict:
         with urlopen(request, timeout=40) as response:  # nosec B310 - fixed Google endpoint
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
-        # Do not return provider response bodies: they can contain implementation details.
+        # Return a concise provider reason; this makes setup mistakes diagnosable without ever
+        # exposing the request payload or API key.
+        provider_status = ""
+        try:
+            error = json.loads(exc.read().decode("utf-8")).get("error", {})
+            provider_status = str(error.get("status") or "")
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            pass
         if exc.code == 429:
             raise GeminiError("AI is temporarily busy. Please try again in a minute.") from exc
-        raise GeminiError("The AI service could not complete that request.") from exc
+        detail = f" ({provider_status})" if provider_status else ""
+        raise GeminiError(
+            f"Gemini rejected the request with HTTP {exc.code}{detail}. "
+            "Check GEMINI_MODEL and the server logs."
+        ) from exc
     except (URLError, TimeoutError) as exc:
         raise GeminiError("The AI service is currently unavailable. Please try again.") from exc
 
@@ -109,7 +120,13 @@ def media_part(url: str, max_bytes: int) -> dict:
         raise HTTPException(status_code=422, detail="Uploaded media could not be read.") from exc
     if len(content) > max_bytes:
         raise HTTPException(status_code=413, detail="Media is too large for AI analysis.")
-    return {"inline_data": {"mime_type": content_type, "data": base64.b64encode(content).decode("ascii")}}
+    # REST uses camelCase here (the SDK exposes snake_case fields separately).
+    return {
+        "inlineData": {
+            "mimeType": content_type,
+            "data": base64.b64encode(content).decode("ascii"),
+        }
+    }
 
 
 def generate_multimodal_json(*, prompt: str, media: list[dict], schema: dict) -> dict:
