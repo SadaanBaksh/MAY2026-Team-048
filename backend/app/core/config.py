@@ -22,7 +22,12 @@ class Settings(BaseSettings):
 
     # Kept server-side only. Never expose this value through the Expo app.
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash-lite"
+    # Not "-flash-lite": Google restricted that variant from new users/projects partway through
+    # this project (confirmed via a 404 "no longer available to new users" from the Gemini API
+    # despite it still being listed in ListModels) — this is the closest stable, still-multimodal
+    # sibling. If Google deprecates this one too, check `GET /v1beta/models` with your own key for
+    # what's currently available before picking a replacement.
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     @property
     def cors_origins(self) -> list[str]:

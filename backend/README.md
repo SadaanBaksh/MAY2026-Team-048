@@ -66,11 +66,24 @@ to `backend/.env` (not the frontend):
 
 ```env
 GEMINI_API_KEY=your-key-here
-GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-The default model keeps short classification and chat requests economical. The API rate-limits
-complaint analysis to 6 requests/minute and resident chat to 15 requests/minute per client.
+The API rate-limits complaint analysis to 6 requests/minute and resident chat to 15 requests/minute
+per client.
+
+**On model availability**: Google has restricted some model variants (e.g. `gemini-2.5-flash-lite`)
+from new users/projects even though they still appear in the API's `ListModels` response — the
+only reliable way to confirm a model actually works for *your* key is to call it directly:
+```bash
+curl "https://generativelanguage.googleapis.com/v1beta/models/<model>:generateContent" \
+  -H "Content-Type: application/json" -H "x-goog-api-key: <your key>" \
+  -d '{"contents":[{"role":"user","parts":[{"text":"say hello"}]}]}'
+```
+If `GEMINI_MODEL` ever starts returning `503 "The AI service could not complete that request."`
+from this app, that generic message is intentional (the backend deliberately doesn't forward
+provider error bodies to clients) — run the `curl` above with the configured model/key to see the
+real error before assuming it's an app bug.
 
 ## Migrations
 

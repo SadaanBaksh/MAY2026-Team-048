@@ -64,6 +64,12 @@ def generate_json(*, prompt: str, schema: dict, max_output_tokens: int) -> dict:
                 "maxOutputTokens": max_output_tokens,
                 "responseMimeType": "application/json",
                 "responseSchema": schema,
+                # gemini-2.5-flash "thinks" by default; with a small maxOutputTokens budget the
+                # thinking tokens alone can exhaust it, leaving an empty candidates[0].content —
+                # this task is a simple classification/reply, not something needing chain-of-
+                # thought reasoning, so disable it and put the whole budget toward the actual
+                # structured output.
+                "thinkingConfig": {"thinkingBudget": 0},
             },
         }
     )
@@ -115,6 +121,9 @@ def generate_multimodal_json(*, prompt: str, media: list[dict], schema: dict) ->
                 "maxOutputTokens": 300,
                 "responseMimeType": "application/json",
                 "responseSchema": schema,
+                # See the matching comment in generate_json — disable thinking so the small
+                # output budget isn't silently consumed before any actual JSON is produced.
+                "thinkingConfig": {"thinkingBudget": 0},
             },
         }
     )

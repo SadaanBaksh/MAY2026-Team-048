@@ -1,4 +1,11 @@
+import pytest
+
 from app.models.enums import UserRole
+
+
+@pytest.fixture()
+def category(make_category):
+    return make_category(id="cat_plumbing", name="Plumbing", icon="water")
 
 
 def test_analyze_complaint_uses_structured_result(
