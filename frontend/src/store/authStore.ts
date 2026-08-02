@@ -2,155 +2,188 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { USERS } from '@/data/seed';
+import {
+  ApiError,
+  apiUserToAppUser,
+  getCurrentUser,
+  listUsers,
+  loginUser,
+  registerUser,
+  updateUser,
+} from '@/api/client';
 import type { AppUser, UserRole } from '@/types';
-import { generateId } from '@/utils/id';
-import { isoNow } from '@/utils/date';
+import { clearToken, getToken, setToken } from '@/utils/tokenStorage';
 
 export interface RegisterInput {
   name: string;
   email: string;
   phone: string;
   role: UserRole;
+  password: string;
   unitNumber?: string;
   building?: string;
-  apartmentId?: string;
   title?: string;
   specialization?: string;
 }
 
+type AuthResult = { success: boolean; error?: string };
+
+const DEMO_PASSWORD = 'Demo@1234';
+const DEMO_CREDENTIALS: Record<UserRole, { email: string; password: string }> = {
+  resident: { email: 'demo.resident@simplifix.app', password: DEMO_PASSWORD },
+  facility_employee: { email: 'demo.employee@simplifix.app', password: DEMO_PASSWORD },
+  maintenance_staff: { email: 'demo.staff@simplifix.app', password: DEMO_PASSWORD },
+  facility_manager: { email: 'demo.manager@simplifix.app', password: DEMO_PASSWORD },
+};
+
+function errorMessage(err: unknown): string {
+  if (err instanceof ApiError) return err.message;
+  return 'Something went wrong. Please check your connection and try again.';
+}
+
 interface AuthState {
   currentUser: AppUser | null;
+  token: string | null;
   users: AppUser[];
-  login: (email: string) => { success: boolean; error?: string };
-  loginAsDemo: (role: UserRole) => void;
-  register: (input: RegisterInput) => { success: boolean; error?: string };
-  logout: () => void;
-  updateCurrentUser: (partial: Partial<AppUser>) => void;
-  approveUser: (userId: string) => void;
-  rejectUser: (userId: string) => void;
+  isHydrated: boolean;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  loginAsDemo: (role: UserRole) => Promise<AuthResult>;
+  register: (input: RegisterInput) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+  updateCurrentUser: (partial: Partial<AppUser>) => Promise<void>;
+  approveUser: (userId: string) => Promise<void>;
+  rejectUser: (userId: string) => Promise<void>;
+  refreshUsers: () => Promise<void>;
+  /** Refetches the logged-in user's own record — e.g. picks up a rating recomputed
+   * server-side by someone else's action (a resident closing a rated ticket). */
+  refreshCurrentUser: () => Promise<void>;
+  hydrateSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       currentUser: null,
-      users: USERS,
+      token: null,
+      users: [],
+      isHydrated: false,
 
-      login: (email: string) => {
-        const match = get().users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-        if (!match) return { success: false, error: 'No account found with that email.' };
-        set({ currentUser: match });
-        return { success: true };
-      },
-
-      loginAsDemo: (role: UserRole) => {
-        const match = get().users.find((u) => u.role === role);
-        if (match) set({ currentUser: match });
-      },
-
-      register: (input: RegisterInput) => {
-        const exists = get().users.some(
-          (u) => u.email.toLowerCase() === input.email.trim().toLowerCase(),
-        );
-        if (exists) return { success: false, error: 'An account with that email already exists.' };
-
-        const palette = ['#0c2d35', '#7A3FC2', '#C2740F', '#1C7A5A', '#B62B4D', '#2E7BC2'];
-        const base = {
-          name: input.name,
-          email: input.email,
-          phone: input.phone,
-          avatarColor: palette[Math.floor(Math.random() * palette.length)],
-          createdAt: isoNow(),
-        };
-
-        let newUser: AppUser;
-        switch (input.role) {
-          case 'resident':
-            newUser = {
-              ...base,
-              userId: generateId('user_res'),
-              role: 'resident',
-              accountStatus: 'active',
-              apartmentId: input.apartmentId ?? generateId('apt'),
-            };
-            break;
-          case 'facility_manager':
-            newUser = {
-              ...base,
-              userId: generateId('user_mgr'),
-              role: 'facility_manager',
-              accountStatus: 'active',
-              title: input.title?.trim() || 'Facility Manager',
-            };
-            break;
-          case 'facility_employee':
-            newUser = {
-              ...base,
-              userId: generateId('user_emp'),
-              role: 'facility_employee',
-              accountStatus: 'pending',
-              title: input.title?.trim() || 'Facility Coordinator',
-            };
-            break;
-          case 'maintenance_staff':
-            newUser = {
-              ...base,
-              userId: generateId('user_wrk'),
-              role: 'maintenance_staff',
-              accountStatus: 'pending',
-              specialization: input.specialization?.trim() || 'General Maintenance',
-              activeJobs: 0,
-              rating: 0,
-            };
-            break;
+      login: async (email, password) => {
+        try {
+          const token = await loginUser(email, password);
+          const apiUser = await getCurrentUser(token);
+          await setToken(token);
+          set({ token, currentUser: apiUserToAppUser(apiUser) });
+          // Nearly every ticket/complaint screen across all roles resolves names via
+          // the roster (mirrors the old mock setup, where every role saw everyone).
+          await get().refreshUsers();
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: errorMessage(err) };
         }
-
-        set((state) => ({ users: [...state.users, newUser], currentUser: newUser }));
-        return { success: true };
       },
 
-      logout: () => set({ currentUser: null }),
+      loginAsDemo: async (role) => {
+        const creds = DEMO_CREDENTIALS[role];
+        return get().login(creds.email, creds.password);
+      },
 
-      updateCurrentUser: (partial) =>
-        set((state) => {
-          if (!state.currentUser) return state;
-          const updated = { ...state.currentUser, ...partial } as AppUser;
-          return {
-            currentUser: updated,
-            users: state.users.map((u) => (u.userId === updated.userId ? updated : u)),
-          };
-        }),
+      register: async (input) => {
+        try {
+          await registerUser({
+            name: input.name,
+            email: input.email,
+            phone: input.phone,
+            role: input.role,
+            password: input.password,
+            building: input.building,
+            unit_number: input.unitNumber,
+            title: input.title,
+            specialization: input.specialization,
+          });
+        } catch (err) {
+          return { success: false, error: errorMessage(err) };
+        }
+        return get().login(input.email, input.password);
+      },
 
-      approveUser: (userId: string) =>
+      logout: async () => {
+        await clearToken();
+        set({ currentUser: null, token: null, users: [] });
+      },
+
+      updateCurrentUser: async (partial) => {
+        const { currentUser, token } = get();
+        if (!currentUser || !token) return;
+        const apiUser = await updateUser(token, currentUser.userId, {
+          name: partial.name,
+          email: partial.email,
+          phone: partial.phone,
+          avatar_color: partial.avatarColor,
+          avatar_uri: partial.avatarUri,
+        });
+        const updated = apiUserToAppUser(apiUser);
         set((state) => ({
-          users: state.users.map((u) =>
-            u.userId === userId ? { ...u, accountStatus: 'active' } : u,
-          ),
-        })),
+          currentUser: updated,
+          users: state.users.map((u) => (u.userId === updated.userId ? updated : u)),
+        }));
+      },
 
-      rejectUser: (userId: string) =>
+      approveUser: async (userId) => {
+        const { token } = get();
+        if (!token) return;
+        const apiUser = await updateUser(token, userId, { account_status: 'active' });
         set((state) => ({
-          users: state.users.map((u) =>
-            u.userId === userId ? { ...u, accountStatus: 'rejected' } : u,
-          ),
-        })),
+          users: state.users.map((u) => (u.userId === userId ? apiUserToAppUser(apiUser) : u)),
+        }));
+      },
+
+      rejectUser: async (userId) => {
+        const { token } = get();
+        if (!token) return;
+        const apiUser = await updateUser(token, userId, { account_status: 'rejected' });
+        set((state) => ({
+          users: state.users.map((u) => (u.userId === userId ? apiUserToAppUser(apiUser) : u)),
+        }));
+      },
+
+      refreshUsers: async () => {
+        const { token } = get();
+        if (!token) return;
+        const apiUsers = await listUsers(token);
+        set({ users: apiUsers.map(apiUserToAppUser) });
+      },
+
+      refreshCurrentUser: async () => {
+        const { token } = get();
+        if (!token) return;
+        const apiUser = await getCurrentUser(token);
+        set({ currentUser: apiUserToAppUser(apiUser) });
+      },
+
+      hydrateSession: async () => {
+        const token = await getToken();
+        if (!token) {
+          set({ isHydrated: true });
+          return;
+        }
+        try {
+          const apiUser = await getCurrentUser(token);
+          set({ token, currentUser: apiUserToAppUser(apiUser) });
+          await get().refreshUsers();
+        } catch {
+          await clearToken();
+          set({ token: null, currentUser: null });
+        } finally {
+          set({ isHydrated: true });
+        }
+      },
     }),
     {
       name: 'simplifix-auth',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ currentUser: state.currentUser, users: state.users }),
-      migrate: (persistedState) => {
-        const state = persistedState as { currentUser: AppUser | null; users: AppUser[] };
-        const backfill = (u: AppUser): AppUser =>
-          u.accountStatus ? u : ({ ...u, accountStatus: 'active' } as AppUser);
-        return {
-          ...state,
-          users: (state?.users ?? []).map(backfill),
-          currentUser: state?.currentUser ? backfill(state.currentUser) : null,
-        };
-      },
+      partialize: (state) => ({ currentUser: state.currentUser }),
     },
   ),
 );

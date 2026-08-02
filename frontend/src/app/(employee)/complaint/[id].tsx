@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
-import { MediaThumb } from '@/components/shared/MediaThumb';
+import { TicketMediaGallery } from '@/components/shared/TicketMediaGallery';
 import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
@@ -34,11 +35,23 @@ export default function EmployeeComplaintDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const media = useTicketStore((s) => s.media);
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
   const reviewAndAssign = useTicketStore((s) => s.reviewAndAssign);
-  const addComment = useTicketStore((s) => s.addComment);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const refreshComments = useTicketStore((s) => s.refreshComments);
+  const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+      if (token && id) refreshComments(token, id);
+      if (token && id) refreshTicketHistory(token, id);
+    }, [token, id, refreshTickets, refreshComments, refreshTicketHistory]),
+  );
 
   const ticket = tickets.find((t) => t.ticketId === id);
 
@@ -48,6 +61,8 @@ export default function EmployeeComplaintDetailScreen() {
     ticket?.costResponsibility ?? 'Pending Review',
   );
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(ticket?.workerId ?? null);
+  const [assigning, setAssigning] = useState(false);
+  const [assignError, setAssignError] = useState('');
 
   const resident = ticket ? users.find((u) => u.userId === ticket.residentId) : null;
   const apartment =
@@ -93,14 +108,26 @@ export default function EmployeeComplaintDetailScreen() {
   const canEdit = ticket.status === 'Pending' || ticket.status === 'Assigned';
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
+  const ticketMedia = media.filter((m) => m.ticketId === ticket.ticketId);
 
-  const handleAssign = () => {
-    if (!selectedWorkerId) return;
-    reviewAndAssign(
-      ticket.ticketId,
-      { categoryId, priority, workerId: selectedWorkerId, costResponsibility },
-      { name: user.name, role: 'Facility Employee' },
-    );
+  const handleAssign = async () => {
+    if (!selectedWorkerId || !token || assigning) return;
+    setAssignError('');
+    setAssigning(true);
+    try {
+      await reviewAndAssign(
+        token,
+        ticket.ticketId,
+        { categoryId, priority, workerId: selectedWorkerId, costResponsibility },
+        { name: user.name, role: 'Facility Employee' },
+      );
+    } catch (err) {
+      setAssignError(
+        err instanceof ApiError ? err.message : 'Could not assign the ticket. Please try again.',
+      );
+    } finally {
+      setAssigning(false);
+    }
   };
 
   return (
@@ -111,9 +138,7 @@ export default function EmployeeComplaintDetailScreen() {
         showBack
       />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && (
-          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />
-        )}
+        <TicketMediaGallery media={ticketMedia} height={200} />
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -205,11 +230,14 @@ export default function EmployeeComplaintDetailScreen() {
                   </Card>
                 );
               })}
+              {!!assignError && <Text style={styles.error}>{assignError}</Text>}
               <Button
-                label={ticket.workerId ? 'Update Assignment' : 'Assign & Notify'}
+                label={
+                  assigning ? 'Assigning…' : ticket.workerId ? 'Update Assignment' : 'Assign & Notify'
+                }
                 fullWidth
                 size="lg"
-                disabled={!selectedWorkerId}
+                disabled={!selectedWorkerId || assigning}
                 onPress={handleAssign}
                 icon="checkmark-circle-outline"
               />
@@ -247,18 +275,7 @@ export default function EmployeeComplaintDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitleLg}>Messages</Text>
           <Card>
-            <CommentsThread
-              comments={ticketComments}
-              currentUserId={user.userId}
-              onSend={(message) =>
-                addComment(ticket.ticketId, {
-                  userId: user.userId,
-                  authorName: user.name,
-                  authorRole: user.role,
-                  message,
-                })
-              }
-            />
+            <CommentsThread comments={ticketComments} ticketId={ticket.ticketId} />
           </Card>
         </View>
       </Screen>
@@ -293,6 +310,10 @@ const getStyles = (Colors: ThemeColors) =>
     body: {
       ...Type.body,
       color: Colors.ink,
+    },
+    error: {
+      ...Type.caption,
+      color: Colors.danger,
     },
     personCard: {
       flexDirection: 'row',

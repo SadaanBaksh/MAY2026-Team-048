@@ -13,18 +13,14 @@ export function EmergencyAlertBar() {
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const isDesktop = useIsDesktop();
   const tickets = useTicketStore((s) => s.tickets);
-  const activeEmergencyAlertId = useTicketStore((s) => s.activeEmergencyAlertId);
   const pulse = useRef(new Animated.Value(1)).current;
 
+  // Tickets come back newest-first (backend orders by date_of_request desc; refreshTickets
+  // prepends them), so this naturally surfaces the most recently submitted unassigned emergency —
+  // from any resident, any device, not just whoever is using this employee's own device.
   const emergency = useMemo(
-    () =>
-      tickets.find(
-        (ticket) =>
-          ticket.ticketId === activeEmergencyAlertId &&
-          ticket.priority === 'Emergency' &&
-          ticket.status === 'Pending',
-      ),
-    [activeEmergencyAlertId, tickets],
+    () => tickets.find((ticket) => ticket.priority === 'Emergency' && ticket.status === 'Pending'),
+    [tickets],
   );
 
   useEffect(() => {

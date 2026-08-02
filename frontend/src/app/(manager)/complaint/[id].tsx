@@ -1,11 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
-import { MediaThumb } from '@/components/shared/MediaThumb';
+import { TicketMediaGallery } from '@/components/shared/TicketMediaGallery';
 import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Avatar } from '@/components/ui/Avatar';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
@@ -27,11 +27,23 @@ export default function ManagerComplaintAuditScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const media = useTicketStore((s) => s.media);
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const refreshComments = useTicketStore((s) => s.refreshComments);
+  const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+      if (token && id) refreshComments(token, id);
+      if (token && id) refreshTicketHistory(token, id);
+    }, [token, id, refreshTickets, refreshComments, refreshTicketHistory]),
+  );
 
   const ticket = tickets.find((t) => t.ticketId === id);
 
@@ -53,6 +65,7 @@ export default function ManagerComplaintAuditScreen() {
       : null;
   const ticketHistory = history.filter((h) => h.ticketId === ticket.ticketId);
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
+  const ticketMedia = media.filter((m) => m.ticketId === ticket.ticketId);
 
   return (
     <View style={styles.wrapper}>
@@ -62,9 +75,7 @@ export default function ManagerComplaintAuditScreen() {
         showBack
       />
       <Screen edges={['bottom']}>
-        {ticket.imageUrl && (
-          <MediaThumb uri={ticket.imageUrl} mediaType={ticket.mediaType} height={200} />
-        )}
+        <TicketMediaGallery media={ticketMedia} height={200} />
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{ticket.title}</Text>
@@ -144,7 +155,7 @@ export default function ManagerComplaintAuditScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitleLg}>Messages</Text>
           <Card>
-            <CommentsThread comments={ticketComments} currentUserId={user.userId} readOnly />
+            <CommentsThread comments={ticketComments} ticketId={ticket.ticketId} />
           </Card>
         </View>
       </Screen>

@@ -4,7 +4,7 @@ Simplifix is an AI-assisted apartment community maintenance management system bu
 
 The project aims to replace fragmented maintenance communication across WhatsApp messages, phone calls, and paper registers with a structured workflow for reporting, assigning, resolving, and tracking residential maintenance complaints.
 
-> Current status: the frontend mobile app has been started. It runs on local mock data and on-device storage. Backend, database, authentication server, cloud media storage, and live AI integrations are part of the planned full-system architecture.
+> Current status: the frontend mobile app runs on local mock data and on-device storage. A FastAPI + PostgreSQL backend skeleton (auth, data models, and CRUD APIs) has been started in [`backend/`](./backend); it is not yet wired up to the frontend. Cloud media storage and live AI integrations are still part of the planned full-system architecture.
 
 ## What the App Does
 
@@ -34,7 +34,8 @@ Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Close
 
 ## Current Implementation
 
-The current repository contains the Expo React Native frontend in [`frontend/`](./frontend).
+The repository contains the Expo React Native frontend in [`frontend/`](./frontend) and a FastAPI +
+PostgreSQL backend skeleton in [`backend/`](./backend).
 
 Implemented frontend capabilities include:
 
@@ -43,13 +44,14 @@ Implemented frontend capabilities include:
 - Demo login accounts for quick role switching
 - Mock complaint, user, worker, notification, and analytics data
 - Zustand stores persisted with `AsyncStorage`
-- Local mock AI helpers for complaint generation behavior
+- Server-backed Gemini complaint analysis and resident support chat
 - Resident complaint creation and tracking flows
 - Employee triage and assignment flows
 - Maintenance job update flows
 - Manager analytics, history, and performance views
 
-No environment variables or API keys are currently required.
+The frontend needs no API key. To enable AI features, add `GEMINI_API_KEY` to `backend/.env`;
+keep it server-side and never use an `EXPO_PUBLIC_` variable for it.
 
 ## Setup
 
@@ -93,28 +95,41 @@ On the login screen, select any demo account to enter the app as:
 MAY2026-Team-048/
 ├─ README.md                 # Root project overview
 ├─ LICENSE
-└─ frontend/                 # Current Expo React Native application
-   ├─ src/
-   │  ├─ app/                # Expo Router screens and route groups
-   │  │  ├─ (auth)/          # Welcome, login, and registration screens
-   │  │  ├─ (resident)/      # Resident dashboard, complaints, details, notifications
-   │  │  ├─ (employee)/      # Employee dashboard, queue, workers, assignment
-   │  │  ├─ (maintenance)/   # Maintenance staff job list and job detail flows
-   │  │  └─ (manager)/       # Manager analytics, performance, history, details
-   │  ├─ components/
-   │  │  ├─ ui/              # Reusable UI primitives
-   │  │  └─ shared/          # Domain-specific shared components
-   │  ├─ constants/          # Theme and design tokens
-   │  ├─ data/               # Mock data and categories
-   │  ├─ store/              # Zustand stores
-   │  ├─ types/              # Shared TypeScript types
-   │  └─ utils/              # Date, ID, overdue, and mock AI helpers
-   ├─ assets/                # App icons, splash assets, and images
-   ├─ scripts/               # Utility scripts
-   ├─ app.json               # Expo app configuration
-   ├─ metro.config.js        # Metro bundler configuration
-   ├─ package.json           # Frontend dependencies and scripts
-   └─ tsconfig.json          # TypeScript configuration
+├─ frontend/                 # Current Expo React Native application
+│  ├─ src/
+│  │  ├─ app/                # Expo Router screens and route groups
+│  │  │  ├─ (auth)/          # Welcome, login, and registration screens
+│  │  │  ├─ (resident)/      # Resident dashboard, complaints, details, notifications
+│  │  │  ├─ (employee)/      # Employee dashboard, queue, workers, assignment
+│  │  │  ├─ (maintenance)/   # Maintenance staff job list and job detail flows
+│  │  │  └─ (manager)/       # Manager analytics, performance, history, details
+│  │  ├─ components/
+│  │  │  ├─ ui/              # Reusable UI primitives
+│  │  │  └─ shared/          # Domain-specific shared components
+│  │  ├─ constants/          # Theme and design tokens
+│  │  ├─ data/               # Mock data and categories
+│  │  ├─ store/              # Zustand stores
+│  │  ├─ types/              # Shared TypeScript types
+│  │  └─ utils/              # Date, ID, overdue, and mock AI helpers
+│  ├─ assets/                # App icons, splash assets, and images
+│  ├─ scripts/               # Utility scripts
+│  ├─ app.json               # Expo app configuration
+│  ├─ metro.config.js        # Metro bundler configuration
+│  ├─ package.json           # Frontend dependencies and scripts
+│  └─ tsconfig.json          # TypeScript configuration
+└─ backend/                  # FastAPI + PostgreSQL backend skeleton
+   ├─ app/
+   │  ├─ core/               # Settings, password hashing, JWT
+   │  ├─ db/                 # SQLAlchemy engine/session, declarative base
+   │  ├─ models/              # SQLAlchemy models
+   │  ├─ schemas/             # Pydantic request/response models
+   │  ├─ api/v1/endpoints/    # auth, users, apartments, categories, tickets, comments, notifications
+   │  └─ main.py              # FastAPI app entrypoint
+   ├─ alembic/                # Database migrations
+   ├─ scripts/                # Seed scripts
+   ├─ requirements.txt
+   ├─ Dockerfile
+   └─ docker-compose.yml
 
 ```
 

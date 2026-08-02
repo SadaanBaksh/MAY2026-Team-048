@@ -2,34 +2,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { COMMENTS, COMPLAINT_HISTORY, COMPLAINT_MEDIA, TICKETS, USERS } from '@/data/seed';
-import { useNotificationStore } from '@/store/notificationStore';
+import {
+  fetchComments,
+  fetchTicketHistory,
+  fetchTickets,
+  postComment,
+  updateTicket,
+  type ApiComment,
+  type ApiTicket,
+} from '@/api/client';
+import { TICKETS, USERS } from '@/data/seed';
+import { useAuthStore } from '@/store/authStore';
 import type {
   Comment,
   ComplaintHistoryEntry,
   ComplaintMedia,
   CostResponsibility,
-  MediaType,
   Priority,
   Ticket,
   TicketStatus,
 } from '@/types';
 import { isoNow } from '@/utils/date';
 import { generateId } from '@/utils/id';
-
-export interface SubmitComplaintInput {
-  residentId: string;
-  categoryId: string;
-  title: string;
-  aiDescription: string;
-  aiConfidence: number;
-  priority: Priority;
-  mediaUrl: string | null;
-  mediaType: MediaType | null;
-  residentNote: string;
-  voiceNoteUrl: string | null;
-  voiceNoteDurationSec: number | null;
-}
 
 export interface Actor {
   name: string;
@@ -41,11 +35,17 @@ interface TicketState {
   media: ComplaintMedia[];
   history: ComplaintHistoryEntry[];
   comments: Comment[];
-  /** The newly received emergency that should surface as the employee pull-up alert. */
-  activeEmergencyAlertId: string | null;
 
-  submitComplaint: (input: SubmitComplaintInput) => string;
+  /** Records a ticket that was already created (with uploaded media) via the backend API. */
+  addTicketFromApi: (apiTicket: ApiTicket) => string;
+  /** Fetches the caller's tickets from the backend, merging them into local state. */
+  refreshTickets: (token: string) => Promise<void>;
+  /** Fetches the server-authoritative history for one ticket. */
+  refreshTicketHistory: (token: string, ticketId: string) => Promise<void>;
+  /** Fetches the server-authoritative comment thread for one ticket. */
+  refreshComments: (token: string, ticketId: string) => Promise<void>;
   reviewAndAssign: (
+    token: string,
     ticketId: string,
     changes: {
       categoryId: string;
@@ -54,19 +54,26 @@ interface TicketState {
       costResponsibility: CostResponsibility;
     },
     actor: Actor,
-  ) => void;
-  updateCostResponsibility: (ticketId: string, costResponsibility: CostResponsibility) => void;
-  startProgress: (ticketId: string, actor: Actor) => void;
+  ) => Promise<void>;
+  updateCostResponsibility: (
+    token: string,
+    ticketId: string,
+    costResponsibility: CostResponsibility,
+  ) => Promise<void>;
+  startProgress: (token: string, ticketId: string, actor: Actor) => Promise<void>;
   resolveTicket: (
+    token: string,
     ticketId: string,
     changes: { remarks: string; proofUrl: string },
     actor: Actor,
-  ) => void;
-  verifyAndClose: (ticketId: string, changes: { rating: number; feedback: string }) => void;
-  addComment: (
+  ) => Promise<void>;
+  verifyAndClose: (
+    token: string,
     ticketId: string,
-    input: { userId: string; authorName: string; authorRole: string; message: string },
-  ) => void;
+    changes: { rating: number; feedback: string },
+  ) => Promise<void>;
+  /** Posts a new comment to the backend and appends it to local state. */
+  postCommentAction: (token: string, ticketId: string, message: string) => Promise<void>;
 }
 
 function pushHistory(
@@ -89,261 +96,215 @@ function pushHistory(
   return [...state.history, entry];
 }
 
+function mapApiTicketToTicket(apiTicket: ApiTicket): Ticket {
+  return {
+    ticketId: apiTicket.id,
+    residentId: apiTicket.resident_id,
+    workerId: apiTicket.worker_id,
+    categoryId: apiTicket.category_id,
+    imageUrl: apiTicket.image_url,
+    mediaType: apiTicket.media_type,
+    residentNote: apiTicket.resident_note,
+    voiceNoteUrl: apiTicket.voice_note_url,
+    voiceNoteDurationSec: apiTicket.voice_note_duration_sec,
+    aiDescription: apiTicket.ai_description,
+    aiConfidence: apiTicket.ai_confidence,
+    priority: apiTicket.priority,
+    status: apiTicket.status,
+    costResponsibility: apiTicket.cost_responsibility,
+    dateOfRequest: apiTicket.date_of_request,
+    dateOfResolution: apiTicket.date_of_resolution,
+    resolutionRemarks: apiTicket.resolution_remarks,
+    resolutionProofUrl: apiTicket.resolution_proof_url,
+    residentRating: apiTicket.resident_rating,
+    residentFeedback: apiTicket.resident_feedback,
+    isOverdue: apiTicket.is_overdue,
+    title: apiTicket.title,
+  };
+}
+
+function mapApiCommentToComment(apiComment: ApiComment): Comment {
+  const author = useAuthStore.getState().users.find((u) => u.userId === apiComment.user_id);
+  return {
+    commentId: apiComment.id,
+    ticketId: apiComment.ticket_id,
+    userId: apiComment.user_id,
+    authorName: author?.name ?? 'Unknown user',
+    authorRole: author?.role ?? 'resident',
+    message: apiComment.message,
+    postedAt: apiComment.posted_at,
+  };
+}
+
+// IDs of the hardcoded demo dataset (`data/seed.ts`), used only to strip that dataset back out
+// of anything already persisted to AsyncStorage from before the app was backend-driven — see the
+// `migrate` below. Real tickets (from the API) never collide with these.
+const SEED_TICKET_IDS = new Set(TICKETS.map((t) => t.ticketId));
+
+function mapApiTicketMedia(apiTicket: ApiTicket): ComplaintMedia[] {
+  return apiTicket.media.map((m) => ({
+    mediaId: m.id,
+    ticketId: apiTicket.id,
+    mediaUrl: m.media_url,
+    mediaType: m.media_type,
+    uploadedAt: m.uploaded_at,
+  }));
+}
+
 export const useTicketStore = create<TicketState>()(
   persist(
-    (set, get) => ({
-      tickets: TICKETS,
-      media: COMPLAINT_MEDIA,
-      history: COMPLAINT_HISTORY,
-      comments: COMMENTS,
-      activeEmergencyAlertId: null,
-
-      submitComplaint: (input) => {
-        const ticketId = generateId('tkt');
-        const ticket: Ticket = {
-          ticketId,
-          residentId: input.residentId,
-          workerId: null,
-          categoryId: input.categoryId,
-          imageUrl: input.mediaUrl,
-          mediaType: input.mediaType,
-          residentNote: input.residentNote,
-          voiceNoteUrl: input.voiceNoteUrl,
-          voiceNoteDurationSec: input.voiceNoteDurationSec,
-          aiDescription: input.aiDescription,
-          aiConfidence: input.aiConfidence,
-          priority: input.priority,
-          status: 'Pending',
-          costResponsibility: 'Pending Review',
-          dateOfRequest: isoNow(),
-          dateOfResolution: null,
-          resolutionRemarks: null,
-          resolutionProofUrl: null,
-          residentRating: null,
-          residentFeedback: null,
-          isOverdue: false,
-          title: input.title,
-        };
-
-        const resident = USERS.find((u) => u.userId === input.residentId);
-
+    (set, get) => {
+      /** Maps a freshly-updated ApiTicket into local state, returning the mapped ticket. */
+      const applyUpdatedTicket = (apiTicket: ApiTicket): Ticket => {
+        const ticket = mapApiTicketToTicket(apiTicket);
         set((state) => ({
-          tickets: [ticket, ...state.tickets],
-          media:
-            input.mediaUrl && input.mediaType
-              ? [
-                  ...state.media,
-                  {
-                    mediaId: generateId('media'),
-                    ticketId,
-                    mediaUrl: input.mediaUrl,
-                    mediaType: input.mediaType,
-                    uploadedAt: isoNow(),
-                  },
-                ]
-              : state.media,
-          history: pushHistory(
-            state,
-            ticketId,
-            null,
-            'Pending',
-            'Complaint submitted by resident.',
-            resident?.name ?? 'Resident',
-          ),
-          activeEmergencyAlertId:
-            input.priority === 'Emergency' ? ticketId : state.activeEmergencyAlertId,
+          tickets: state.tickets.map((t) => (t.ticketId === ticket.ticketId ? ticket : t)),
         }));
+        return ticket;
+      };
 
-        const employees = USERS.filter((u) => u.role === 'facility_employee');
-        employees.forEach((emp) => {
-          useNotificationStore.getState().addNotification({
-            userId: emp.userId,
-            ticketId,
-            title:
-              input.priority === 'Emergency'
-                ? 'Emergency service request'
-                : 'New complaint submitted',
-            message:
-              input.priority === 'Emergency'
-                ? `${resident?.name ?? 'A resident'} needs emergency assistance: ${input.title}`
-                : `${resident?.name ?? 'A resident'} reported: ${input.title}`,
+      return {
+        tickets: [],
+        media: [],
+        history: [],
+        comments: [],
+
+        addTicketFromApi: (apiTicket) => {
+          const ticket = mapApiTicketToTicket(apiTicket);
+          const newMedia = mapApiTicketMedia(apiTicket);
+          const resident = USERS.find((u) => u.userId === apiTicket.resident_id);
+
+          set((state) => ({
+            tickets: [ticket, ...state.tickets],
+            media: [...state.media, ...newMedia],
+            history: pushHistory(
+              state,
+              ticket.ticketId,
+              null,
+              'Pending',
+              'Complaint submitted by resident.',
+              resident?.name ?? 'Resident',
+            ),
+          }));
+
+          return ticket.ticketId;
+        },
+
+        refreshTickets: async (token) => {
+          const apiTickets = await fetchTickets(token);
+          // Every ticket now comes from the backend (no more local-only submission path), so
+          // this is a plain replace — no merge logic needed to protect anything local-only.
+          set({
+            tickets: apiTickets.map(mapApiTicketToTicket),
+            media: apiTickets.flatMap(mapApiTicketMedia),
           });
-        });
+        },
 
-        return ticketId;
-      },
+        refreshTicketHistory: async (token, ticketId) => {
+          const apiHistory = await fetchTicketHistory(token, ticketId);
+          const users = useAuthStore.getState().users;
+          const mapped: ComplaintHistoryEntry[] = apiHistory.map((h) => ({
+            historyId: h.id,
+            ticketId: h.ticket_id,
+            oldStatus: h.old_status,
+            newStatus: h.new_status,
+            remarks: h.remarks,
+            changedAt: h.changed_at,
+            actorName: users.find((u) => u.userId === h.actor_id)?.name ?? 'Unknown',
+          }));
 
-      reviewAndAssign: (ticketId, changes, actor) => {
-        const worker = USERS.find((u) => u.userId === changes.workerId);
-        set((state) => ({
-          tickets: state.tickets.map((t) =>
-            t.ticketId === ticketId
-              ? {
-                  ...t,
-                  categoryId: changes.categoryId,
-                  priority: changes.priority,
-                  workerId: changes.workerId,
-                  costResponsibility: changes.costResponsibility,
-                  status: 'Assigned' as TicketStatus,
-                }
-              : t,
-          ),
-          history: pushHistory(
-            state,
-            ticketId,
-            state.tickets.find((t) => t.ticketId === ticketId)?.status ?? 'Pending',
-            'Assigned',
-            `Assigned to ${worker?.name ?? 'maintenance staff'}.`,
-            actor.name,
-          ),
-          activeEmergencyAlertId:
-            state.activeEmergencyAlertId === ticketId ? null : state.activeEmergencyAlertId,
-        }));
+          set((state) => ({
+            history: [...state.history.filter((h) => h.ticketId !== ticketId), ...mapped],
+          }));
+        },
 
-        const ticket = get().tickets.find((t) => t.ticketId === ticketId);
-        if (worker) {
-          useNotificationStore.getState().addNotification({
-            userId: worker.userId,
-            ticketId,
-            title: 'New assignment',
-            message: `You have been assigned: ${ticket?.title ?? 'a complaint'}.`,
+        reviewAndAssign: async (token, ticketId, changes, actor) => {
+          const apiTicket = await updateTicket(token, ticketId, {
+            category_id: changes.categoryId,
+            worker_id: changes.workerId,
+            priority: changes.priority,
+            cost_responsibility: changes.costResponsibility,
+            status: 'Assigned',
           });
-        }
-        if (ticket) {
-          useNotificationStore.getState().addNotification({
-            userId: ticket.residentId,
-            ticketId,
-            title: 'Complaint assigned',
-            message: `${worker?.name ?? 'A technician'} has been assigned to your complaint.`,
-          });
-        }
-      },
+          applyUpdatedTicket(apiTicket);
+          await get().refreshTicketHistory(token, ticketId);
+        },
 
-      updateCostResponsibility: (ticketId, costResponsibility) =>
-        set((state) => ({
-          tickets: state.tickets.map((t) =>
-            t.ticketId === ticketId ? { ...t, costResponsibility } : t,
-          ),
-        })),
-
-      startProgress: (ticketId, actor) => {
-        set((state) => ({
-          tickets: state.tickets.map((t) =>
-            t.ticketId === ticketId ? { ...t, status: 'In_Progress' as TicketStatus } : t,
-          ),
-          history: pushHistory(
-            state,
-            ticketId,
-            'Assigned',
-            'In_Progress',
-            'Work has started on-site.',
-            actor.name,
-          ),
-        }));
-        const ticket = get().tickets.find((t) => t.ticketId === ticketId);
-        if (ticket) {
-          useNotificationStore.getState().addNotification({
-            userId: ticket.residentId,
-            ticketId,
-            title: 'Work started',
-            message: `${actor.name} has started work on: ${ticket.title}.`,
+        updateCostResponsibility: async (token, ticketId, costResponsibility) => {
+          const apiTicket = await updateTicket(token, ticketId, {
+            cost_responsibility: costResponsibility,
           });
-        }
-      },
+          applyUpdatedTicket(apiTicket);
+        },
 
-      resolveTicket: (ticketId, changes, actor) => {
-        set((state) => ({
-          tickets: state.tickets.map((t) =>
-            t.ticketId === ticketId
-              ? {
-                  ...t,
-                  status: 'Resolved' as TicketStatus,
-                  dateOfResolution: isoNow(),
-                  resolutionRemarks: changes.remarks,
-                  resolutionProofUrl: changes.proofUrl,
-                }
-              : t,
-          ),
-          history: pushHistory(
-            state,
-            ticketId,
-            'In_Progress',
-            'Resolved',
-            changes.remarks,
-            actor.name,
-          ),
-        }));
-        const ticket = get().tickets.find((t) => t.ticketId === ticketId);
-        if (ticket) {
-          useNotificationStore.getState().addNotification({
-            userId: ticket.residentId,
-            ticketId,
-            title: 'Complaint resolved',
-            message: `Your complaint "${ticket.title}" has been marked resolved. Please verify and rate.`,
-          });
-          const employees = USERS.filter((u) => u.role === 'facility_employee');
-          employees.forEach((emp) => {
-            useNotificationStore.getState().addNotification({
-              userId: emp.userId,
-              ticketId,
-              title: 'Work completed',
-              message: `${actor.name} completed: ${ticket.title}.`,
-            });
-          });
-        }
-      },
+        startProgress: async (token, ticketId, actor) => {
+          const apiTicket = await updateTicket(token, ticketId, { status: 'In_Progress' });
+          applyUpdatedTicket(apiTicket);
+          await get().refreshTicketHistory(token, ticketId);
+        },
 
-      verifyAndClose: (ticketId, changes) => {
-        set((state) => ({
-          tickets: state.tickets.map((t) =>
-            t.ticketId === ticketId
-              ? {
-                  ...t,
-                  status: 'Closed' as TicketStatus,
-                  residentRating: changes.rating,
-                  residentFeedback: changes.feedback,
-                }
-              : t,
-          ),
-          history: pushHistory(
-            state,
-            ticketId,
-            'Resolved',
-            'Closed',
-            'Resident verified the resolution and closed the complaint.',
-            'Resident',
-          ),
-        }));
-        const ticket = get().tickets.find((t) => t.ticketId === ticketId);
-        if (ticket?.workerId) {
-          useNotificationStore.getState().addNotification({
-            userId: ticket.workerId,
-            ticketId,
-            title: 'Resident feedback received',
-            message: `You were rated ${changes.rating}/5 for: ${ticket.title}.`,
+        resolveTicket: async (token, ticketId, changes, actor) => {
+          const apiTicket = await updateTicket(token, ticketId, {
+            status: 'Resolved',
+            resolution_remarks: changes.remarks,
+            resolution_proof_url: changes.proofUrl,
           });
-        }
-      },
+          applyUpdatedTicket(apiTicket);
+          await get().refreshTicketHistory(token, ticketId);
+        },
 
-      addComment: (ticketId, input) =>
-        set((state) => ({
-          comments: [
-            ...state.comments,
-            {
-              commentId: generateId('cmt'),
-              ticketId,
-              userId: input.userId,
-              authorName: input.authorName,
-              authorRole: input.authorRole as Comment['authorRole'],
-              message: input.message,
-              postedAt: isoNow(),
-            },
-          ],
-        })),
-    }),
+        verifyAndClose: async (token, ticketId, changes) => {
+          const apiTicket = await updateTicket(token, ticketId, {
+            status: 'Closed',
+            resident_rating: changes.rating,
+            resident_feedback: changes.feedback,
+          });
+          applyUpdatedTicket(apiTicket);
+          await get().refreshTicketHistory(token, ticketId);
+        },
+
+        refreshComments: async (token, ticketId) => {
+          const apiComments = await fetchComments(token, ticketId);
+          const mapped = apiComments.map(mapApiCommentToComment);
+          set((state) => ({
+            comments: [...state.comments.filter((c) => c.ticketId !== ticketId), ...mapped],
+          }));
+        },
+
+        postCommentAction: async (token, ticketId, message) => {
+          const apiComment = await postComment(token, ticketId, message);
+          const comment = mapApiCommentToComment(apiComment);
+          set((state) => ({ comments: [...state.comments, comment] }));
+        },
+      };
+    },
     {
       name: 'simplifix-tickets',
       storage: createJSONStorage(() => AsyncStorage),
+      // Bumped (v2) to strip the hardcoded demo dataset (`data/seed.ts`) out of AsyncStorage:
+      // the store used to seed `tickets`/`media`/`history` with it directly, so every real
+      // account was showing fabricated complaints (e.g. "Aditi Sharma") that don't belong to
+      // them, alongside comments persisted locally before comments moved to the backend.
+      // Bumped again (v3) once the last local-only ticket path (the employee dashboard's demo
+      // emergency button, and the old pre-backend emergency flow) was removed — any `tkt_`-
+      // prefixed ticket still sitting in AsyncStorage at this point is guaranteed stale, since
+      // every ticket ID now comes from the backend (a plain UUID) instead.
+      version: 3,
+      migrate: (persistedState) => {
+        const state = persistedState as TicketState;
+        const isStale = (ticketId: string) =>
+          SEED_TICKET_IDS.has(ticketId) || ticketId.startsWith('tkt_');
+        return {
+          ...state,
+          comments: [],
+          tickets: state.tickets.filter((t) => !isStale(t.ticketId)),
+          media: state.media.filter((m) => !isStale(m.ticketId)),
+          history: state.history.filter((h) => !isStale(h.ticketId)),
+        };
+      },
+      // Comments are always fetched fresh from the backend, so don't persist them at all —
+      // otherwise stale/local-only messages would keep reappearing on next launch.
+      partialize: (state) => ({ ...state, comments: [] }),
     },
   ),
 );

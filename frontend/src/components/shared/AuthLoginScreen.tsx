@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import * as v from 'valibot';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -21,6 +22,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type RoleColorMap, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import type { AppUser, UserRole } from '@/types';
+import { emailSchema, firstIssueMessage } from '@/utils/validation';
 
 export interface DemoAccountItem {
   role: UserRole;
@@ -63,35 +65,54 @@ export function AuthLoginScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const users = useAuthStore((s) => s.users);
+  const [submitting, setSubmitting] = useState(false);
   const login = useAuthStore((s) => s.login);
   const loginAsDemo = useAuthStore((s) => s.loginAsDemo);
+  const logout = useAuthStore((s) => s.logout);
 
-  const handleLogin = () => {
-    if (!email.trim() || !password.trim()) {
-      setError('Enter your email and password to continue.');
-      return;
-    }
-    const targetUser = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (targetUser && validateRole) {
-      const roleError = validateRole(targetUser);
-      if (roleError) {
-        setError(roleError);
-        return;
-      }
-    }
-    const result = login(email);
+  const afterLogin = async (result: { success: boolean; error?: string }) => {
     if (!result.success) {
       setError(result.error ?? 'Unable to log in.');
       return;
+    }
+    const loggedInUser = useAuthStore.getState().currentUser;
+    if (loggedInUser && validateRole) {
+      const roleError = validateRole(loggedInUser);
+      if (roleError) {
+        await logout();
+        setError(roleError);
+        return;
+      }
     }
     setError('');
     router.replace('/');
   };
 
-  const handleDemo = (role: UserRole) => {
-    loginAsDemo(role);
-    router.replace('/');
+  const handleLogin = async () => {
+    const emailError = firstIssueMessage(v.safeParse(emailSchema, email));
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+    if (!password.trim()) {
+      setError('Enter your password to continue.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await afterLogin(await login(email.trim(), password));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDemo = async (role: UserRole) => {
+    setSubmitting(true);
+    try {
+      await afterLogin(await loginAsDemo(role));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -99,7 +120,7 @@ export function AuthLoginScreen({
       <ScreenHeader title={headerTitle} showBack onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
@@ -138,6 +159,8 @@ export function AuthLoginScreen({
               <Button
                 label={buttonLabel}
                 onPress={handleLogin}
+                loading={submitting}
+                disabled={submitting}
                 fullWidth
                 size="lg"
                 style={styles.loginButton}
@@ -158,6 +181,7 @@ export function AuthLoginScreen({
                   label={acc.shortLabel}
                   labelColor={Colors.inkSecondary}
                   roleColor={RoleColors[acc.role]}
+                  disabled={submitting}
                   onPress={() => handleDemo(acc.role)}
                 />
               ))}
@@ -183,18 +207,25 @@ function DemoRoleChip({
   label,
   labelColor,
   roleColor,
+  disabled,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   labelColor: string;
   roleColor: RoleColorMap[UserRole];
+  disabled?: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [chipStyles.chip, pressed && chipStyles.chipPressed]}
+      disabled={disabled}
+      style={({ pressed }) => [
+        chipStyles.chip,
+        pressed && chipStyles.chipPressed,
+        disabled && chipStyles.chipDisabled,
+      ]}
     >
       <View style={[chipStyles.icon, { backgroundColor: roleColor.soft }]}>
         <Ionicons name={icon} size={18} color={roleColor.text} />
@@ -214,6 +245,9 @@ const chipStyles = StyleSheet.create({
   },
   chipPressed: {
     opacity: 0.7,
+  },
+  chipDisabled: {
+    opacity: 0.4,
   },
   icon: {
     width: 44,

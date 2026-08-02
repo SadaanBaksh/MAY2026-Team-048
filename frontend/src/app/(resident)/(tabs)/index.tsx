@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, type Href } from 'expo-router';
-import { useMemo } from 'react';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -14,6 +14,7 @@ import { APARTMENTS } from '@/data/seed';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Resident } from '@/types';
 
@@ -24,7 +25,17 @@ export default function ResidentHomeScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser) as Resident;
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+      if (token) refreshNotifications(token);
+    }, [token, refreshTickets, refreshNotifications]),
+  );
 
   const apartment = APARTMENTS.find((a) => a.apartmentId === user.apartmentId);
 

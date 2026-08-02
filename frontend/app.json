@@ -59,7 +59,8 @@
         {
           "microphonePermission": "Simplifix uses your microphone so you can record a voice note describing a maintenance issue."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

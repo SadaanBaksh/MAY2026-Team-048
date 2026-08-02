@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ApiError, createTicket, uploadFile } from '@/api/client';
 import { MediaThumb } from '@/components/shared/MediaThumb';
 import { VoiceNotePlayer } from '@/components/shared/VoiceNotePlayer';
 import { Button } from '@/components/ui/Button';
@@ -15,42 +16,69 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
-import type { MediaType } from '@/types';
 
-const EMERGENCY_PHONE_NUMBER = '1800123456';
+const EMERGENCY_PHONE_NUMBER = '112';
+const MAX_PHOTOS = 5;
 
 export default function EmergencyScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser)!;
-  const submitComplaint = useTicketStore((s) => s.submitComplaint);
+  const token = useAuthStore((s) => s.token);
+  const addTicketFromApi = useTicketStore((s) => s.addTicketFromApi);
   const voiceRecorder = useVoiceRecorder();
   const voiceActionInFlight = useRef(false);
 
-  const [mediaUri, setMediaUri] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<MediaType | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [voiceNoteUri, setVoiceNoteUri] = useState<string | null>(null);
   const [voiceNoteDurationSec, setVoiceNoteDurationSec] = useState<number | null>(null);
   const [permissionError, setPermissionError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [submittedTicketId, setSubmittedTicketId] = useState<string | null>(null);
 
-  const chooseMedia = async () => {
+  const pickFromLibrary = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      setPermissionError(`You can attach up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
     setPermissionError('');
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setPermissionError('Photo library permission is required to attach a photo or video.');
+      setPermissionError('Photo library permission is required to attach a photo.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
+      mediaTypes: ['images'],
       quality: 0.7,
-      videoMaxDuration: 30,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photos.length,
     });
-    if (!result.canceled && result.assets[0]) {
-      setMediaUri(result.assets[0].uri);
-      setMediaType(result.assets[0].type === 'video' ? 'Video' : 'Image');
+    if (!result.canceled && result.assets.length > 0) {
+      setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
     }
+  };
+
+  const takePhoto = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      setPermissionError(`You can attach up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
+    setPermissionError('');
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setPermissionError('Camera permission is required to take a photo.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled && result.assets[0]) {
+      setPhotos((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const removePhoto = (uri: string) => {
+    setPhotos((prev) => prev.filter((p) => p !== uri));
   };
 
   const startVoiceNote = async () => {
@@ -80,24 +108,41 @@ export default function EmergencyScreen() {
     }
   };
 
-  const submitEmergency = () => {
-    if (!mediaUri && !voiceNoteUri && !note.trim()) return;
-    const description =
-      note.trim() || 'Emergency assistance requested. See the attached media or audio message.';
-    const ticketId = submitComplaint({
-      residentId: user.userId,
-      categoryId: 'cat_emergency',
-      title: note.trim().split(/\s+/).slice(0, 6).join(' ') || 'Emergency assistance needed',
-      aiDescription: description,
-      aiConfidence: 1,
-      priority: 'Emergency',
-      mediaUrl: mediaUri,
-      mediaType,
-      residentNote: note,
-      voiceNoteUrl: voiceNoteUri,
-      voiceNoteDurationSec,
-    });
-    setSubmittedTicketId(ticketId);
+  const submitEmergency = async () => {
+    if ((photos.length === 0 && !voiceNoteUri && !note.trim()) || !token || submitting) return;
+    setSubmitError('');
+    setSubmitting(true);
+    try {
+      const description =
+        note.trim() || 'Emergency assistance requested. See the attached media or audio message.';
+      const photoUrls = await Promise.all(
+        photos.map(async (uri) => (await uploadFile(token, uri, 'photo')).url),
+      );
+      const voiceNoteUploadUrl = voiceNoteUri
+        ? (await uploadFile(token, voiceNoteUri, 'voice_note')).url
+        : null;
+
+      const apiTicket = await createTicket(token, {
+        title: note.trim().split(/\s+/).slice(0, 6).join(' ') || 'Emergency assistance needed',
+        category_id: 'cat_emergency',
+        resident_note: note,
+        photo_urls: photoUrls,
+        voice_note_url: voiceNoteUploadUrl,
+        voice_note_duration_sec: voiceNoteDurationSec,
+        ai_description: description,
+        ai_confidence: 1,
+        priority: 'Emergency',
+      });
+
+      const ticketId = addTicketFromApi(apiTicket);
+      setSubmittedTicketId(ticketId);
+    } catch (err) {
+      setSubmitError(
+        err instanceof ApiError ? err.message : 'Could not send your emergency request. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submittedTicketId) {
@@ -140,7 +185,7 @@ export default function EmergencyScreen() {
     );
   }
 
-  const canSubmit = !!mediaUri || !!voiceNoteUri || !!note.trim();
+  const canSubmit = photos.length > 0 || !!voiceNoteUri || !!note.trim();
 
   return (
     <View style={styles.wrapper}>
@@ -170,16 +215,42 @@ export default function EmergencyScreen() {
           Use any one or more options below. A message is helpful, but not required.
         </Text>
 
-        <Text style={styles.label}>Photo or video</Text>
-        {mediaUri && mediaType ? (
-          <MediaThumb uri={mediaUri} mediaType={mediaType} height={180} />
-        ) : null}
-        <Button
-          label={mediaUri ? 'Replace photo or video' : 'Add photo or video'}
-          icon="images-outline"
-          variant="secondary"
-          onPress={chooseMedia}
-        />
+        <Text style={styles.label}>
+          Photos ({photos.length}/{MAX_PHOTOS})
+        </Text>
+        {photos.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
+            {photos.map((uri) => (
+              <View key={uri} style={styles.photoItem}>
+                <MediaThumb uri={uri} mediaType="Image" height={120} radius={Radius.md} />
+                <Pressable style={styles.removeBadge} onPress={() => removePhoto(uri)}>
+                  <Ionicons name="close" size={14} color={Colors.white} />
+                </Pressable>
+              </View>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.placeholder}>
+            <Ionicons name="image-outline" size={32} color={Colors.inkTertiary} />
+            <Text style={styles.placeholderText}>No photos attached yet</Text>
+          </View>
+        )}
+        <View style={styles.mediaActions}>
+          <Button
+            label="Take Photo"
+            icon="camera-outline"
+            variant="secondary"
+            onPress={takePhoto}
+            style={styles.flexButton}
+          />
+          <Button
+            label="Choose File"
+            icon="images-outline"
+            variant="secondary"
+            onPress={pickFromLibrary}
+            style={styles.flexButton}
+          />
+        </View>
 
         <Text style={styles.label}>Audio message</Text>
         {voiceNoteUri ? (
@@ -226,14 +297,15 @@ export default function EmergencyScreen() {
           />
         </Card>
         {!!permissionError && <Text style={styles.error}>{permissionError}</Text>}
+        {!!submitError && <Text style={styles.error}>{submitError}</Text>}
 
         <Button
-          label="Send emergency request"
+          label={submitting ? 'Sending…' : 'Send emergency request'}
           icon="alert-circle"
           fullWidth
           size="lg"
           variant="danger"
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           onPress={submitEmergency}
         />
       </ScrollView>
@@ -257,6 +329,33 @@ const getStyles = (Colors: ThemeColors) =>
     sectionTitle: { ...Type.subtitle, color: Colors.ink, marginTop: Spacing.md },
     helper: { ...Type.caption, color: Colors.inkSecondary, marginBottom: Spacing.xs },
     label: { ...Type.captionBold, color: Colors.inkSecondary, marginTop: Spacing.sm },
+    placeholder: {
+      height: 180,
+      borderRadius: Radius.lg,
+      borderWidth: 1.5,
+      borderColor: Colors.border,
+      borderStyle: 'dashed',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: Colors.surface,
+    },
+    placeholderText: { ...Type.caption, color: Colors.inkTertiary },
+    photoRow: { flexDirection: 'row' },
+    photoItem: { width: 120, marginRight: Spacing.sm },
+    removeBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(18,20,28,0.65)',
+    },
+    mediaActions: { flexDirection: 'row', gap: Spacing.sm },
+    flexButton: { flex: 1 },
     noteCard: { padding: 0 },
     noteInput: {
       minHeight: 100,

@@ -20,7 +20,7 @@ export default function EmployeeLoginScreen() {
       demoAccounts={DEMO_ACCOUNTS}
       validateRole={(user) =>
         user.role === 'resident'
-          ? 'This email belongs to a customer account. Please use Customer Login.'
+          ? 'This email belongs to a resident account. Please use Resident Login.'
           : null
       }
       footerLinks={[
@@ -30,8 +30,8 @@ export default function EmployeeLoginScreen() {
           onPress: () => router.push('/(auth)/register'),
         },
         {
-          promptText: 'Are you a customer?',
-          linkText: 'Customer Login',
+          promptText: 'Are you a resident?',
+          linkText: 'Resident Login',
           onPress: () => router.replace('/(auth)/customer-login'),
         },
       ]}

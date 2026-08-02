@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as v from 'valibot';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -13,6 +14,13 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import type { UserRole } from '@/types';
+import {
+  emailSchema,
+  firstIssueMessage,
+  passwordSchema,
+  phoneSchema,
+  toCanonicalPhone,
+} from '@/utils/validation';
 
 const REGISTER_CARD_MAX_WIDTH = 480;
 
@@ -68,6 +76,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Keep the selected role valid for whichever pair of options the current
   // breakpoint shows (e.g. resizing from desktop down to mobile width).
@@ -75,9 +84,24 @@ export default function RegisterScreen() {
     setRole(isDesktop ? 'facility_manager' : 'resident');
   }, [isDesktop]);
 
-  const handleSubmit = () => {
-    if (!name.trim() || !email.trim() || !phone.trim() || !password) {
-      setError('Please fill in every field to continue.');
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      setError('Please enter your name.');
+      return;
+    }
+    const emailError = firstIssueMessage(v.safeParse(emailSchema, email));
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+    const phoneError = firstIssueMessage(v.safeParse(phoneSchema, phone));
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
+    const passwordError = firstIssueMessage(v.safeParse(passwordSchema, password));
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (role === 'resident' && (!building.trim() || !unitNumber.trim())) {
@@ -96,21 +120,27 @@ export default function RegisterScreen() {
       setError('Passwords do not match.');
       return;
     }
-    const result = register({
-      name,
-      email,
-      phone,
-      role,
-      building,
-      unitNumber,
-      title,
-      specialization,
-    });
-    if (!result.success) {
-      setError(result.error ?? 'Unable to create account.');
-      return;
+    setSubmitting(true);
+    try {
+      const result = await register({
+        name,
+        email,
+        phone: toCanonicalPhone(phone),
+        role,
+        password,
+        building,
+        unitNumber,
+        title,
+        specialization,
+      });
+      if (!result.success) {
+        setError(result.error ?? 'Unable to create account.');
+        return;
+      }
+      router.replace('/');
+    } finally {
+      setSubmitting(false);
     }
-    router.replace('/');
   };
 
   const copy = ROLE_COPY[role];
@@ -120,7 +150,7 @@ export default function RegisterScreen() {
       <ScreenHeader title="Create Account" showBack onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
@@ -233,7 +263,14 @@ export default function RegisterScreen() {
                 onChangeText={setConfirmPassword}
               />
               {!!error && <Text style={styles.error}>{error}</Text>}
-              <Button label="Create Account" onPress={handleSubmit} fullWidth size="lg" />
+              <Button
+                label="Create Account"
+                onPress={handleSubmit}
+                loading={submitting}
+                disabled={submitting}
+                fullWidth
+                size="lg"
+              />
             </View>
           </Card>
 

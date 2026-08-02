@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -12,6 +12,7 @@ import { APARTMENTS } from '@/data/seed';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { MaintenanceStaff } from '@/types';
 
@@ -21,8 +22,18 @@ export default function MaintenanceJobsScreen() {
   const { Colors } = useTheme();
   const user = useAuthStore((s) => s.currentUser) as MaintenanceStaff;
   const users = useAuthStore((s) => s.users);
+  const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
+  const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
   const [segment, setSegment] = useState<Segment>('active');
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) refreshTickets(token);
+      if (token) refreshNotifications(token);
+    }, [token, refreshTickets, refreshNotifications]),
+  );
 
   const myJobs = useMemo(
     () =>

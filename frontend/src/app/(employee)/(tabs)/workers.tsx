@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -14,7 +15,14 @@ import type { MaintenanceStaff } from '@/types';
 export default function EmployeeWorkersScreen() {
   const { Colors } = useTheme();
   const users = useAuthStore((s) => s.users);
+  const refreshUsers = useAuthStore((s) => s.refreshUsers);
   const tickets = useTicketStore((s) => s.tickets);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUsers();
+    }, [refreshUsers]),
+  );
 
   const workers = useMemo(() => {
     const staff = users.filter(

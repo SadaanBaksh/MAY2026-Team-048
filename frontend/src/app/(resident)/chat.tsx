@@ -14,12 +14,12 @@ import {
 
 import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { askResidentAssistant, ApiError } from '@/api/client';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import type { Resident } from '@/types';
-import { answerResidentMessage } from '@/utils/mockResidentAssistant';
 
 type MessageRole = 'assistant' | 'resident';
 
@@ -53,10 +53,9 @@ export default function ResidentChatScreen() {
   const { Colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(Colors, isDark), [Colors, isDark]);
   const scrollRef = useRef<ScrollView>(null);
-  const responseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const user = useAuthStore((state) => state.currentUser) as Resident;
+  const token = useAuthStore((state) => state.token);
   const tickets = useTicketStore((state) => state.tickets);
-  const comments = useTicketStore((state) => state.comments);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
 
@@ -86,14 +85,7 @@ export default function ResidentChatScreen() {
     return () => cancelAnimationFrame(handle);
   }, [messages.length, isThinking]);
 
-  useEffect(
-    () => () => {
-      if (responseTimerRef.current) clearTimeout(responseTimerRef.current);
-    },
-    [],
-  );
-
-  const sendMessage = (rawText: string) => {
+  const sendMessage = async (rawText: string) => {
     const text = rawText.trim();
     if (!text || isThinking) return;
 
@@ -101,18 +93,31 @@ export default function ResidentChatScreen() {
     setInput('');
     setIsThinking(true);
 
-    responseTimerRef.current = setTimeout(() => {
-      const reply = answerResidentMessage(text, { resident: user, tickets: myTickets, comments });
+    try {
+      if (!token) throw new Error('You need to sign in again before using the assistant.');
+      const history = messages
+        .slice(-6)
+        .map((message) => ({ role: message.role, text: message.text }));
+      const response = await askResidentAssistant(token, { message: text, history });
       setMessages((current) => [
         ...current,
-        makeMessage('assistant', reply.text, {
-          relatedTicketId: reply.relatedTicketId,
-          suggestions: reply.suggestions,
+        makeMessage('assistant', response.reply, {
+          relatedTicketId: response.related_ticket_id ?? undefined,
+          suggestions: response.suggestions,
         }),
       ]);
+    } catch (err) {
+      setMessages((current) => [
+        ...current,
+        makeMessage(
+          'assistant',
+          err instanceof ApiError ? err.message : 'I could not reach the assistant. Please try again.',
+          { suggestions: STARTER_PROMPTS },
+        ),
+      ]);
+    } finally {
       setIsThinking(false);
-      responseTimerRef.current = null;
-    }, 650);
+    }
   };
 
   const latestSuggestions =

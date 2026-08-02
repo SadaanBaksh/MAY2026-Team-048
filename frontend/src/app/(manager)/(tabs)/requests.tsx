@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -27,8 +27,13 @@ export default function ManagerRequestsScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const users = useAuthStore((s) => s.users);
+  const refreshUsers = useAuthStore((s) => s.refreshUsers);
   const approveUser = useAuthStore((s) => s.approveUser);
   const rejectUser = useAuthStore((s) => s.rejectUser);
+
+  useEffect(() => {
+    refreshUsers();
+  }, [refreshUsers]);
 
   const pending = users.filter(
     (u): u is PendingUser =>

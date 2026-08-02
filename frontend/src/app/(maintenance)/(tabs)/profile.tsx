@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -18,7 +18,14 @@ export default function MaintenanceProfileScreen() {
   const { Colors } = useTheme();
   const user = useAuthStore((s) => s.currentUser) as MaintenanceStaff;
   const logout = useAuthStore((s) => s.logout);
+  const refreshCurrentUser = useAuthStore((s) => s.refreshCurrentUser);
   const tickets = useTicketStore((s) => s.tickets);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshCurrentUser();
+    }, [refreshCurrentUser]),
+  );
 
   const jobs = useMemo(
     () => tickets.filter((t) => t.workerId === user.userId),
