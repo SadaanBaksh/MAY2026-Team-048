@@ -29,8 +29,11 @@ backend/
 │  └─ main.py           # FastAPI app entrypoint
 ├─ alembic/             # migrations (env.py + versions/)
 ├─ scripts/
-│  └─ seed_categories.py
+│  ├─ seed_categories.py
+│  └─ generate_api_report.py   # OpenAPI-vs-tests validation report (see below)
 ├─ tests/               # pytest suite (see Testing below)
+├─ openapi.yaml         # generated - see API Validation Report
+├─ reports/              # generated - see API Validation Report
 ├─ requirements.txt
 ├─ requirements-dev.txt # requirements.txt + pytest/httpx, for running the test suite
 ├─ pytest.ini
@@ -150,6 +153,40 @@ test database, an authenticated `client` per role (`resident_user`/`employee_use
 
 ### is this a feature or a bug?
 One test `(test_resident_cannot_close_before_resolved)` documents a real gap rather than papering over it: the backend lets a resident jump a ticket straight to `Closed` from any status, not just `Resolved` — there's no server-side check enforcing the intended order. Wasn't in scope to fix while writing tests, but flagging it since it's a real permission gap, not just a style nit.
+
+## API Validation Report
+
+`scripts/generate_api_report.py` cross-checks what the OpenAPI spec documents against what the
+test suite actually observes at runtime. FastAPI only auto-documents an endpoint's success status
+plus `422`; anything else it genuinely returns (`401`/`403`/`404`/`429`/`503`, etc.) silently stays
+undocumented unless the route explicitly declares it via `responses=` — this catches that drift
+automatically instead of relying on manual spec review.
+
+```bash
+cd backend
+.venv\Scripts\python.exe scripts\generate_api_report.py   # Windows
+.venv/bin/python scripts/generate_api_report.py             # macOS/Linux
+```
+
+One command does everything:
+1. Regenerates `openapi.yaml` straight from the live FastAPI app (always fresh, never hand-edited)
+   and parses every operation's method, path, and documented response statuses — nothing is
+   hardcoded, so adding/removing a route is picked up automatically.
+2. Runs the full pytest suite. `tests/conftest.py` patches `TestClient.request()` once (the single
+   choke point every `.get()`/`.post()`/`.patch()`/`.delete()` call funnels through) to record every
+   real HTTP call any test makes — method, concrete path, status code, test id — to
+   `reports/api_execution_results.json`, with zero changes to the tests themselves.
+3. Maps each captured concrete path back to its OpenAPI template (e.g. `/api/v1/tickets/abc123` →
+   `/api/v1/tickets/{ticket_id}`, query strings ignored) and aggregates every observed status per
+   operation.
+4. Classifies each of the 24 operations as **PASS** (every observed status is documented),
+   **MISMATCH** (a status was observed that isn't documented), or **NOT TESTED** (no test hit it at
+   all — documented-but-unexercised statuses alone are *not* a mismatch), and writes
+   `reports/api_validation_report.html`.
+
+Open `reports/api_validation_report.html` in a browser for the full table plus a breakdown of
+exactly which test(s) produced each undocumented status code. Both `openapi.yaml` and `reports/`
+are gitignored (fully regenerated, never hand-edited) — re-run the script any time to refresh them.
 
 ## Deployment
 

@@ -39,7 +39,10 @@ EMAIL_MAX_LENGTH = 254
 
 
 def _validate_email_length(value: str) -> str:
-    if len(value) > EMAIL_MAX_LENGTH:
+    # Belt-and-suspenders: pydantic's EmailStr (via the email_validator package) already
+    # enforces this exact 254-char cap on its own, so this raise is unreachable today -
+    # kept only as an explicit guarantee in case that upstream default ever changes.
+    if len(value) > EMAIL_MAX_LENGTH:  # pragma: no cover
         raise ValueError(f"Email must be {EMAIL_MAX_LENGTH} characters or fewer.")
     return value
 

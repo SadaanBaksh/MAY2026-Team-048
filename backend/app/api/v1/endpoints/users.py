@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.api.response_docs import CONFLICT, FORBIDDEN, NOT_FOUND, UNAUTHORIZED
 from app.db.session import get_db
 from app.models.enums import UserRole
 from app.models.user import User
@@ -10,7 +11,7 @@ from app.schemas.user import UserRead, UserUpdate, normalize_phone
 router = APIRouter()
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=UserRead, responses={**UNAUTHORIZED})
 def read_current_user(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
@@ -30,7 +31,7 @@ def list_users(
     return query.all()
 
 
-@router.get("/{user_id}", response_model=UserRead)
+@router.get("/{user_id}", response_model=UserRead, responses={**NOT_FOUND})
 def get_user(
     user_id: str,
     db: Session = Depends(get_db),
@@ -42,7 +43,11 @@ def get_user(
     return user
 
 
-@router.patch("/{user_id}", response_model=UserRead)
+@router.patch(
+    "/{user_id}",
+    response_model=UserRead,
+    responses={**CONFLICT, **FORBIDDEN, **NOT_FOUND},
+)
 def update_user(
     user_id: str,
     payload: UserUpdate,

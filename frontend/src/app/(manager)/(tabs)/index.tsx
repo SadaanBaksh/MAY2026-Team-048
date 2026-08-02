@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -16,9 +16,7 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
-
-const MANAGER_AI_SUMMARY =
-  '3 new complaints arrived today — 2 plumbing issues in Wing A are marked High priority and awaiting worker assignment. 1 electrical fault (Wing C, Unit 402) is overdue by 6 hours. Overall resolution rate is up 12% this week.';
+import { fetchDashboardSummary } from '@/api/client';
 
 const CHART_PALETTE = [
   '#0c2d35',
@@ -41,9 +39,19 @@ export default function ManagerAnalyticsScreen() {
   const tickets = useTicketStore((s) => s.tickets);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
 
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
+      if (token) {
+        setSummaryLoading(true);
+        fetchDashboardSummary(token)
+          .then(setAiSummary)
+          .catch(() => setAiSummary(null))
+          .finally(() => setSummaryLoading(false));
+      }
     }, [token, refreshTickets]),
   );
 
@@ -131,7 +139,11 @@ export default function ManagerAnalyticsScreen() {
         </View>
       </View>
 
-      <AISummaryCard summary={MANAGER_AI_SUMMARY} variant="manager" label="Community Digest" />
+      {summaryLoading ? (
+        <AISummaryCard summary="Generating summary…" variant="manager" label="Community Digest" />
+      ) : aiSummary ? (
+        <AISummaryCard summary={aiSummary} variant="manager" label="Community Digest" />
+      ) : null}
 
       <View style={styles.statsGrid}>
         <StatCard

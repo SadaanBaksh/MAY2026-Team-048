@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from app.api.response_docs import CONFLICT, RATE_LIMITED, UNAUTHORIZED
 from app.core.limiter import limiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
@@ -43,7 +44,12 @@ def _resolve_apartment_id(db: Session, building: str | None, unit_number: str | 
     return apartment.id
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    responses={**CONFLICT, **RATE_LIMITED},
+)
 @limiter.limit("5/minute")
 def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)) -> User:
     existing = db.query(User).filter(User.email == payload.email).first()
@@ -94,7 +100,7 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     return user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, responses={**UNAUTHORIZED, **RATE_LIMITED})
 @limiter.limit("10/minute")
 def login(
     request: Request,

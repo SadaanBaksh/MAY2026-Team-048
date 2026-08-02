@@ -320,6 +320,11 @@ export async function askResidentAssistant(
   });
 }
 
+export async function fetchDashboardSummary(token: string): Promise<string> {
+  const { summary } = await apiFetch<{ summary: string }>('/api/v1/ai/dashboard-summary', { token });
+  return summary;
+}
+
 export async function fetchTickets(token: string): Promise<ApiTicket[]> {
   return apiFetch<ApiTicket[]>('/api/v1/tickets/', { token });
 }

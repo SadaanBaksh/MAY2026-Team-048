@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.response_docs import NOT_FOUND
 from app.db.session import get_db
 from app.models.category import Category
 from app.schemas.category import CategoryRead
@@ -13,7 +14,7 @@ def list_categories(db: Session = Depends(get_db)) -> list[Category]:
     return db.query(Category).all()
 
 
-@router.get("/{category_id}", response_model=CategoryRead)
+@router.get("/{category_id}", response_model=CategoryRead, responses={**NOT_FOUND})
 def get_category(category_id: str, db: Session = Depends(get_db)) -> Category:
     category = db.get(Category, category_id)
     if category is None:
