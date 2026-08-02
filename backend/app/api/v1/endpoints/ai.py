@@ -52,6 +52,14 @@ def _ai_error(exc: GeminiError) -> HTTPException:
     return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
 
 
+def _as_aware_utc(value: datetime) -> datetime:
+    # Ticket.date_of_request/date_of_resolution are declared DateTime(timezone=True) and
+    # always written as UTC (models/ticket.py), but SQLite - unlike Postgres - doesn't
+    # actually persist tzinfo and hands back naive datetimes regardless of that flag.
+    # Subtracting a naive DB value from an aware `now` raises TypeError, so normalize here.
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
 @router.post(
     "/analyze-complaint",
     response_model=ComplaintAnalysisRead,
@@ -184,7 +192,7 @@ def dashboard_summary(
         stats_text += f"Resolved tickets awaiting rating: {awaiting_rating}\n"
         if tickets:
             most_recent = max(tickets, key=lambda t: t.date_of_request)
-            days_ago = (now - most_recent.date_of_request).days
+            days_ago = (now - _as_aware_utc(most_recent.date_of_request)).days
             stats_text += f"Most recent ticket: '{most_recent.title}' ({most_recent.status.value}), created {days_ago} days ago\n"
     elif current_user.role in (UserRole.facility_employee, UserRole.facility_manager):
         unassigned = sum(1 for t in tickets if t.worker_id is None and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
