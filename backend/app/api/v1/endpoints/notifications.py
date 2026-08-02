@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.api.response_docs import NOT_FOUND, UNAUTHORIZED
 from app.db.session import get_db
 from app.models.notification import Notification
 from app.models.user import User
@@ -10,7 +11,7 @@ from app.schemas.notification import NotificationRead
 router = APIRouter()
 
 
-@router.get("/me", response_model=list[NotificationRead])
+@router.get("/me", response_model=list[NotificationRead], responses={**UNAUTHORIZED})
 def list_my_notifications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -23,7 +24,9 @@ def list_my_notifications(
     )
 
 
-@router.patch("/{notification_id}/read", response_model=NotificationRead)
+@router.patch(
+    "/{notification_id}/read", response_model=NotificationRead, responses={**NOT_FOUND}
+)
 def mark_notification_read(
     notification_id: str,
     db: Session = Depends(get_db),

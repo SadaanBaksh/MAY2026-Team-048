@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import ensure_ticket_access, get_current_user, notify_user
+from app.api.response_docs import FORBIDDEN, NOT_FOUND
 from app.db.session import get_db
 from app.models.comment import Comment
 from app.models.ticket import Ticket
@@ -11,7 +12,11 @@ from app.schemas.comment import CommentCreate, CommentRead
 router = APIRouter()
 
 
-@router.get("/{ticket_id}/comments", response_model=list[CommentRead])
+@router.get(
+    "/{ticket_id}/comments",
+    response_model=list[CommentRead],
+    responses={**FORBIDDEN, **NOT_FOUND},
+)
 def list_comments(
     ticket_id: str,
     db: Session = Depends(get_db),
@@ -30,7 +35,10 @@ def list_comments(
 
 
 @router.post(
-    "/{ticket_id}/comments", response_model=CommentRead, status_code=status.HTTP_201_CREATED
+    "/{ticket_id}/comments",
+    response_model=CommentRead,
+    status_code=status.HTTP_201_CREATED,
+    responses={**FORBIDDEN, **NOT_FOUND},
 )
 def create_comment(
     ticket_id: str,

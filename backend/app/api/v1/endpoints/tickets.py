@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import ensure_ticket_access, get_current_user, notify_user, require_roles
+from app.api.response_docs import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
 from app.db.session import get_db
 from app.models.enums import MediaType, Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
@@ -42,6 +43,7 @@ def list_tickets(
     response_model=TicketRead,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_roles(UserRole.resident))],
+    responses={**UNAUTHORIZED, **FORBIDDEN},
 )
 def create_ticket(
     payload: TicketCreate,
@@ -97,7 +99,7 @@ def create_ticket(
     return ticket
 
 
-@router.get("/{ticket_id}", response_model=TicketRead)
+@router.get("/{ticket_id}", response_model=TicketRead, responses={**FORBIDDEN, **NOT_FOUND})
 def get_ticket(
     ticket_id: str,
     db: Session = Depends(get_db),
@@ -112,7 +114,7 @@ def get_ticket(
     return ticket
 
 
-@router.patch("/{ticket_id}", response_model=TicketRead)
+@router.patch("/{ticket_id}", response_model=TicketRead, responses={**FORBIDDEN, **NOT_FOUND})
 def update_ticket(
     ticket_id: str,
     payload: TicketUpdate,
@@ -243,7 +245,11 @@ def update_ticket(
     return ticket
 
 
-@router.get("/{ticket_id}/history", response_model=list[TicketHistoryRead])
+@router.get(
+    "/{ticket_id}/history",
+    response_model=list[TicketHistoryRead],
+    responses={**FORBIDDEN, **NOT_FOUND},
+)
 def get_ticket_history(
     ticket_id: str,
     db: Session = Depends(get_db),

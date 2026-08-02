@@ -3,6 +3,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
+from app.api.response_docs import FORBIDDEN, RATE_LIMITED, SERVICE_UNAVAILABLE
 from app.core.gemini import GeminiError, generate_json, generate_multimodal_json, media_part
 from app.core.limiter import limiter, rate_limit_key_for_user
 from app.core.storage import upload_belongs_to
@@ -48,7 +49,11 @@ def _ai_error(exc: GeminiError) -> HTTPException:
     return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
 
 
-@router.post("/analyze-complaint", response_model=ComplaintAnalysisRead)
+@router.post(
+    "/analyze-complaint",
+    response_model=ComplaintAnalysisRead,
+    responses={**FORBIDDEN, **RATE_LIMITED, **SERVICE_UNAVAILABLE},
+)
 @limiter.limit("6/minute", key_func=rate_limit_key_for_user)
 def analyze_complaint(
     request: Request,
@@ -87,7 +92,11 @@ def analyze_complaint(
         raise HTTPException(status_code=503, detail="The AI service returned an invalid response.") from exc
 
 
-@router.post("/resident-chat", response_model=ResidentChatRead)
+@router.post(
+    "/resident-chat",
+    response_model=ResidentChatRead,
+    responses={**FORBIDDEN, **RATE_LIMITED, **SERVICE_UNAVAILABLE},
+)
 @limiter.limit("15/minute", key_func=rate_limit_key_for_user)
 def resident_chat(
     request: Request,

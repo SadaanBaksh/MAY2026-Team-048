@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_roles
+from app.api.response_docs import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
 from app.db.session import get_db
 from app.models.apartment import Apartment
 from app.models.enums import UserRole
@@ -20,6 +21,7 @@ def list_apartments(db: Session = Depends(get_db)) -> list[Apartment]:
     response_model=ApartmentRead,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_roles(UserRole.facility_employee, UserRole.facility_manager))],
+    responses={**UNAUTHORIZED, **FORBIDDEN},
 )
 def create_apartment(payload: ApartmentCreate, db: Session = Depends(get_db)) -> Apartment:
     apartment = Apartment(**payload.model_dump())
@@ -29,7 +31,7 @@ def create_apartment(payload: ApartmentCreate, db: Session = Depends(get_db)) ->
     return apartment
 
 
-@router.get("/{apartment_id}", response_model=ApartmentRead)
+@router.get("/{apartment_id}", response_model=ApartmentRead, responses={**NOT_FOUND})
 def get_apartment(apartment_id: str, db: Session = Depends(get_db)) -> Apartment:
     apartment = db.get(Apartment, apartment_id)
     if apartment is None:
