@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # despite it still being listed in ListModels) — this is the closest stable, still-multimodal
     # sibling. If Google deprecates this one too, check `GET /v1beta/models` with your own key for
     # what's currently available before picking a replacement.
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"
 
     @property
     def cors_origins(self) -> list[str]:

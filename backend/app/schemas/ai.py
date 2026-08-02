@@ -37,3 +37,7 @@ class ResidentChatRead(BaseModel):
     reply: str
     related_ticket_id: str | None = None
     suggestions: list[str] = Field(default_factory=list, max_length=3)
+
+
+class DashboardSummaryRead(BaseModel):
+    summary: str
