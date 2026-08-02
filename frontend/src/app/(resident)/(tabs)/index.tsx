@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -16,10 +16,8 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { fetchDashboardSummary } from '@/api/client';
 import type { Resident } from '@/types';
-
-const RESIDENT_AI_SUMMARY =
-  'Your plumbing complaint (Unit A-101) was marked In Progress 3 hours ago — a technician has been assigned. 1 resolved ticket is awaiting your review and rating.';
 
 export default function ResidentHomeScreen() {
   const { Colors } = useTheme();
@@ -30,10 +28,20 @@ export default function ResidentHomeScreen() {
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
 
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token) refreshNotifications(token);
+      if (token) {
+        setSummaryLoading(true);
+        fetchDashboardSummary(token)
+          .then(setAiSummary)
+          .catch(() => setAiSummary(null))
+          .finally(() => setSummaryLoading(false));
+      }
     }, [token, refreshTickets, refreshNotifications]),
   );
 
@@ -107,11 +115,11 @@ export default function ResidentHomeScreen() {
           </View>
         )}
 
-        <AISummaryCard
-          summary={RESIDENT_AI_SUMMARY}
-          variant="resident"
-          label="My Complaints Summary"
-        />
+        {summaryLoading ? (
+          <AISummaryCard summary="Generating summary…" variant="resident" label="My Complaints Summary" />
+        ) : aiSummary ? (
+          <AISummaryCard summary={aiSummary} variant="resident" label="My Complaints Summary" />
+        ) : null}
 
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>

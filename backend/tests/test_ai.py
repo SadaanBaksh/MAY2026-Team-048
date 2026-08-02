@@ -334,3 +334,48 @@ def test_analyze_complaint_accepts_own_uploaded_voice_note_url(
     )
 
     assert response.status_code == 200, response.text
+
+
+def test_dashboard_summary_resident(client, auth_headers, resident_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"summary": "Test summary."},
+    )
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
+    assert response.status_code == 200
+    assert response.json() == {"summary": "Test summary."}
+
+
+def test_dashboard_summary_employee(client, auth_headers, employee_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"summary": "Test summary."},
+    )
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(employee_user))
+    assert response.status_code == 200
+    assert response.json() == {"summary": "Test summary."}
+
+
+def test_dashboard_summary_manager(client, auth_headers, manager_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"summary": "Test summary."},
+    )
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(manager_user))
+    assert response.status_code == 200
+    assert response.json() == {"summary": "Test summary."}
+
+
+def test_dashboard_summary_maintenance(client, auth_headers, maintenance_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"summary": "Test summary."},
+    )
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(maintenance_user))
+    assert response.status_code == 200
+    assert response.json() == {"summary": "Test summary."}
+
+
+def test_dashboard_summary_unauthenticated(client):
+    response = client.get("/api/v1/ai/dashboard-summary")
+    assert response.status_code == 401

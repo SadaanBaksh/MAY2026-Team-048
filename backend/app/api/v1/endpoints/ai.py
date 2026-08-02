@@ -3,18 +3,21 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
-from app.api.response_docs import FORBIDDEN, RATE_LIMITED, SERVICE_UNAVAILABLE
+from app.api.response_docs import FORBIDDEN, RATE_LIMITED, SERVICE_UNAVAILABLE, UNAUTHORIZED
 from app.core.gemini import GeminiError, generate_json, generate_multimodal_json, media_part
 from app.core.limiter import limiter, rate_limit_key_for_user
 from app.core.storage import upload_belongs_to
 from app.db.session import get_db
 from app.models.category import Category
-from app.models.enums import UserRole
+from app.models.enums import UserRole, Priority, AccountStatus, TicketStatus
 from app.models.ticket import Ticket
 from app.models.user import User
+from datetime import datetime, timezone
+
 from app.schemas.ai import (
     ComplaintAnalysisRead,
     ComplaintAnalysisRequest,
+    DashboardSummaryRead,
     ResidentChatRead,
     ResidentChatRequest,
 )
@@ -132,6 +135,100 @@ def resident_chat(
             result.get("related_ticket_id") if result.get("related_ticket_id") in {ticket.id for ticket in tickets} else None
         )
         return ResidentChatRead.model_validate(result)
+    except GeminiError as exc:
+        raise _ai_error(exc) from exc
+    except ValidationError as exc:
+        raise HTTPException(status_code=503, detail="The AI service returned an invalid response.") from exc
+
+
+_SUMMARY_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "summary": {"type": "STRING"},
+    },
+    "required": ["summary"],
+}
+
+
+@router.get(
+    "/dashboard-summary",
+    response_model=DashboardSummaryRead,
+    responses={**UNAUTHORIZED, **RATE_LIMITED, **SERVICE_UNAVAILABLE},
+)
+@limiter.limit("10/minute", key_func=rate_limit_key_for_user)
+def dashboard_summary(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DashboardSummaryRead:
+    now = datetime.now(timezone.utc)
+    today = now.date()
+
+    if current_user.role == UserRole.resident:
+        tickets = db.query(Ticket).filter(Ticket.resident_id == current_user.id).all()
+    elif current_user.role in (UserRole.facility_employee, UserRole.facility_manager):
+        tickets = db.query(Ticket).all()
+    else:  # maintenance_staff
+        tickets = db.query(Ticket).filter(Ticket.worker_id == current_user.id).all()
+
+    status_counts = {}
+    for t in tickets:
+        status_counts[t.status.value] = status_counts.get(t.status.value, 0) + 1
+
+    overdue = sum(1 for t in tickets if getattr(t, "is_overdue", False) and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
+    
+    stats_text = f"Total tickets: {len(tickets)}\nCounts by status: {status_counts}\nOverdue tickets: {overdue}\n"
+
+    if current_user.role == UserRole.resident:
+        awaiting_rating = sum(1 for t in tickets if t.status == TicketStatus.Resolved and t.resident_rating is None)
+        stats_text += f"Resolved tickets awaiting rating: {awaiting_rating}\n"
+        if tickets:
+            most_recent = max(tickets, key=lambda t: t.date_of_request)
+            days_ago = (now - most_recent.date_of_request).days
+            stats_text += f"Most recent ticket: '{most_recent.title}' ({most_recent.status.value}), created {days_ago} days ago\n"
+    elif current_user.role in (UserRole.facility_employee, UserRole.facility_manager):
+        unassigned = sum(1 for t in tickets if t.worker_id is None and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
+        high_priority_open = sum(1 for t in tickets if t.priority in (Priority.High, Priority.Critical, Priority.Emergency) and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
+        created_today = sum(1 for t in tickets if t.date_of_request.date() == today)
+        stats_text += (
+            f"Unassigned tickets: {unassigned}\n"
+            f"High/Critical/Emergency open tickets: {high_priority_open}\n"
+            f"Tickets created today: {created_today}\n"
+        )
+        if current_user.role == UserRole.facility_manager:
+            resolved_closed = status_counts.get(TicketStatus.Resolved.value, 0) + status_counts.get(TicketStatus.Closed.value, 0)
+            resolution_rate = f"{(resolved_closed / len(tickets) * 100):.1f}%" if tickets else "0%"
+            
+            resolved_tickets = [t for t in tickets if t.status == TicketStatus.Resolved and t.date_of_resolution]
+            if resolved_tickets:
+                avg_res_time = sum((t.date_of_resolution - t.date_of_request).total_seconds() for t in resolved_tickets) / len(resolved_tickets)
+                avg_time_str = f"{avg_res_time / 86400:.1f} days"
+            else:
+                avg_time_str = "N/A"
+                
+            pending_users = db.query(User).filter(User.account_status == AccountStatus.pending).count()
+            
+            stats_text += (
+                f"Resolution rate: {resolution_rate}\n"
+                f"Average resolution time: {avg_time_str}\n"
+                f"Pending user approvals: {pending_users}\n"
+            )
+    else:  # maintenance_staff
+        active_jobs = sum(1 for t in tickets if t.status in (TicketStatus.Assigned, TicketStatus.In_Progress))
+        stats_text += f"Active jobs: {active_jobs}\n"
+
+    prompt = (
+        "You are an AI generating a dashboard summary for a residential maintenance app. "
+        f"The user is a {current_user.role.value}. Based on the following stats, write exactly "
+        "2-3 sentences to summarize the current state. Be concise and factual. Reference specific "
+        "numbers from the data. Do not invent data not present in the stats. Use a friendly, "
+        "professional tone. If there are no tickets or stats are all zeros, say something like 'No complaints on record yet.'\n\n"
+        f"Stats:\n{stats_text}"
+    )
+
+    try:
+        result = generate_json(prompt=prompt, schema=_SUMMARY_SCHEMA, max_output_tokens=150)
+        return DashboardSummaryRead.model_validate(result)
     except GeminiError as exc:
         raise _ai_error(exc) from exc
     except ValidationError as exc:

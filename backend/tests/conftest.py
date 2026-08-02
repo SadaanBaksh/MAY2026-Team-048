@@ -114,6 +114,7 @@ def mock_s3(monkeypatch):
         def put_object(self, **kwargs):
             calls.append(kwargs)
 
+    monkeypatch.setattr("app.core.config.settings.S3_BUCKET_NAME", "test-bucket")
     monkeypatch.setattr("app.core.storage._get_s3_client", lambda: FakeS3Client())
     return calls
 

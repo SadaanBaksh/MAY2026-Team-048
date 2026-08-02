@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
@@ -17,9 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { isTicketOverdue } from '@/utils/overdue';
-
-const EMPLOYEE_AI_SUMMARY =
-  '5 complaints are currently in progress — the most urgent is a gas leak report in Wing B (Critical). 2 tickets have stalled in Assigned status for over 12 hours. Top category this week: Plumbing (4 tickets). No new complaints since 2 hours ago.';
+import { fetchDashboardSummary } from '@/api/client';
 
 export default function EmployeeDashboardScreen() {
   const { Colors } = useTheme();
@@ -30,10 +28,20 @@ export default function EmployeeDashboardScreen() {
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
 
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token) refreshNotifications(token);
+      if (token) {
+        setSummaryLoading(true);
+        fetchDashboardSummary(token)
+          .then(setAiSummary)
+          .catch(() => setAiSummary(null))
+          .finally(() => setSummaryLoading(false));
+      }
     }, [token, refreshTickets, refreshNotifications]),
   );
 
@@ -110,7 +118,11 @@ export default function EmployeeDashboardScreen() {
         />
       </View>
 
-      <AISummaryCard summary={EMPLOYEE_AI_SUMMARY} variant="employee" label="Operations Brief" />
+      {summaryLoading ? (
+        <AISummaryCard summary="Generating summary…" variant="employee" label="Operations Brief" />
+      ) : aiSummary ? (
+        <AISummaryCard summary={aiSummary} variant="employee" label="Operations Brief" />
+      ) : null}
 
       {overdue.length > 0 && (
         <View style={styles.section}>
