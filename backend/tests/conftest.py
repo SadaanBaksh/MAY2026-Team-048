@@ -1,5 +1,8 @@
+import json
 import uuid
+from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -15,6 +18,52 @@ from app.models.apartment import Apartment
 from app.models.category import Category
 from app.models.enums import AccountStatus, UserRole
 from app.models.user import User
+
+# --- API execution capture (used by scripts/generate_api_report.py) --------------
+#
+# Every request made through TestClient - regardless of which test file or which
+# .get()/.post()/.patch()/.delete() convenience method is called - funnels through
+# TestClient.request() (verified against the installed starlette/httpx versions:
+# the convenience methods call super().get()/.post()/etc, which internally call
+# self.request(...), and `self` stays the TestClient instance). Patching that one
+# method at the class level, once, is enough to capture every real HTTP call any
+# of the 100+ existing tests make, without touching a single test file.
+
+_API_EXECUTIONS: list[dict] = []
+_CURRENT_TEST_ID = {"value": "unknown"}
+_REPORTS_DIR = Path(__file__).resolve().parent.parent / "reports"
+
+_original_testclient_request = TestClient.request
+
+
+def _instrumented_request(self, method, url, *args, **kwargs):
+    response = _original_testclient_request(self, method, url, *args, **kwargs)
+    try:
+        path = httpx.URL(str(url)).path
+    except Exception:
+        path = str(url).split("?", 1)[0]
+    _API_EXECUTIONS.append(
+        {
+            "test": _CURRENT_TEST_ID["value"],
+            "method": str(method).upper(),
+            "path": path,
+            "status": response.status_code,
+        }
+    )
+    return response
+
+
+TestClient.request = _instrumented_request
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    _CURRENT_TEST_ID["value"] = item.nodeid
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    _REPORTS_DIR.mkdir(exist_ok=True)
+    output_path = _REPORTS_DIR / "api_execution_results.json"
+    output_path.write_text(json.dumps({"executions": _API_EXECUTIONS}, indent=2))
 
 
 @pytest.fixture()
