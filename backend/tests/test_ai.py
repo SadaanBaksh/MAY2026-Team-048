@@ -379,3 +379,76 @@ def test_dashboard_summary_maintenance(client, auth_headers, maintenance_user, m
 def test_dashboard_summary_unauthenticated(client):
     response = client.get("/api/v1/ai/dashboard-summary")
     assert response.status_code == 401
+
+
+def test_dashboard_summary_resident_with_tickets(
+    client, auth_headers, resident_user, category, monkeypatch
+):
+    """The four role-based tests above all use ticket-less users, so they never reach
+    the 'if tickets:' branch (most-recent-ticket blurb) or the status-counting loop
+    body - both require at least one real ticket to execute at all."""
+    created = client.post(
+        "/api/v1/tickets/",
+        json={"title": "Leaking faucet", "category_id": category.id},
+        headers=auth_headers(resident_user),
+    )
+    assert created.status_code == 201, created.text
+
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"summary": "Test summary."},
+    )
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
+    assert response.status_code == 200
+
+
+def test_dashboard_summary_manager_with_resolved_tickets(
+    client, auth_headers, resident_user, employee_user, manager_user, maintenance_user,
+    category, monkeypatch,
+):
+    """Covers the manager-only average-resolution-time branch, which only runs when
+    at least one ticket has actually been resolved (date_of_resolution is set)."""
+    created = client.post(
+        "/api/v1/tickets/",
+        json={"title": "Leaking faucet", "category_id": category.id},
+        headers=auth_headers(resident_user),
+    ).json()
+    client.patch(
+        f"/api/v1/tickets/{created['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+    resolved = client.patch(
+        f"/api/v1/tickets/{created['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+    assert resolved.status_code == 200
+
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"summary": "Test summary."},
+    )
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(manager_user))
+    assert response.status_code == 200
+
+
+def test_dashboard_summary_gemini_error_becomes_503(client, auth_headers, resident_user, monkeypatch):
+    def _raise(**_):
+        raise GeminiError("AI is temporarily busy. Please try again in a minute.")
+
+    monkeypatch.setattr("app.api.v1.endpoints.ai.generate_json", _raise)
+
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
+
+    assert response.status_code == 503
+    assert "temporarily busy" in response.json()["detail"]
+
+
+def test_dashboard_summary_malformed_result_becomes_503(client, auth_headers, resident_user, monkeypatch):
+    """Missing the required 'summary' key - valid JSON, wrong shape."""
+    monkeypatch.setattr("app.api.v1.endpoints.ai.generate_json", lambda **_: {})
+
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
+
+    assert response.status_code == 503
