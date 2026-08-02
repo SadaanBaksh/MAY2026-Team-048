@@ -33,6 +33,22 @@ def test_register_resident_without_apartment_fails(client):
     assert response.status_code == 422
 
 
+def test_register_second_resident_reuses_existing_apartment(client):
+    first = client.post("/api/v1/auth/register", json=_resident_payload())
+    assert first.status_code == 201
+
+    second_payload = _resident_payload(email="second-resident@example.com")
+    second_payload["phone"] = "+91 98765 43199"
+    # Same apartment, different casing/whitespace - must match the existing row
+    # case-insensitively rather than creating a duplicate Apartment.
+    second_payload["building"] = " wing a "
+    second_payload["unit_number"] = " 101 "
+    second = client.post("/api/v1/auth/register", json=second_payload)
+
+    assert second.status_code == 201
+    assert second.json()["apartment_id"] == first.json()["apartment_id"]
+
+
 def test_register_facility_employee_defaults_to_pending(client):
     payload = {
         "name": "Employee One",

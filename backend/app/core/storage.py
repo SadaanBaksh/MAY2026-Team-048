@@ -1,5 +1,6 @@
 import uuid
 from typing import Literal
+from urllib.parse import urlparse
 
 import boto3
 from fastapi import HTTPException, UploadFile, status
@@ -48,7 +49,7 @@ def _get_s3_client():
     return _s3_client
 
 
-def upload_to_s3(file: UploadFile, kind: UploadKind) -> str:
+def upload_to_s3(file: UploadFile, kind: UploadKind, uploader_id: str) -> str:
     rules = _LIMITS[kind]
 
     # Browsers can append codec parameters (e.g. "audio/webm;codecs=opus") to the blob's
@@ -69,7 +70,10 @@ def upload_to_s3(file: UploadFile, kind: UploadKind) -> str:
             detail=f"{kind} exceeds the {rules['max_bytes'] // (1024 * 1024)}MB limit",
         )
 
-    key = f"{rules['folder']}/{uuid.uuid4()}{extension}"
+    # The uploader's id is baked into the key (not just a DB column) so that anything
+    # holding only the URL - e.g. the AI analyzer - can verify ownership via
+    # upload_belongs_to() without a DB round-trip.
+    key = f"{rules['folder']}/{uploader_id}/{uuid.uuid4()}{extension}"
 
     _get_s3_client().put_object(
         Bucket=settings.S3_BUCKET_NAME,
@@ -79,3 +83,11 @@ def upload_to_s3(file: UploadFile, kind: UploadKind) -> str:
     )
 
     return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
+
+
+def upload_belongs_to(url: str, user_id: str) -> bool:
+    """Check the {folder}/{uploader_id}/{filename} convention upload_to_s3() writes.
+    Anything that doesn't match - a foreign URL, a pre-existing upload from before this
+    check existed, a malformed value - is treated as not owned, which is the safe default."""
+    parts = urlparse(url).path.lstrip("/").split("/")
+    return len(parts) == 3 and parts[1] == user_id

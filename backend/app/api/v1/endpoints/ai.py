@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, require_roles
 from app.core.gemini import GeminiError, generate_json, generate_multimodal_json, media_part
 from app.core.limiter import limiter, rate_limit_key_for_user
+from app.core.storage import upload_belongs_to
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.enums import UserRole
@@ -59,6 +60,14 @@ def analyze_complaint(
     if not categories:
         raise HTTPException(status_code=503, detail="Complaint categories are not configured.")
     category_list = ", ".join(f"{category.id} ({category.name})" for category in categories)
+
+    for url in (*payload.photo_urls, payload.voice_note_url):
+        if url is not None and not upload_belongs_to(str(url), current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only analyze media you uploaded yourself.",
+            )
+
     media = [media_part(str(url), 5 * 1024 * 1024) for url in payload.photo_urls]
     if payload.voice_note_url:
         media.append(media_part(str(payload.voice_note_url), 6 * 1024 * 1024))

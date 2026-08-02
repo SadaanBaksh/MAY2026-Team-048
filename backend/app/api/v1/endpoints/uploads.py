@@ -13,5 +13,5 @@ def create_upload(
     kind: UploadKind = Form(...),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
-    url = upload_to_s3(file, kind)
+    url = upload_to_s3(file, kind, current_user.id)
     return {"url": url}
