@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { Slot, Tabs } from 'expo-router';
 
 import { useIsDesktop } from '@/hooks/useIsDesktop';

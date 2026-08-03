@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -40,7 +40,7 @@ export function ProfileHeader({ user, meta }: { user: AppUser; meta?: string }) 
       <View style={[styles.roleBadge, { backgroundColor: roleColor.soft }]}>
         <Text style={[styles.roleText, { color: roleColor.text }]}>{ROLE_LABELS[user.role]}</Text>
       </View>
-      {meta && <Text style={styles.meta}>{meta}</Text>}
+      {!!meta && <Text style={styles.meta}>{meta}</Text>}
 
       <View style={styles.contactBlock}>
         <View style={styles.contactRow}>
