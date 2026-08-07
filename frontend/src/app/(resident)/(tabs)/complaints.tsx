@@ -4,12 +4,14 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { useDashboardSearch } from '@/hooks/useDashboardSearch';
 
 type Segment = 'active' | 'history';
 
@@ -17,8 +19,12 @@ export default function ResidentComplaintsScreen() {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((s) => s.currentUser)!;
+  const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
   const [segment, setSegment] = useState<Segment>('active');
+  const [query, setQuery] = useState('');
+
+  const { matchingComplaints } = useDashboardSearch(query, tickets, users, user);
 
   const myTickets = useMemo(
     () =>
@@ -28,13 +34,21 @@ export default function ResidentComplaintsScreen() {
     [tickets, user.userId],
   );
 
-  const filtered = myTickets.filter((t) =>
-    segment === 'active' ? t.status !== 'Closed' : t.status === 'Closed',
-  );
+  const displayedTickets = useMemo(() => {
+    const list = query.trim() ? matchingComplaints : myTickets;
+    return list.filter((t) =>
+      segment === 'active' ? t.status !== 'Closed' : t.status === 'Closed',
+    );
+  }, [query, matchingComplaints, myTickets, segment]);
 
   return (
     <Screen edges={['top']}>
       <Text style={styles.title}>My Complaints</Text>
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search my complaints by title, category, status..."
+      />
       <SegmentedControl
         value={segment}
         onChange={setSegment}
@@ -44,18 +58,26 @@ export default function ResidentComplaintsScreen() {
         ]}
       />
       <View style={styles.list}>
-        {filtered.length === 0 ? (
+        {displayedTickets.length === 0 ? (
           <EmptyState
-            icon={segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
-            title={segment === 'active' ? 'No active complaints' : 'No history yet'}
+            icon={query.trim() ? 'search-outline' : segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
+            title={
+              query.trim()
+                ? 'No matching complaints'
+                : segment === 'active'
+                ? 'No active complaints'
+                : 'No history yet'
+            }
             message={
-              segment === 'active'
+              query.trim()
+                ? `No complaints matched "${query}".`
+                : segment === 'active'
                 ? 'You have no ongoing maintenance requests right now.'
                 : 'Closed and rated complaints will appear here.'
             }
           />
         ) : (
-          filtered.map((t) => (
+          displayedTickets.map((t) => (
             <TicketCard
               key={t.ticketId}
               ticket={t}

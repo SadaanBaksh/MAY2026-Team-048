@@ -9,6 +9,7 @@ import { BarChart } from '@/components/ui/BarChart';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
+import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { CATEGORIES } from '@/data/categories';
 import { Spacing, Type } from '@/constants/theme';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -39,6 +40,7 @@ export default function ManagerAnalyticsScreen() {
   const tickets = useTicketStore((s) => s.tickets);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
@@ -139,11 +141,15 @@ export default function ManagerAnalyticsScreen() {
         </View>
       </View>
 
-      {summaryLoading ? (
-        <AISummaryCard summary="Generating summary…" variant="manager" label="Community Digest" />
-      ) : aiSummary ? (
-        <AISummaryCard summary={aiSummary} variant="manager" label="Community Digest" />
-      ) : null}
+      <DashboardSearch query={searchQuery} onChangeQuery={setSearchQuery} />
+
+      {!searchQuery.trim() && (
+        <>
+          {summaryLoading ? (
+            <AISummaryCard summary="Generating summary…" variant="manager" label="Community Digest" />
+          ) : aiSummary ? (
+            <AISummaryCard summary={aiSummary} variant="manager" label="Community Digest" />
+          ) : null}
 
       <View style={styles.statsGrid}>
         <StatCard
@@ -204,6 +210,8 @@ export default function ManagerAnalyticsScreen() {
           </View>
         </View>
       </Card>
+      </>
+      )}
     </Screen>
   );
 }
