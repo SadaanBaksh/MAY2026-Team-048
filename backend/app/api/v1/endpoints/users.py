@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.api.response_docs import CONFLICT, FORBIDDEN, NOT_FOUND, UNAUTHORIZED
+from app.core.ai_cache import invalidate_summaries
 from app.db.session import get_db
 from app.models.enums import UserRole
 from app.models.user import User
@@ -94,5 +95,6 @@ def update_user(
         setattr(user, field, value)
 
     db.commit()
+    invalidate_summaries()
     db.refresh(user)
     return user

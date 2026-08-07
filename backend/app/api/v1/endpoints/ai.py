@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
 from app.api.response_docs import FORBIDDEN, RATE_LIMITED, SERVICE_UNAVAILABLE, UNAUTHORIZED
+from app.core.ai_cache import get_cached_summary, make_cache_key, make_fingerprint, set_cached_summary
 from app.core.gemini import GeminiError, generate_json, generate_multimodal_json, media_part
 from app.core.limiter import limiter, rate_limit_key_for_user
 from app.core.storage import upload_belongs_to
@@ -225,6 +226,15 @@ def dashboard_summary(
         active_jobs = sum(1 for t in tickets if t.status in (TicketStatus.Assigned, TicketStatus.In_Progress))
         stats_text += f"Active jobs: {active_jobs}\n"
 
+    # ── Cache layer ──────────────────────────────────────────────────────
+    cache_key = make_cache_key(current_user.id, current_user.role.value)
+    fingerprint = make_fingerprint(stats_text)
+
+    cached = get_cached_summary(cache_key, fingerprint)
+    if cached is not None:
+        return DashboardSummaryRead.model_validate(cached)
+    # ────────────────────────────────────────────────────────────────────
+
     prompt = (
         "You are an AI generating a dashboard summary for a residential maintenance app. "
         f"The user is a {current_user.role.value}. Based on the following stats, write exactly "
@@ -236,6 +246,7 @@ def dashboard_summary(
 
     try:
         result = generate_json(prompt=prompt, schema=_SUMMARY_SCHEMA, max_output_tokens=150)
+        set_cached_summary(cache_key, fingerprint, result)
         return DashboardSummaryRead.model_validate(result)
     except GeminiError as exc:
         raise _ai_error(exc) from exc
