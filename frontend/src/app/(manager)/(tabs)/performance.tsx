@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { BarChart } from '@/components/ui/BarChart';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { Spacing, Type } from '@/constants/theme';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -21,12 +23,23 @@ export default function ManagerPerformanceScreen() {
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
   const publicServices = usePublicServiceStore((s) => s.services);
+  const [query, setQuery] = useState('');
 
   const rows = useMemo(() => {
     const staff = users.filter(
       (u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active',
     );
     return staff
+      .filter((w) => {
+        if (!query.trim()) return true;
+        const q = query.toLowerCase();
+        return (
+          w.name.toLowerCase().includes(q) ||
+          w.specialization.toLowerCase().includes(q) ||
+          w.email.toLowerCase().includes(q) ||
+          w.phone.toLowerCase().includes(q)
+        );
+      })
       .map((w) => {
         const jobs = tickets.filter((t) => t.workerId === w.userId);
         const publicJobs = publicServices.filter((service) => service.workerId === w.userId);
@@ -64,48 +77,63 @@ export default function ManagerPerformanceScreen() {
         return { worker: w, active, completed, avgRating, avgHours };
       })
       .sort((a, b) => b.avgRating - a.avgRating);
-  }, [users, tickets, publicServices]);
+  }, [users, tickets, publicServices, query]);
 
   const loadData = rows.map((r) => ({ label: r.worker.name.split(' ')[0], value: r.active }));
 
   return (
     <Screen edges={['top']}>
       <Text style={styles.title}>Staff Performance</Text>
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search staff by name, specialization..."
+      />
 
-      <Card style={[styles.section, isDesktop && styles.chartCard]}>
-        <Text style={styles.sectionTitle}>Active Load by Staff</Text>
-        <BarChart data={loadData} />
-      </Card>
+      {loadData.length > 0 && (
+        <Card style={[styles.section, isDesktop && styles.chartCard]}>
+          <Text style={styles.sectionTitle}>Active Load by Staff</Text>
+          <BarChart data={loadData} />
+        </Card>
+      )}
 
       <View style={isDesktop ? styles.gridList : styles.list}>
-        {rows.map(({ worker, active, completed, avgRating, avgHours }) => (
-          <Card key={worker.userId} style={[styles.card, isDesktop && styles.gridCard]}>
-            <View style={styles.row}>
-              <Avatar name={worker.name} color={worker.avatarColor} size={44} />
-              <View style={styles.info}>
-                <Text style={styles.name}>{worker.name}</Text>
-                <Text style={styles.spec}>{worker.specialization}</Text>
+        {rows.length === 0 ? (
+          <EmptyState
+            icon="search-outline"
+            title="No staff performance records found"
+            message={`No staff members matched "${query}".`}
+          />
+        ) : (
+          rows.map(({ worker, active, completed, avgRating, avgHours }) => (
+            <Card key={worker.userId} style={[styles.card, isDesktop && styles.gridCard]}>
+              <View style={styles.row}>
+                <Avatar name={worker.name} color={worker.avatarColor} size={44} />
+                <View style={styles.info}>
+                  <Text style={styles.name}>{worker.name}</Text>
+                  <Text style={styles.spec}>{worker.specialization}</Text>
+                </View>
+                <RatingStars value={Math.round(avgRating)} readOnly size={14} />
               </View>
-              <RatingStars value={Math.round(avgRating)} readOnly size={14} />
-            </View>
-            <View style={styles.metricsRow}>
-              <View style={styles.metric}>
-                <Text style={styles.metricValue}>{active}</Text>
-                <Text style={styles.metricLabel}>Active</Text>
+              <View style={styles.metricsRow}>
+                <View style={styles.metric}>
+                  <Text style={styles.metricValue}>{active}</Text>
+                  <Text style={styles.metricLabel}>Active</Text>
+                </View>
+                <View style={styles.metric}>
+                  <Text style={styles.metricValue}>{completed}</Text>
+                  <Text style={styles.metricLabel}>Completed</Text>
+                </View>
+                <View style={styles.metric}>
+                  <Text style={styles.metricValue}>
+                    {avgHours != null ? `${avgHours.toFixed(1)}h` : '—'}
+                  </Text>
+                  <Text style={styles.metricLabel}>Avg Time</Text>
+                </View>
               </View>
-              <View style={styles.metric}>
-                <Text style={styles.metricValue}>{completed}</Text>
-                <Text style={styles.metricLabel}>Completed</Text>
-              </View>
-              <View style={styles.metric}>
-                <Text style={styles.metricValue}>
-                  {avgHours != null ? `${avgHours.toFixed(1)}h` : '—'}
-                </Text>
-                <Text style={styles.metricLabel}>Avg Time</Text>
-              </View>
-            </View>
-          </Card>
-        ))}
+            </Card>
+          ))
+        )}
       </View>
     </Screen>
   );

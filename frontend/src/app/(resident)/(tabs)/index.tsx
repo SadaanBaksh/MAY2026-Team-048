@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
+import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { APARTMENTS } from '@/data/seed';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -28,6 +29,7 @@ export default function ResidentHomeScreen() {
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
@@ -83,20 +85,24 @@ export default function ResidentHomeScreen() {
           />
         </View>
 
-        <Pressable onPress={() => router.push('/(resident)/new-complaint')}>
-          <Card style={styles.reportCard} elevated={false}>
-            <View style={styles.reportIcon}>
-              <Ionicons name="camera" size={22} color={Colors.white} />
-            </View>
-            <View style={styles.reportText}>
-              <Text style={styles.reportTitle}>Report an Issue</Text>
-              <Text style={styles.reportSubtitle}>
-                Snap a photo or video — AI fills in the details
-              </Text>
-            </View>
-            <Ionicons name="arrow-forward-circle" size={26} color={Colors.white} />
-          </Card>
-        </Pressable>
+        <DashboardSearch query={searchQuery} onChangeQuery={setSearchQuery} />
+
+        {!searchQuery.trim() && (
+          <>
+            <Pressable onPress={() => router.push('/(resident)/new-complaint')}>
+              <Card style={styles.reportCard} elevated={false}>
+                <View style={styles.reportIcon}>
+                  <Ionicons name="camera" size={22} color={Colors.white} />
+                </View>
+                <View style={styles.reportText}>
+                  <Text style={styles.reportTitle}>Report an Issue</Text>
+                  <Text style={styles.reportSubtitle}>
+                    Snap a photo or video — AI fills in the details
+                  </Text>
+                </View>
+                <Ionicons name="arrow-forward-circle" size={26} color={Colors.white} />
+              </Card>
+            </Pressable>
 
         {needsAttention.length > 0 && (
           <View style={styles.section}>
@@ -154,6 +160,8 @@ export default function ResidentHomeScreen() {
             </View>
           )}
         </View>
+        </>
+        )}
       </Screen>
 
       <Pressable

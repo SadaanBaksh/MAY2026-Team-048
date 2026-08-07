@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
@@ -14,8 +15,9 @@ import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useTicketStore } from '@/store/ticketStore';
+import { useDashboardSearch } from '@/hooks/useDashboardSearch';
 import { usePublicServiceStore } from '@/store/publicServiceStore';
+import { useTicketStore } from '@/store/ticketStore';
 import type { MaintenanceStaff } from '@/types';
 
 type Segment = 'active' | 'completed';
@@ -31,6 +33,7 @@ export default function MaintenanceJobsScreen() {
   const publicServices = usePublicServiceStore((s) => s.services);
   const refreshPublicServices = usePublicServiceStore((s) => s.refreshServices);
   const [segment, setSegment] = useState<Segment>('active');
+  const [query, setQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -40,6 +43,8 @@ export default function MaintenanceJobsScreen() {
     }, [token, refreshTickets, refreshNotifications, refreshPublicServices]),
   );
 
+  const { matchingComplaints } = useDashboardSearch(query, tickets, users, user);
+
   const myJobs = useMemo(
     () =>
       tickets
@@ -48,17 +53,31 @@ export default function MaintenanceJobsScreen() {
     [tickets, user.userId],
   );
 
-  const filtered = myJobs.filter((t) =>
-    segment === 'active'
-      ? t.status === 'Assigned' || t.status === 'In_Progress'
-      : t.status === 'Resolved' || t.status === 'Closed',
-  );
+  const displayedJobs = useMemo(() => {
+    const list = query.trim() ? matchingComplaints : myJobs;
+    return list.filter((t) =>
+      segment === 'active'
+        ? t.status === 'Assigned' || t.status === 'In_Progress'
+        : t.status === 'Resolved' || t.status === 'Closed',
+    );
+  }, [query, matchingComplaints, myJobs, segment]);
 
-  const publicJobs = publicServices.filter((service) =>
-    segment === 'active'
-      ? service.status === 'Assigned' || service.status === 'In_Progress'
-      : service.status === 'Resolved',
-  );
+  const publicJobs = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return publicServices
+      .filter((service) =>
+        segment === 'active'
+          ? service.status === 'Assigned' || service.status === 'In_Progress'
+          : service.status === 'Resolved',
+      )
+      .filter(
+        (service) =>
+          !q ||
+          service.title.toLowerCase().includes(q) ||
+          service.description.toLowerCase().includes(q) ||
+          service.location.toLowerCase().includes(q),
+      );
+  }, [publicServices, query, segment]);
 
   const infoFor = (residentId: string) => {
     const resident = users.find((u) => u.userId === residentId);
@@ -90,6 +109,12 @@ export default function MaintenanceJobsScreen() {
         />
       </View>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search my jobs by title, resident, unit..."
+      />
+
       <SegmentedControl
         value={segment}
         onChange={setSegment}
@@ -100,20 +125,34 @@ export default function MaintenanceJobsScreen() {
       />
 
       <View style={styles.list}>
-        {filtered.length === 0 && publicJobs.length === 0 ? (
+        {displayedJobs.length === 0 && publicJobs.length === 0 ? (
           <EmptyState
-            icon={segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
-            title={segment === 'active' ? 'No active jobs' : 'No completed jobs yet'}
+            icon={
+              query.trim()
+                ? 'search-outline'
+                : segment === 'active'
+                  ? 'checkmark-circle-outline'
+                  : 'time-outline'
+            }
+            title={
+              query.trim()
+                ? 'No matching jobs found'
+                : segment === 'active'
+                  ? 'No active jobs'
+                  : 'No completed jobs yet'
+            }
             message={
-              segment === 'active'
-                ? 'New assignments will appear here.'
-                : 'Jobs you finish will show up here.'
+              query.trim()
+                ? `No jobs matched "${query}".`
+                : segment === 'active'
+                  ? 'New assignments will appear here.'
+                  : 'Jobs you finish will show up here.'
             }
           />
         ) : (
           <>
-            {filtered.length > 0 && <Text style={styles.listLabel}>Private services</Text>}
-            {filtered.map((t) => (
+            {displayedJobs.length > 0 && <Text style={styles.listLabel}>Private services</Text>}
+            {displayedJobs.map((t) => (
               <TicketCard
                 key={t.ticketId}
                 ticket={t}

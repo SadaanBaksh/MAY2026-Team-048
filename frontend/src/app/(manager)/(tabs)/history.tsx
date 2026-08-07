@@ -47,12 +47,20 @@ export default function ManagerHistoryScreen() {
       .filter((t) => {
         if (!query.trim()) return true;
         const q = query.toLowerCase();
+        const workerName = users.find((u) => u.userId === t.workerId)?.name ?? '';
         return (
-          t.title.toLowerCase().includes(q) || residentName(t.residentId).toLowerCase().includes(q)
+          t.title.toLowerCase().includes(q) ||
+          t.ticketId.toLowerCase().includes(q) ||
+          (t.residentNote || '').toLowerCase().includes(q) ||
+          (t.aiDescription || '').toLowerCase().includes(q) ||
+          t.priority.toLowerCase().includes(q) ||
+          t.status.toLowerCase().includes(q) ||
+          residentName(t.residentId).toLowerCase().includes(q) ||
+          apartmentFor(t.residentId).toLowerCase().includes(q) ||
+          workerName.toLowerCase().includes(q)
         );
       })
       .sort((a, b) => new Date(b.dateOfRequest).getTime() - new Date(a.dateOfRequest).getTime());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickets, statusFilter, query, users]);
 
   return (

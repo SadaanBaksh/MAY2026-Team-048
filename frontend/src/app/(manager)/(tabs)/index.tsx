@@ -9,6 +9,7 @@ import { BarChart } from '@/components/ui/BarChart';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
+import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
 import { CATEGORIES } from '@/data/categories';
 import { Spacing, Type } from '@/constants/theme';
@@ -43,6 +44,7 @@ export default function ManagerAnalyticsScreen() {
   const publicServices = usePublicServiceStore((s) => s.services);
   const refreshPublicServices = usePublicServiceStore((s) => s.refreshServices);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
@@ -157,106 +159,122 @@ export default function ManagerAnalyticsScreen() {
         </View>
       </View>
 
-      {summaryLoading ? (
-        <AISummaryCard summary="Generating summary…" variant="manager" label="Community Digest" />
-      ) : aiSummary ? (
-        <AISummaryCard summary={aiSummary} variant="manager" label="Community Digest" />
-      ) : null}
+      <DashboardSearch query={searchQuery} onChangeQuery={setSearchQuery} />
 
-      <View style={styles.statsGrid}>
-        <StatCard
-          label="Total Complaints"
-          value={stats.total}
-          icon="document-text-outline"
-          color={Colors.primary}
-        />
-        <StatCard
-          label="Pending"
-          value={stats.pending}
-          icon="hourglass-outline"
-          color={Colors.warning}
-        />
-        <StatCard
-          label="Overdue"
-          value={stats.overdue}
-          icon="alert-circle-outline"
-          color={Colors.danger}
-        />
-        <StatCard
-          label="Avg Resolution"
-          value={`${stats.avgResolutionHours.toFixed(1)}h`}
-          icon="speedometer-outline"
-          color={Colors.info}
-        />
-        <StatCard
-          label="Emergency Services Handled"
-          value={stats.emergencyHandled}
-          icon="shield-checkmark-outline"
-          color={Colors.danger}
-        />
-      </View>
-
-      <View style={isDesktop ? styles.chartGrid : styles.chartStack}>
-        <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
-          <Text style={styles.sectionTitle}>Complaints by Category</Text>
-          {categoryData.length > 0 ? (
-            <DonutChart data={categoryData} centerValue={String(stats.total)} centerLabel="Total" />
-          ) : (
-            <Text style={styles.empty}>No complaint data yet.</Text>
-          )}
-        </Card>
-
-        <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
-          <Text style={styles.sectionTitle}>Status Breakdown</Text>
-          <BarChart data={statusData} />
-        </Card>
-      </View>
-
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Public Services</Text>
-        <View style={styles.publicStats}>
-          <View style={styles.publicMetric}>
-            <Text style={styles.publicValue}>{publicStats.total}</Text>
-            <Text style={styles.publicLabel}>Total</Text>
-          </View>
-          <View style={styles.publicMetric}>
-            <Text style={styles.publicValue}>{publicStats.open}</Text>
-            <Text style={styles.publicLabel}>Open</Text>
-          </View>
-          <View style={styles.publicMetric}>
-            <Text style={styles.publicValue}>{publicStats.resolved}</Text>
-            <Text style={styles.publicLabel}>Resolved</Text>
-          </View>
-          <View style={styles.publicMetric}>
-            <Text style={styles.publicValue}>{publicStats.mergedReports}</Text>
-            <Text style={styles.publicLabel}>Merged reports</Text>
-          </View>
-        </View>
-      </Card>
-
-      {publicServices.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Public Issues</Text>
-          {publicServices.slice(0, 3).map((service) => (
-            <PublicServiceCard
-              key={service.id}
-              service={service}
-              onPress={() => router.push(`/(manager)/public/${service.id}`)}
+      {!searchQuery.trim() && (
+        <>
+          {summaryLoading ? (
+            <AISummaryCard
+              summary="Generating summary…"
+              variant="manager"
+              label="Community Digest"
             />
-          ))}
-        </View>
-      )}
+          ) : aiSummary ? (
+            <AISummaryCard summary={aiSummary} variant="manager" label="Community Digest" />
+          ) : null}
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Resident Satisfaction</Text>
-        <View style={styles.satisfactionRow}>
-          <Text style={styles.satisfactionValue}>{stats.avgRating.toFixed(1)}</Text>
-          <View>
-            <Text style={styles.satisfactionLabel}>Average rating</Text>
-            <Text style={styles.satisfactionMeta}>from {stats.ratedCount} rated complaints</Text>
+          <View style={styles.statsGrid}>
+            <StatCard
+              label="Total Complaints"
+              value={stats.total}
+              icon="document-text-outline"
+              color={Colors.primary}
+            />
+            <StatCard
+              label="Pending"
+              value={stats.pending}
+              icon="hourglass-outline"
+              color={Colors.warning}
+            />
+            <StatCard
+              label="Overdue"
+              value={stats.overdue}
+              icon="alert-circle-outline"
+              color={Colors.danger}
+            />
+            <StatCard
+              label="Avg Resolution"
+              value={`${stats.avgResolutionHours.toFixed(1)}h`}
+              icon="speedometer-outline"
+              color={Colors.info}
+            />
+            <StatCard
+              label="Emergency Services Handled"
+              value={stats.emergencyHandled}
+              icon="shield-checkmark-outline"
+              color={Colors.danger}
+            />
           </View>
-        </View>
-      </Card>
+
+          <View style={isDesktop ? styles.chartGrid : styles.chartStack}>
+            <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
+              <Text style={styles.sectionTitle}>Complaints by Category</Text>
+              {categoryData.length > 0 ? (
+                <DonutChart
+                  data={categoryData}
+                  centerValue={String(stats.total)}
+                  centerLabel="Total"
+                />
+              ) : (
+                <Text style={styles.empty}>No complaint data yet.</Text>
+              )}
+            </Card>
+
+            <Card style={[styles.section, isDesktop && styles.chartGridItem]}>
+              <Text style={styles.sectionTitle}>Status Breakdown</Text>
+              <BarChart data={statusData} />
+            </Card>
+          </View>
+
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>Public Services</Text>
+            <View style={styles.publicStats}>
+              <View style={styles.publicMetric}>
+                <Text style={styles.publicValue}>{publicStats.total}</Text>
+                <Text style={styles.publicLabel}>Total</Text>
+              </View>
+              <View style={styles.publicMetric}>
+                <Text style={styles.publicValue}>{publicStats.open}</Text>
+                <Text style={styles.publicLabel}>Open</Text>
+              </View>
+              <View style={styles.publicMetric}>
+                <Text style={styles.publicValue}>{publicStats.resolved}</Text>
+                <Text style={styles.publicLabel}>Resolved</Text>
+              </View>
+              <View style={styles.publicMetric}>
+                <Text style={styles.publicValue}>{publicStats.mergedReports}</Text>
+                <Text style={styles.publicLabel}>Merged reports</Text>
+              </View>
+            </View>
+          </Card>
+
+          {publicServices.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recent Public Issues</Text>
+              {publicServices.slice(0, 3).map((service) => (
+                <PublicServiceCard
+                  key={service.id}
+                  service={service}
+                  onPress={() => router.push(`/(manager)/public/${service.id}`)}
+                />
+              ))}
+            </View>
+          )}
+
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>Resident Satisfaction</Text>
+            <View style={styles.satisfactionRow}>
+              <Text style={styles.satisfactionValue}>{stats.avgRating.toFixed(1)}</Text>
+              <View>
+                <Text style={styles.satisfactionLabel}>Average rating</Text>
+                <Text style={styles.satisfactionMeta}>
+                  from {stats.ratedCount} rated complaints
+                </Text>
+              </View>
+            </View>
+          </Card>
+        </>
+      )}
     </Screen>
   );
 }
