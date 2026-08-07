@@ -11,6 +11,7 @@ export default function MaintenanceLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="job/[id]" />
+      <Stack.Screen name="public/[id]" />
       <Stack.Screen name="notifications" />
     </Stack>
   );

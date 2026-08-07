@@ -8,12 +8,14 @@ import { Screen } from '@/components/ui/Screen';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
+import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
 import { APARTMENTS } from '@/data/seed';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { usePublicServiceStore } from '@/store/publicServiceStore';
 import type { MaintenanceStaff } from '@/types';
 
 type Segment = 'active' | 'completed';
@@ -26,13 +28,16 @@ export default function MaintenanceJobsScreen() {
   const tickets = useTicketStore((s) => s.tickets);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
+  const publicServices = usePublicServiceStore((s) => s.services);
+  const refreshPublicServices = usePublicServiceStore((s) => s.refreshServices);
   const [segment, setSegment] = useState<Segment>('active');
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token) refreshNotifications(token);
-    }, [token, refreshTickets, refreshNotifications]),
+      if (token) refreshPublicServices(token);
+    }, [token, refreshTickets, refreshNotifications, refreshPublicServices]),
   );
 
   const myJobs = useMemo(
@@ -47,6 +52,12 @@ export default function MaintenanceJobsScreen() {
     segment === 'active'
       ? t.status === 'Assigned' || t.status === 'In_Progress'
       : t.status === 'Resolved' || t.status === 'Closed',
+  );
+
+  const publicJobs = publicServices.filter((service) =>
+    segment === 'active'
+      ? service.status === 'Assigned' || service.status === 'In_Progress'
+      : service.status === 'Resolved',
   );
 
   const infoFor = (residentId: string) => {
@@ -89,7 +100,7 @@ export default function MaintenanceJobsScreen() {
       />
 
       <View style={styles.list}>
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && publicJobs.length === 0 ? (
           <EmptyState
             icon={segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
             title={segment === 'active' ? 'No active jobs' : 'No completed jobs yet'}
@@ -100,14 +111,25 @@ export default function MaintenanceJobsScreen() {
             }
           />
         ) : (
-          filtered.map((t) => (
-            <TicketCard
-              key={t.ticketId}
-              ticket={t}
-              subtitle={infoFor(t.residentId)}
-              onPress={() => router.push(`/(maintenance)/job/${t.ticketId}`)}
-            />
-          ))
+          <>
+            {filtered.length > 0 && <Text style={styles.listLabel}>Private services</Text>}
+            {filtered.map((t) => (
+              <TicketCard
+                key={t.ticketId}
+                ticket={t}
+                subtitle={infoFor(t.residentId)}
+                onPress={() => router.push(`/(maintenance)/job/${t.ticketId}`)}
+              />
+            ))}
+            {publicJobs.length > 0 && <Text style={styles.listLabel}>Public services</Text>}
+            {publicJobs.map((service) => (
+              <PublicServiceCard
+                key={service.id}
+                service={service}
+                onPress={() => router.push(`/(maintenance)/public/${service.id}`)}
+              />
+            ))}
+          </>
         )}
       </View>
     </Screen>
@@ -141,5 +163,10 @@ const getStyles = (Colors: ThemeColors) =>
     },
     list: {
       gap: Spacing.sm,
+    },
+    listLabel: {
+      ...Type.captionBold,
+      color: Colors.inkSecondary,
+      marginTop: Spacing.xs,
     },
   });

@@ -6,6 +6,10 @@ import type {
   CostResponsibility,
   MediaType,
   Priority,
+  PublicService,
+  PublicServiceComment,
+  PublicServiceStatus,
+  PublicSimilaritySuggestion,
   TicketStatus,
   UserRole,
 } from '@/types';
@@ -71,7 +75,10 @@ async function extractErrorMessage(response: Response): Promise<string> {
     const body = await response.json();
     if (typeof body.detail === 'string') return body.detail;
     if (Array.isArray(body.detail)) {
-      return body.detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join('; ');
+      return body.detail
+        .map((d: { msg?: string }) => d.msg)
+        .filter(Boolean)
+        .join('; ');
     }
   } catch {
     // fall through to generic message
@@ -321,7 +328,9 @@ export async function askResidentAssistant(
 }
 
 export async function fetchDashboardSummary(token: string): Promise<string> {
-  const { summary } = await apiFetch<{ summary: string }>('/api/v1/ai/dashboard-summary', { token });
+  const { summary } = await apiFetch<{ summary: string }>('/api/v1/ai/dashboard-summary', {
+    token,
+  });
   return summary;
 }
 
@@ -398,10 +407,237 @@ export interface ApiNotification {
   id: string;
   user_id: string;
   ticket_id: string | null;
+  public_service_id?: string | null;
   title: string;
   message: string;
   is_read: boolean;
   created_at: string;
+}
+
+interface ApiPublicReport {
+  id: string;
+  author_id: string;
+  author_name: string;
+  author_building: string | null;
+  title: string;
+  description: string;
+  location: string;
+  created_at: string;
+  media: { id: string; media_url: string; uploaded_at: string }[];
+}
+
+export interface ApiPublicService {
+  id: string;
+  created_by_id: string;
+  creator_name: string;
+  creator_building: string | null;
+  worker_id: string | null;
+  category_id: string;
+  title: string;
+  description: string;
+  location: string;
+  ai_summary: string;
+  priority: Priority;
+  status: PublicServiceStatus;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  resolution_remarks: string | null;
+  resolution_proof_url: string | null;
+  merged_into_id: string | null;
+  reports: ApiPublicReport[];
+  comment_count: number;
+}
+
+export interface ApiPublicComment {
+  id: string;
+  service_id: string;
+  user_id: string;
+  author_name: string;
+  author_role: UserRole;
+  message: string;
+  posted_at: string;
+}
+
+interface ApiPublicSuggestion {
+  id: string;
+  service_a: ApiPublicService;
+  service_b: ApiPublicService;
+  score: number;
+  rationale: string;
+  model_name: string;
+  status: 'Pending' | 'Accepted' | 'Declined';
+  reviewed_by_id: string | null;
+  reviewed_at: string | null;
+  merged_service_id: string | null;
+  created_at: string;
+}
+
+export function mapApiPublicService(value: ApiPublicService): PublicService {
+  return {
+    id: value.id,
+    createdById: value.created_by_id,
+    creatorName: value.creator_name,
+    creatorBuilding: value.creator_building,
+    workerId: value.worker_id,
+    categoryId: value.category_id,
+    title: value.title,
+    description: value.description,
+    location: value.location,
+    aiSummary: value.ai_summary,
+    priority: value.priority,
+    status: value.status,
+    createdAt: value.created_at,
+    updatedAt: value.updated_at,
+    resolvedAt: value.resolved_at,
+    resolutionRemarks: value.resolution_remarks,
+    resolutionProofUrl: value.resolution_proof_url,
+    mergedIntoId: value.merged_into_id,
+    commentCount: value.comment_count,
+    reports: value.reports.map((report) => ({
+      id: report.id,
+      authorId: report.author_id,
+      authorName: report.author_name,
+      authorBuilding: report.author_building,
+      title: report.title,
+      description: report.description,
+      location: report.location,
+      createdAt: report.created_at,
+      media: report.media.map((media) => ({
+        id: media.id,
+        mediaUrl: media.media_url,
+        uploadedAt: media.uploaded_at,
+      })),
+    })),
+  };
+}
+
+function mapApiPublicComment(value: ApiPublicComment): PublicServiceComment {
+  return {
+    id: value.id,
+    serviceId: value.service_id,
+    userId: value.user_id,
+    authorName: value.author_name,
+    authorRole: value.author_role,
+    message: value.message,
+    postedAt: value.posted_at,
+  };
+}
+
+function mapApiSuggestion(value: ApiPublicSuggestion): PublicSimilaritySuggestion {
+  return {
+    id: value.id,
+    serviceA: mapApiPublicService(value.service_a),
+    serviceB: mapApiPublicService(value.service_b),
+    score: value.score,
+    rationale: value.rationale,
+    modelName: value.model_name,
+    status: value.status,
+    reviewedById: value.reviewed_by_id,
+    reviewedAt: value.reviewed_at,
+    mergedServiceId: value.merged_service_id,
+    createdAt: value.created_at,
+  };
+}
+
+export async function fetchPublicServices(token: string): Promise<PublicService[]> {
+  const values = await apiFetch<ApiPublicService[]>('/api/v1/public-services/', { token });
+  return values.map(mapApiPublicService);
+}
+
+export async function fetchPublicService(token: string, id: string): Promise<PublicService> {
+  return mapApiPublicService(
+    await apiFetch<ApiPublicService>(`/api/v1/public-services/${id}`, { token }),
+  );
+}
+
+export async function createPublicService(
+  token: string,
+  payload: {
+    title: string;
+    description: string;
+    location: string;
+    category_id: string;
+    priority: Priority;
+    photo_urls?: string[];
+  },
+): Promise<PublicService> {
+  return mapApiPublicService(
+    await apiFetch<ApiPublicService>('/api/v1/public-services/', {
+      method: 'POST',
+      token,
+      json: payload,
+    }),
+  );
+}
+
+export async function updatePublicService(
+  token: string,
+  id: string,
+  patch: {
+    worker_id?: string | null;
+    category_id?: string;
+    priority?: Priority;
+    status?: PublicServiceStatus;
+    resolution_remarks?: string;
+    resolution_proof_url?: string;
+  },
+): Promise<PublicService> {
+  return mapApiPublicService(
+    await apiFetch<ApiPublicService>(`/api/v1/public-services/${id}`, {
+      method: 'PATCH',
+      token,
+      json: patch,
+    }),
+  );
+}
+
+export async function fetchPublicComments(
+  token: string,
+  serviceId: string,
+): Promise<PublicServiceComment[]> {
+  const values = await apiFetch<ApiPublicComment[]>(
+    `/api/v1/public-services/${serviceId}/comments`,
+    { token },
+  );
+  return values.map(mapApiPublicComment);
+}
+
+export async function createPublicComment(
+  token: string,
+  serviceId: string,
+  message: string,
+): Promise<PublicServiceComment> {
+  return mapApiPublicComment(
+    await apiFetch<ApiPublicComment>(`/api/v1/public-services/${serviceId}/comments`, {
+      method: 'POST',
+      token,
+      json: { message },
+    }),
+  );
+}
+
+export async function fetchSimilaritySuggestions(
+  token: string,
+): Promise<PublicSimilaritySuggestion[]> {
+  const values = await apiFetch<ApiPublicSuggestion[]>(
+    '/api/v1/public-services/similarity/suggestions',
+    { token },
+  );
+  return values.map(mapApiSuggestion);
+}
+
+export async function reviewSimilaritySuggestion(
+  token: string,
+  suggestionId: string,
+  accept: boolean,
+): Promise<PublicSimilaritySuggestion> {
+  return mapApiSuggestion(
+    await apiFetch<ApiPublicSuggestion>(
+      `/api/v1/public-services/similarity/suggestions/${suggestionId}/review`,
+      { method: 'POST', token, json: { accept } },
+    ),
+  );
 }
 
 export async function fetchNotifications(token: string): Promise<ApiNotification[]> {

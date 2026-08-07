@@ -31,7 +31,8 @@ export default function MaintenanceNotificationsScreen() {
           notifications={notifications}
           onPressItem={(n) => {
             if (token) markNotificationReadAction(token, n.notificationId);
-            if (n.ticketId) router.push(`/(maintenance)/job/${n.ticketId}`);
+            if (n.publicServiceId) router.push(`/(maintenance)/public/${n.publicServiceId}`);
+            else if (n.ticketId) router.push(`/(maintenance)/job/${n.ticketId}`);
           }}
         />
       </Screen>

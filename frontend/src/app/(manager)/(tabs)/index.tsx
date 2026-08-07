@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -9,12 +9,14 @@ import { BarChart } from '@/components/ui/BarChart';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
+import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
 import { CATEGORIES } from '@/data/categories';
 import { Spacing, Type } from '@/constants/theme';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { usePublicServiceStore } from '@/store/publicServiceStore';
 import { isTicketOverdue } from '@/utils/overdue';
 import { fetchDashboardSummary } from '@/api/client';
 
@@ -38,6 +40,8 @@ export default function ManagerAnalyticsScreen() {
   const token = useAuthStore((s) => s.token);
   const tickets = useTicketStore((s) => s.tickets);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
+  const publicServices = usePublicServiceStore((s) => s.services);
+  const refreshPublicServices = usePublicServiceStore((s) => s.refreshServices);
 
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -45,6 +49,7 @@ export default function ManagerAnalyticsScreen() {
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token);
+      if (token) refreshPublicServices(token);
       if (token) {
         setSummaryLoading(true);
         fetchDashboardSummary(token)
@@ -52,7 +57,7 @@ export default function ManagerAnalyticsScreen() {
           .catch(() => setAiSummary(null))
           .finally(() => setSummaryLoading(false));
       }
-    }, [token, refreshTickets]),
+    }, [token, refreshTickets, refreshPublicServices]),
   );
 
   const stats = useMemo(() => {
@@ -127,6 +132,19 @@ export default function ManagerAnalyticsScreen() {
     [tickets, Colors],
   );
 
+  const publicStats = useMemo(
+    () => ({
+      total: publicServices.length,
+      open: publicServices.filter((service) => service.status !== 'Resolved').length,
+      resolved: publicServices.filter((service) => service.status === 'Resolved').length,
+      mergedReports: publicServices.reduce(
+        (sum, service) => sum + Math.max(0, service.reports.length - 1),
+        0,
+      ),
+    }),
+    [publicServices],
+  );
+
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
@@ -195,6 +213,41 @@ export default function ManagerAnalyticsScreen() {
       </View>
 
       <Card style={styles.section}>
+        <Text style={styles.sectionTitle}>Public Services</Text>
+        <View style={styles.publicStats}>
+          <View style={styles.publicMetric}>
+            <Text style={styles.publicValue}>{publicStats.total}</Text>
+            <Text style={styles.publicLabel}>Total</Text>
+          </View>
+          <View style={styles.publicMetric}>
+            <Text style={styles.publicValue}>{publicStats.open}</Text>
+            <Text style={styles.publicLabel}>Open</Text>
+          </View>
+          <View style={styles.publicMetric}>
+            <Text style={styles.publicValue}>{publicStats.resolved}</Text>
+            <Text style={styles.publicLabel}>Resolved</Text>
+          </View>
+          <View style={styles.publicMetric}>
+            <Text style={styles.publicValue}>{publicStats.mergedReports}</Text>
+            <Text style={styles.publicLabel}>Merged reports</Text>
+          </View>
+        </View>
+      </Card>
+
+      {publicServices.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Public Issues</Text>
+          {publicServices.slice(0, 3).map((service) => (
+            <PublicServiceCard
+              key={service.id}
+              service={service}
+              onPress={() => router.push(`/(manager)/public/${service.id}`)}
+            />
+          ))}
+        </View>
+      )}
+
+      <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Resident Satisfaction</Text>
         <View style={styles.satisfactionRow}>
           <Text style={styles.satisfactionValue}>{stats.avgRating.toFixed(1)}</Text>
@@ -257,6 +310,25 @@ const getStyles = (Colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: Spacing.md,
+    },
+    publicStats: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    publicMetric: {
+      minWidth: 110,
+      flex: 1,
+      alignItems: 'center',
+      padding: Spacing.sm,
+    },
+    publicValue: {
+      ...Type.title,
+      color: Colors.primary,
+    },
+    publicLabel: {
+      ...Type.tiny,
+      color: Colors.inkSecondary,
+      textAlign: 'center',
     },
     satisfactionValue: {
       ...Type.display,

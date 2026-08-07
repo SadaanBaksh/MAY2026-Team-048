@@ -57,10 +57,24 @@ def ensure_ticket_access(ticket: Ticket, current_user: User) -> None:
 
 
 def notify_user(
-    db: Session, *, user_id: str, ticket_id: str | None, title: str, message: str
+    db: Session,
+    *,
+    user_id: str,
+    ticket_id: str | None = None,
+    public_service_id: str | None = None,
+    title: str,
+    message: str,
 ) -> None:
     """Single choke point for creating a `Notification` row. Keeping every notification
     creation routed through here (rather than inline `db.add(Notification(...))` calls
     scattered across endpoints) means a future push-notification feature is a one-place
     extension of this function instead of a hunt across the codebase."""
-    db.add(Notification(user_id=user_id, ticket_id=ticket_id, title=title, message=message))
+    db.add(
+        Notification(
+            user_id=user_id,
+            ticket_id=ticket_id,
+            public_service_id=public_service_id,
+            title=title,
+            message=message,
+        )
+    )

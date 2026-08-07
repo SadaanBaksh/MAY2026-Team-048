@@ -31,7 +31,8 @@ export default function EmployeeNotificationsScreen() {
           notifications={notifications}
           onPressItem={(n) => {
             if (token) markNotificationReadAction(token, n.notificationId);
-            if (n.ticketId) router.push(`/(employee)/complaint/${n.ticketId}`);
+            if (n.publicServiceId) router.push(`/(employee)/public/${n.publicServiceId}`);
+            else if (n.ticketId) router.push(`/(employee)/complaint/${n.ticketId}`);
           }}
         />
       </Screen>

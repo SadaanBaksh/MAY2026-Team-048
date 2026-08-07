@@ -11,6 +11,7 @@ function mapApiNotificationToNotification(apiNotification: ApiNotification): App
     notificationId: apiNotification.id,
     userId: apiNotification.user_id,
     ticketId: apiNotification.ticket_id ?? undefined,
+    publicServiceId: apiNotification.public_service_id ?? undefined,
     title: apiNotification.title,
     message: apiNotification.message,
     isRead: apiNotification.is_read,
