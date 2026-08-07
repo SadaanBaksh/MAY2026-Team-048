@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
@@ -14,6 +15,7 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { useDashboardSearch } from '@/hooks/useDashboardSearch';
 import type { MaintenanceStaff } from '@/types';
 
 type Segment = 'active' | 'completed';
@@ -27,6 +29,7 @@ export default function MaintenanceJobsScreen() {
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
   const [segment, setSegment] = useState<Segment>('active');
+  const [query, setQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -34,6 +37,8 @@ export default function MaintenanceJobsScreen() {
       if (token) refreshNotifications(token);
     }, [token, refreshTickets, refreshNotifications]),
   );
+
+  const { matchingComplaints } = useDashboardSearch(query, tickets, users, user);
 
   const myJobs = useMemo(
     () =>
@@ -43,11 +48,14 @@ export default function MaintenanceJobsScreen() {
     [tickets, user.userId],
   );
 
-  const filtered = myJobs.filter((t) =>
-    segment === 'active'
-      ? t.status === 'Assigned' || t.status === 'In_Progress'
-      : t.status === 'Resolved' || t.status === 'Closed',
-  );
+  const displayedJobs = useMemo(() => {
+    const list = query.trim() ? matchingComplaints : myJobs;
+    return list.filter((t) =>
+      segment === 'active'
+        ? t.status === 'Assigned' || t.status === 'In_Progress'
+        : t.status === 'Resolved' || t.status === 'Closed',
+    );
+  }, [query, matchingComplaints, myJobs, segment]);
 
   const infoFor = (residentId: string) => {
     const resident = users.find((u) => u.userId === residentId);
@@ -79,6 +87,12 @@ export default function MaintenanceJobsScreen() {
         />
       </View>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search my jobs by title, resident, unit..."
+      />
+
       <SegmentedControl
         value={segment}
         onChange={setSegment}
@@ -89,18 +103,26 @@ export default function MaintenanceJobsScreen() {
       />
 
       <View style={styles.list}>
-        {filtered.length === 0 ? (
+        {displayedJobs.length === 0 ? (
           <EmptyState
-            icon={segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
-            title={segment === 'active' ? 'No active jobs' : 'No completed jobs yet'}
+            icon={query.trim() ? 'search-outline' : segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
+            title={
+              query.trim()
+                ? 'No matching jobs found'
+                : segment === 'active'
+                ? 'No active jobs'
+                : 'No completed jobs yet'
+            }
             message={
-              segment === 'active'
+              query.trim()
+                ? `No jobs matched "${query}".`
+                : segment === 'active'
                 ? 'New assignments will appear here.'
                 : 'Jobs you finish will show up here.'
             }
           />
         ) : (
-          filtered.map((t) => (
+          displayedJobs.map((t) => (
             <TicketCard
               key={t.ticketId}
               ticket={t}

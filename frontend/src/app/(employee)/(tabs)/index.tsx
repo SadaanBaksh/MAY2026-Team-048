@@ -10,6 +10,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
+import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { APARTMENTS } from '@/data/seed';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
@@ -28,6 +29,7 @@ export default function EmployeeDashboardScreen() {
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
@@ -91,7 +93,11 @@ export default function EmployeeDashboardScreen() {
         />
       </View>
 
-      <View style={styles.statsGrid}>
+      <DashboardSearch query={searchQuery} onChangeQuery={setSearchQuery} />
+
+      {!searchQuery.trim() && (
+        <>
+          <View style={styles.statsGrid}>
         <StatCard
           label="Pending Review"
           value={pending.length}
@@ -171,6 +177,8 @@ export default function EmployeeDashboardScreen() {
           </View>
         )}
       </View>
+      </>
+      )}
     </Screen>
   );
 }

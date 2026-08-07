@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -30,16 +31,29 @@ export default function ManagerRequestsScreen() {
   const refreshUsers = useAuthStore((s) => s.refreshUsers);
   const approveUser = useAuthStore((s) => s.approveUser);
   const rejectUser = useAuthStore((s) => s.rejectUser);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     refreshUsers();
   }, [refreshUsers]);
 
-  const pending = users.filter(
-    (u): u is PendingUser =>
-      (u.role === 'facility_employee' || u.role === 'maintenance_staff') &&
-      u.accountStatus === 'pending',
-  );
+  const pending = useMemo(() => {
+    const list = users.filter(
+      (u): u is PendingUser =>
+        (u.role === 'facility_employee' || u.role === 'maintenance_staff') &&
+        u.accountStatus === 'pending',
+    );
+    if (!query.trim()) return list;
+    const q = query.toLowerCase();
+    return list.filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.phone.toLowerCase().includes(q) ||
+        ROLE_LABELS[u.role].toLowerCase().includes(q) ||
+        roleMeta(u).toLowerCase().includes(q),
+    );
+  }, [users, query]);
 
   return (
     <Screen edges={['top']}>
@@ -48,11 +62,21 @@ export default function ManagerRequestsScreen() {
         Approve or decline employee and staff registration requests.
       </Text>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search requests by name, role, title, specialization..."
+      />
+
       {pending.length === 0 ? (
         <EmptyState
-          icon="checkmark-done-outline"
-          title="No pending requests"
-          message="New employee and staff sign-ups will show up here."
+          icon={query.trim() ? 'search-outline' : 'checkmark-done-outline'}
+          title={query.trim() ? 'No matching requests' : 'No pending requests'}
+          message={
+            query.trim()
+              ? `No registration requests matched "${query}".`
+              : 'New employee and staff sign-ups will show up here.'
+          }
         />
       ) : (
         pending.map((user) => (

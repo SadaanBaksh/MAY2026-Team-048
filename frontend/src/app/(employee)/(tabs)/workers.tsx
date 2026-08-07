@@ -1,11 +1,13 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -17,6 +19,7 @@ export default function EmployeeWorkersScreen() {
   const users = useAuthStore((s) => s.users);
   const refreshUsers = useAuthStore((s) => s.refreshUsers);
   const tickets = useTicketStore((s) => s.tickets);
+  const [query, setQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -29,6 +32,16 @@ export default function EmployeeWorkersScreen() {
       (u): u is MaintenanceStaff => u.role === 'maintenance_staff' && u.accountStatus === 'active',
     );
     return staff
+      .filter((w) => {
+        if (!query.trim()) return true;
+        const q = query.toLowerCase();
+        return (
+          w.name.toLowerCase().includes(q) ||
+          w.specialization.toLowerCase().includes(q) ||
+          w.email.toLowerCase().includes(q) ||
+          w.phone.toLowerCase().includes(q)
+        );
+      })
       .map((w) => ({
         worker: w,
         activeJobs: tickets.filter(
@@ -39,7 +52,7 @@ export default function EmployeeWorkersScreen() {
         ).length,
       }))
       .sort((a, b) => a.activeJobs - b.activeJobs);
-  }, [users, tickets]);
+  }, [users, tickets, query]);
 
   const styles = useMemo(() => getStyles(Colors), [Colors]);
 
@@ -48,22 +61,36 @@ export default function EmployeeWorkersScreen() {
       <Text style={styles.title}>Maintenance Staff</Text>
       <Text style={styles.subtitle}>Sorted by current workload — least busy first</Text>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search staff by name, specialization, phone..."
+      />
+
       <View style={styles.list}>
-        {workers.map(({ worker, activeJobs, completedJobs }) => (
-          <Card key={worker.userId} style={styles.card}>
-            <Avatar name={worker.name} color={worker.avatarColor} size={48} />
-            <View style={styles.info}>
-              <Text style={styles.name}>{worker.name}</Text>
-              <Text style={styles.spec}>{worker.specialization}</Text>
-              <RatingStars value={Math.round(worker.rating)} readOnly size={14} />
-            </View>
-            <View style={styles.loadBadge}>
-              <Text style={styles.loadValue}>{activeJobs}</Text>
-              <Text style={styles.loadLabel}>active</Text>
-              <Text style={styles.completedLabel}>{completedJobs} done</Text>
-            </View>
-          </Card>
-        ))}
+        {workers.length === 0 ? (
+          <EmptyState
+            icon="search-outline"
+            title="No staff members found"
+            message={`No staff members matched "${query}".`}
+          />
+        ) : (
+          workers.map(({ worker, activeJobs, completedJobs }) => (
+            <Card key={worker.userId} style={styles.card}>
+              <Avatar name={worker.name} color={worker.avatarColor} size={48} />
+              <View style={styles.info}>
+                <Text style={styles.name}>{worker.name}</Text>
+                <Text style={styles.spec}>{worker.specialization}</Text>
+                <RatingStars value={Math.round(worker.rating)} readOnly size={14} />
+              </View>
+              <View style={styles.loadBadge}>
+                <Text style={styles.loadValue}>{activeJobs}</Text>
+                <Text style={styles.loadLabel}>active</Text>
+                <Text style={styles.completedLabel}>{completedJobs} done</Text>
+              </View>
+            </Card>
+          ))
+        )}
       </View>
     </Screen>
   );

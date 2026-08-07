@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import ensure_ticket_access, get_current_user, notify_user, require_roles
 from app.api.response_docs import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
+from app.core.ai_cache import invalidate_summaries
 from app.db.session import get_db
 from app.models.enums import MediaType, Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
@@ -95,6 +96,7 @@ def create_ticket(
         )
 
     db.commit()
+    invalidate_summaries()
     db.refresh(ticket)
     return ticket
 
@@ -241,6 +243,7 @@ def update_ticket(
                 )
 
     db.commit()
+    invalidate_summaries()
     db.refresh(ticket)
     return ticket
 
