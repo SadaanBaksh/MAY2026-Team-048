@@ -11,7 +11,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -46,6 +46,41 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded && isSessionHydrated) SplashScreen.hideAsync();
   }, [fontsLoaded, isSessionHydrated]);
+
+  // React Native Web renders TextInput as input/textarea DOM elements. Reset
+  // the browser focus decoration globally so it cannot add a black rectangle
+  // on top of the app's own field borders and focus states.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const style = document.createElement('style');
+    style.id = 'simplifix-form-control-reset';
+    style.textContent = `
+      input,
+      textarea,
+      select {
+        box-sizing: border-box;
+      }
+
+      input:focus,
+      input:focus-visible,
+      textarea:focus,
+      textarea:focus-visible,
+      select:focus,
+      select:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      input::-moz-focus-inner,
+      textarea::-moz-focus-inner {
+        border: 0;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => style.remove();
+  }, []);
 
   if (!fontsLoaded || !isSessionHydrated) return null;
 

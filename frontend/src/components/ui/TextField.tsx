@@ -89,6 +89,10 @@ const getStyles = (Colors: ThemeColors) =>
     },
     input: {
       flex: 1,
+      // React Native Web renders TextInput as an HTML input. The browser's
+      // default focus outline otherwise draws a second black rectangle over
+      // the custom, accessible focus state on inputRow.
+      borderWidth: 0,
       paddingVertical: 13,
       fontSize: 15,
       color: Colors.ink,
