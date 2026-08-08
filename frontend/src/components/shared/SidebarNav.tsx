@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -37,6 +37,7 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
   const user = useAuthStore((s) => s.currentUser);
   const logout = useAuthStore((s) => s.logout);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = () => {
     const role = user?.role;
@@ -45,11 +46,25 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
   };
 
   return (
-    <View style={styles.sidebar}>
+    <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
       <View style={styles.brandBlock}>
-        <Text style={styles.brand}>{title}</Text>
-        <Text style={styles.brandSubtitle}>Facility operations</Text>
+        {!collapsed && <Text style={styles.brand}>{title}</Text>}
+        {!collapsed && <Text style={styles.brandSubtitle}>Facility operations</Text>}
+        {collapsed && <Text style={styles.brandCompact}>S</Text>}
       </View>
+      <Pressable
+        style={[styles.collapseButton, collapsed && styles.collapseButtonCollapsed]}
+        onPress={() => setCollapsed((value) => !value)}
+        accessibilityRole="button"
+        accessibilityLabel={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+      >
+        <Ionicons
+          name={collapsed ? 'chevron-forward' : 'chevron-back'}
+          size={16}
+          color={Colors.inkSecondary}
+        />
+        {!collapsed && <Text style={styles.collapseLabel}>Collapse</Text>}
+      </Pressable>
       <View style={styles.items}>
         {items.map((item) => {
           const active = item.match(pathname);
@@ -57,11 +72,13 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
             <Pressable
               key={item.href}
               onPress={() => router.push(item.href as never)}
-              style={[styles.item, active && styles.itemActive]}
+              style={[styles.item, collapsed && styles.itemCollapsed, active && styles.itemActive]}
               accessibilityRole="button"
             >
               <Ionicons name={item.icon} size={20} color={active ? Colors.primary : Colors.inkSecondary} />
-              <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
+              {!collapsed && (
+                <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
+              )}
             </Pressable>
           );
         })}
@@ -69,31 +86,46 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
       {user && (
         <View style={styles.accountArea}>
           <Pressable
-            style={styles.account}
+            style={[styles.account, collapsed && styles.accountCollapsed]}
             onPress={() => router.push(PROFILE_ROUTES[user.role] as never)}
             accessibilityRole="button"
             accessibilityLabel="Open profile"
           >
             <Avatar name={user.name} color={user.avatarColor} uri={user.avatarUri} size={36} />
-            <View style={styles.accountText}>
-              <Text style={styles.accountName} numberOfLines={1}>{user.name}</Text>
-              <Text style={styles.accountEmail} numberOfLines={1}>{user.email}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.inkTertiary} />
+            {!collapsed && (
+              <View style={styles.accountText}>
+                <Text style={styles.accountName} numberOfLines={1}>{user.name}</Text>
+                <Text style={styles.accountEmail} numberOfLines={1}>{user.email}</Text>
+              </View>
+            )}
+            {!collapsed && <Ionicons name="chevron-forward" size={16} color={Colors.inkTertiary} />}
           </Pressable>
-          <View style={styles.preference}>
-            <Ionicons name={isDark ? 'moon' : 'moon-outline'} size={18} color={Colors.inkSecondary} />
-            <Text style={styles.preferenceLabel}>Dark mode</Text>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: Colors.borderStrong, true: Colors.teal }}
-              thumbColor={Colors.white}
-            />
+          <View style={[styles.preference, collapsed && styles.preferenceCollapsed]}>
+            {!collapsed && (
+              <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={18} color={Colors.inkSecondary} />
+            )}
+            {!collapsed && <Text style={styles.preferenceLabel}>Dark mode</Text>}
+            {collapsed ? (
+              <Pressable
+                onPress={toggleTheme}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: isDark }}
+                accessibilityLabel="Toggle dark mode"
+              >
+                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={18} color={Colors.inkSecondary} />
+              </Pressable>
+            ) : (
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: Colors.borderStrong, true: Colors.teal }}
+                thumbColor={Colors.white}
+              />
+            )}
           </View>
-          <Pressable style={styles.logout} onPress={handleLogout} accessibilityRole="button">
+          <Pressable style={[styles.logout, collapsed && styles.logoutCollapsed]} onPress={handleLogout} accessibilityRole="button">
             <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
-            <Text style={styles.logoutLabel}>Log out</Text>
+            {!collapsed && <Text style={styles.logoutLabel}>Log out</Text>}
           </Pressable>
         </View>
       )}
@@ -112,9 +144,30 @@ const getStyles = (Colors: ThemeColors) =>
       paddingHorizontal: Spacing.sm,
       paddingBottom: Spacing.md,
     },
+    sidebarCollapsed: {
+      width: 76,
+    },
     brandBlock: { paddingHorizontal: Spacing.sm, marginBottom: Spacing.xl },
     brand: { ...Type.title, color: Colors.ink },
     brandSubtitle: { ...Type.tiny, color: Colors.inkTertiary, marginTop: 2 },
+    brandCompact: { ...Type.title, color: Colors.primary, textAlign: 'center' },
+    collapseButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.xs,
+      minHeight: 32,
+      minWidth: 32,
+      alignSelf: 'flex-end',
+      borderRadius: Radius.sm,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: Colors.border,
+      backgroundColor: Colors.surfaceSunken,
+      paddingHorizontal: Spacing.xs,
+      marginBottom: Spacing.sm,
+    },
+    collapseButtonCollapsed: { width: 32, paddingHorizontal: 0, alignSelf: 'center' },
+    collapseLabel: { ...Type.tiny, color: Colors.inkSecondary },
     items: { gap: 2, flex: 1 },
     item: {
       flexDirection: 'row',
@@ -125,6 +178,7 @@ const getStyles = (Colors: ThemeColors) =>
       borderRadius: Radius.sm,
     },
     itemActive: { backgroundColor: Colors.primarySoft },
+    itemCollapsed: { justifyContent: 'center' },
     itemLabel: { ...Type.bodyMedium, color: Colors.inkSecondary },
     itemLabelActive: { color: Colors.primary },
     accountArea: {
@@ -135,10 +189,13 @@ const getStyles = (Colors: ThemeColors) =>
     },
     account: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
     accountText: { flex: 1, minWidth: 0 },
+    accountCollapsed: { justifyContent: 'center' },
     accountName: { ...Type.captionBold, color: Colors.ink },
     accountEmail: { ...Type.tiny, color: Colors.inkTertiary },
     preference: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
     preferenceLabel: { ...Type.caption, color: Colors.inkSecondary, flex: 1 },
+    preferenceCollapsed: { justifyContent: 'center' },
     logout: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.xs },
+    logoutCollapsed: { justifyContent: 'center' },
     logoutLabel: { ...Type.captionBold, color: Colors.danger },
   });
