@@ -1,5 +1,6 @@
 from app.models.apartment import Apartment
 from app.models.category import Category
+from app.models.chat_message import ChatMessage
 from app.models.comment import Comment
 from app.models.notification import Notification
 from app.models.public_service import PublicReport, PublicReportMedia, PublicService
@@ -14,6 +15,7 @@ from app.models.user import User
 __all__ = [
     "Apartment",
     "Category",
+    "ChatMessage",
     "Comment",
     "Notification",
     "PublicReport",
