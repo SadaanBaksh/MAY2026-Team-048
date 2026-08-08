@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Slot, Tabs } from 'expo-router';
 
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function ResidentTabsLayout() {
   const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
+
+  if (isDesktop) return <Slot />;
 
   return (
     <Tabs

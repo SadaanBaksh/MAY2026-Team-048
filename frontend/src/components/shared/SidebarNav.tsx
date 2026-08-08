@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
+import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
+import type { UserRole } from '@/types';
 
 export interface SidebarNavItem {
   href: string;
@@ -18,16 +22,34 @@ export interface SidebarNavProps {
   items: SidebarNavItem[];
 }
 
-const SIDEBAR_WIDTH = 240;
+const SIDEBAR_WIDTH = 248;
+const PROFILE_ROUTES: Record<UserRole, string> = {
+  resident: '/(resident)/(tabs)/profile',
+  facility_employee: '/(employee)/(tabs)/profile',
+  maintenance_staff: '/(maintenance)/(tabs)/profile',
+  facility_manager: '/(manager)/(tabs)/profile',
+};
 
 export function SidebarNav({ title, items }: SidebarNavProps) {
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.currentUser);
+  const logout = useAuthStore((s) => s.logout);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+
+  const handleLogout = () => {
+    const role = user?.role;
+    logout();
+    router.replace(role === 'resident' ? '/(auth)/customer-login' : '/(auth)/landing');
+  };
 
   return (
     <View style={styles.sidebar}>
-      <Text style={styles.brand}>{title}</Text>
+      <View style={styles.brandBlock}>
+        <Text style={styles.brand}>{title}</Text>
+        <Text style={styles.brandSubtitle}>Facility operations</Text>
+      </View>
       <View style={styles.items}>
         {items.map((item) => {
           const active = item.match(pathname);
@@ -36,17 +58,45 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
               key={item.href}
               onPress={() => router.push(item.href as never)}
               style={[styles.item, active && styles.itemActive]}
+              accessibilityRole="button"
             >
-              <Ionicons
-                name={item.icon}
-                size={20}
-                color={active ? Colors.primary : Colors.inkSecondary}
-              />
+              <Ionicons name={item.icon} size={20} color={active ? Colors.primary : Colors.inkSecondary} />
               <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
             </Pressable>
           );
         })}
       </View>
+      {user && (
+        <View style={styles.accountArea}>
+          <Pressable
+            style={styles.account}
+            onPress={() => router.push(PROFILE_ROUTES[user.role] as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Open profile"
+          >
+            <Avatar name={user.name} color={user.avatarColor} uri={user.avatarUri} size={36} />
+            <View style={styles.accountText}>
+              <Text style={styles.accountName} numberOfLines={1}>{user.name}</Text>
+              <Text style={styles.accountEmail} numberOfLines={1}>{user.email}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.inkTertiary} />
+          </Pressable>
+          <View style={styles.preference}>
+            <Ionicons name={isDark ? 'moon' : 'moon-outline'} size={18} color={Colors.inkSecondary} />
+            <Text style={styles.preferenceLabel}>Dark mode</Text>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: Colors.borderStrong, true: Colors.teal }}
+              thumbColor={Colors.white}
+            />
+          </View>
+          <Pressable style={styles.logout} onPress={handleLogout} accessibilityRole="button">
+            <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
+            <Text style={styles.logoutLabel}>Log out</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -60,16 +110,12 @@ const getStyles = (Colors: ThemeColors) =>
       backgroundColor: Colors.surface,
       paddingTop: Spacing.xl,
       paddingHorizontal: Spacing.sm,
+      paddingBottom: Spacing.md,
     },
-    brand: {
-      ...Type.title,
-      color: Colors.ink,
-      paddingHorizontal: Spacing.sm,
-      marginBottom: Spacing.lg,
-    },
-    items: {
-      gap: 2,
-    },
+    brandBlock: { paddingHorizontal: Spacing.sm, marginBottom: Spacing.xl },
+    brand: { ...Type.title, color: Colors.ink },
+    brandSubtitle: { ...Type.tiny, color: Colors.inkTertiary, marginTop: 2 },
+    items: { gap: 2, flex: 1 },
     item: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -78,14 +124,21 @@ const getStyles = (Colors: ThemeColors) =>
       paddingHorizontal: Spacing.sm,
       borderRadius: Radius.sm,
     },
-    itemActive: {
-      backgroundColor: Colors.primarySoft,
+    itemActive: { backgroundColor: Colors.primarySoft },
+    itemLabel: { ...Type.bodyMedium, color: Colors.inkSecondary },
+    itemLabelActive: { color: Colors.primary },
+    accountArea: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: Colors.border,
+      paddingTop: Spacing.md,
+      gap: Spacing.sm,
     },
-    itemLabel: {
-      ...Type.bodyMedium,
-      color: Colors.inkSecondary,
-    },
-    itemLabelActive: {
-      color: Colors.primary,
-    },
+    account: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
+    accountText: { flex: 1, minWidth: 0 },
+    accountName: { ...Type.captionBold, color: Colors.ink },
+    accountEmail: { ...Type.tiny, color: Colors.inkTertiary },
+    preference: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
+    preferenceLabel: { ...Type.caption, color: Colors.inkSecondary, flex: 1 },
+    logout: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.xs },
+    logoutLabel: { ...Type.captionBold, color: Colors.danger },
   });

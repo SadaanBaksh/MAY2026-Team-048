@@ -1,10 +1,9 @@
 import { Redirect, Slot, Stack } from 'expo-router';
 import { View } from 'react-native';
-
-import { SidebarNav, type SidebarNavItem } from '@/components/shared/SidebarNav';
+import { RoleShell } from '@/components/shared/RoleShell';
+import { type SidebarNavItem } from '@/components/shared/SidebarNav';
 import { EmergencyAlertBar } from '@/components/shared/EmergencyAlertBar';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
@@ -31,7 +30,6 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
 
 export default function EmployeeLayout() {
   const user = useAuthStore((s) => s.currentUser);
-  const { Colors } = useTheme();
   const isDesktop = useIsDesktop();
 
   if (!user || user.role !== 'facility_employee') return <Redirect href="/(auth)/landing" />;
@@ -39,13 +37,10 @@ export default function EmployeeLayout() {
 
   if (isDesktop) {
     return (
-      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.surfaceMuted }}>
-        <SidebarNav title="Simplifix" items={DESKTOP_NAV_ITEMS} />
-        <View style={{ flex: 1 }}>
-          <Slot />
-          <EmergencyAlertBar />
-        </View>
-      </View>
+      <RoleShell title="Employee dashboard" items={DESKTOP_NAV_ITEMS}>
+        <Slot />
+        <EmergencyAlertBar />
+      </RoleShell>
     );
   }
 
