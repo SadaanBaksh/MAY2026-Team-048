@@ -40,6 +40,15 @@ export default function EmployeeTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="public"
+        options={{
+          title: 'Public',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-circle" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="workers"
         options={{
           title: 'Workers',

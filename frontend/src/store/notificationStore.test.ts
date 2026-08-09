@@ -6,9 +6,7 @@ jest.mock('@/api/client', () => ({
   markNotificationRead: jest.fn(),
 }));
 
-const mockFetchNotifications = fetchNotifications as jest.MockedFunction<
-  typeof fetchNotifications
->;
+const mockFetchNotifications = fetchNotifications as jest.MockedFunction<typeof fetchNotifications>;
 const mockMarkNotificationRead = markNotificationRead as jest.MockedFunction<
   typeof markNotificationRead
 >;
@@ -139,6 +137,20 @@ describe('useNotificationStore', () => {
       await useNotificationStore.getState().refreshNotifications('tok');
 
       expect(useNotificationStore.getState().notifications[0].ticketId).toBeUndefined();
+    });
+
+    it('maps a public service target for role-specific navigation', async () => {
+      mockFetchNotifications.mockResolvedValue([
+        buildApiNotification({
+          id: 'ntf_public',
+          ticket_id: null,
+          public_service_id: 'public-1',
+        }),
+      ]);
+
+      await useNotificationStore.getState().refreshNotifications('tok');
+
+      expect(useNotificationStore.getState().notifications[0].publicServiceId).toBe('public-1');
     });
   });
 

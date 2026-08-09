@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { SidebarNav, type SidebarNavItem } from '@/components/shared/SidebarNav';
 import { EmergencyAlertBar } from '@/components/shared/EmergencyAlertBar';
+import { SimilarityReviewModal } from '@/components/shared/SimilarityReviewModal';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +21,12 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
     label: 'Workers',
     icon: 'people',
     match: (p) => p === '/workers',
+  },
+  {
+    href: '/(employee)/(tabs)/public',
+    label: 'Public Services',
+    icon: 'people-circle',
+    match: (p) => p === '/public' || p.startsWith('/public/'),
   },
   {
     href: '/(employee)/(tabs)/profile',
@@ -43,6 +50,7 @@ export default function EmployeeLayout() {
         <SidebarNav title="Simplifix" items={DESKTOP_NAV_ITEMS} />
         <View style={{ flex: 1 }}>
           <Slot />
+          <SimilarityReviewModal />
           <EmergencyAlertBar />
         </View>
       </View>
@@ -54,8 +62,10 @@ export default function EmployeeLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="complaint/[id]" />
+        <Stack.Screen name="public/[id]" />
         <Stack.Screen name="notifications" />
       </Stack>
+      <SimilarityReviewModal />
       <EmergencyAlertBar />
     </View>
   );

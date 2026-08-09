@@ -1,7 +1,17 @@
 from logging.config import fileConfig
+from pathlib import Path
+import sys
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+# Alembic may be launched from a directory other than the project root (for
+# example, by a container entrypoint).  Resolve the backend root from this file
+# so application imports always target /app/app, rather than an unrelated
+# installed package named ``app``.
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.core.config import settings
 from app.db.base import Base

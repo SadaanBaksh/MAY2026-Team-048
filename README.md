@@ -11,7 +11,9 @@ The project aims to replace fragmented maintenance communication across WhatsApp
 Simplifix centralizes the complete complaint lifecycle for apartment communities:
 
 - Residents can create maintenance complaints, attach photos or videos, review AI-assisted complaint details, track status, verify completed work, and rate the resolution.
+- Residents can publish common-area public service reports, discuss them with neighbours, and follow a shared resolution page when reports are merged.
 - Facility employees can review incoming complaints, validate AI-generated descriptions, assign jobs to maintenance staff, monitor workloads, and handle overdue complaints.
+- Facility employees receive AI similarity suggestions for public reports and decide whether matching reports should be merged into a new combined service page.
 - Maintenance staff can view assigned jobs, inspect complaint details and media, update repair progress, add remarks, and upload completion proof.
 - Facility managers can monitor analytics, complaint trends, staff performance, workload distribution, recurring issues, and historical records.
 
@@ -30,6 +32,8 @@ Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Close
 - Worker assignment and workload visibility
 - Completion proof, remarks, resident verification, and ratings
 - Searchable complaint history and audit trail
+- Society-wide public service feed with comments and dedicated issue pages
+- Employee-approved AI similarity scoring and information-preserving report merges
 - Manager analytics for resolution time, category trends, recurring issues, and staff performance
 
 ## Current Implementation
@@ -49,6 +53,7 @@ Implemented frontend capabilities include:
 - Employee triage and assignment flows
 - Maintenance job update flows
 - Manager analytics, history, and performance views
+- Public service creation, discussion, assignment, resolution, merge review, and analytics flows
 
 The frontend needs no API key. To enable AI features, add `GEMINI_API_KEY` to `backend/.env`;
 keep it server-side and never use an `EXPO_PUBLIC_` variable for it.

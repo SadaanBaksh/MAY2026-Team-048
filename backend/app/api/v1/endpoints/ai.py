@@ -10,7 +10,14 @@ from app.core.limiter import limiter, rate_limit_key_for_user
 from app.core.storage import upload_belongs_to
 from app.db.session import get_db
 from app.models.category import Category
-from app.models.enums import UserRole, Priority, AccountStatus, TicketStatus
+from app.models.enums import (
+    AccountStatus,
+    Priority,
+    PublicServiceStatus,
+    TicketStatus,
+    UserRole,
+)
+from app.models.public_service import PublicService
 from app.models.ticket import Ticket
 from app.models.user import User
 from datetime import datetime, timezone
@@ -204,6 +211,24 @@ def dashboard_summary(
             f"High/Critical/Emergency open tickets: {high_priority_open}\n"
             f"Tickets created today: {created_today}\n"
         )
+        public_services = db.query(PublicService).filter(
+            PublicService.status != PublicServiceStatus.Merged
+        ).all()
+        public_open = sum(
+            1 for item in public_services if item.status != PublicServiceStatus.Resolved
+        )
+        public_resolved = sum(
+            1 for item in public_services if item.status == PublicServiceStatus.Resolved
+        )
+        merged_public = db.query(PublicService).filter(
+            PublicService.status == PublicServiceStatus.Merged
+        ).count()
+        stats_text += (
+            f"Public services: {len(public_services)}\n"
+            f"Open public services: {public_open}\n"
+            f"Resolved public services: {public_resolved}\n"
+            f"Resident public pages merged: {merged_public}\n"
+        )
         if current_user.role == UserRole.facility_manager:
             resolved_closed = status_counts.get(TicketStatus.Resolved.value, 0) + status_counts.get(TicketStatus.Closed.value, 0)
             resolution_rate = f"{(resolved_closed / len(tickets) * 100):.1f}%" if tickets else "0%"
@@ -224,7 +249,16 @@ def dashboard_summary(
             )
     else:  # maintenance_staff
         active_jobs = sum(1 for t in tickets if t.status in (TicketStatus.Assigned, TicketStatus.In_Progress))
-        stats_text += f"Active jobs: {active_jobs}\n"
+        active_public_jobs = db.query(PublicService).filter(
+            PublicService.worker_id == current_user.id,
+            PublicService.status.in_(
+                [PublicServiceStatus.Assigned, PublicServiceStatus.In_Progress]
+            ),
+        ).count()
+        stats_text += (
+            f"Active private jobs: {active_jobs}\n"
+            f"Active public jobs: {active_public_jobs}\n"
+        )
 
     # ── Cache layer ──────────────────────────────────────────────────────
     cache_key = make_cache_key(current_user.id, current_user.role.value)

@@ -9,9 +9,13 @@ Simplifix is an AI-assisted complaint management app for residential communities
 The current frontend streamlines the maintenance-complaint lifecycle for a residential community:
 
 - **Residents** file complaints (plumbing, electrical, etc.) with AI-assisted category/priority suggestions, attach photos or videos, and track status through to resolution.
+- **Residents** publish and discuss common-area issues in a separate Community feed. Each issue has a dedicated page, and merged pages retain all contributing reports.
 - **Facility employees** triage incoming complaints and assign them to maintenance staff.
+- **Facility employees** manage public services separately and accept or decline AI similarity merge popups.
 - **Maintenance staff** work through their assigned jobs and update progress.
+- **Maintenance staff** see private and public assignments in one job queue.
 - **Facility managers** get a portfolio-wide view of history and team performance.
+- **Facility managers** see public-service totals, open/resolved counts, merged-report counts, and combined staff workloads.
 
 ## Frontend Setup
 

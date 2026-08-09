@@ -9,13 +9,15 @@ import { SearchBar } from '@/components/ui/SearchBar';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
+import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
 import { APARTMENTS } from '@/data/seed';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useTicketStore } from '@/store/ticketStore';
 import { useDashboardSearch } from '@/hooks/useDashboardSearch';
+import { usePublicServiceStore } from '@/store/publicServiceStore';
+import { useTicketStore } from '@/store/ticketStore';
 import type { MaintenanceStaff } from '@/types';
 
 type Segment = 'active' | 'completed';
@@ -28,6 +30,8 @@ export default function MaintenanceJobsScreen() {
   const tickets = useTicketStore((s) => s.tickets);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
+  const publicServices = usePublicServiceStore((s) => s.services);
+  const refreshPublicServices = usePublicServiceStore((s) => s.refreshServices);
   const [segment, setSegment] = useState<Segment>('active');
   const [query, setQuery] = useState('');
 
@@ -35,7 +39,8 @@ export default function MaintenanceJobsScreen() {
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token) refreshNotifications(token);
-    }, [token, refreshTickets, refreshNotifications]),
+      if (token) refreshPublicServices(token);
+    }, [token, refreshTickets, refreshNotifications, refreshPublicServices]),
   );
 
   const { matchingComplaints } = useDashboardSearch(query, tickets, users, user);
@@ -56,6 +61,23 @@ export default function MaintenanceJobsScreen() {
         : t.status === 'Resolved' || t.status === 'Closed',
     );
   }, [query, matchingComplaints, myJobs, segment]);
+
+  const publicJobs = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return publicServices
+      .filter((service) =>
+        segment === 'active'
+          ? service.status === 'Assigned' || service.status === 'In_Progress'
+          : service.status === 'Resolved',
+      )
+      .filter(
+        (service) =>
+          !q ||
+          service.title.toLowerCase().includes(q) ||
+          service.description.toLowerCase().includes(q) ||
+          service.location.toLowerCase().includes(q),
+      );
+  }, [publicServices, query, segment]);
 
   const infoFor = (residentId: string) => {
     const resident = users.find((u) => u.userId === residentId);
@@ -103,33 +125,50 @@ export default function MaintenanceJobsScreen() {
       />
 
       <View style={styles.list}>
-        {displayedJobs.length === 0 ? (
+        {displayedJobs.length === 0 && publicJobs.length === 0 ? (
           <EmptyState
-            icon={query.trim() ? 'search-outline' : segment === 'active' ? 'checkmark-circle-outline' : 'time-outline'}
+            icon={
+              query.trim()
+                ? 'search-outline'
+                : segment === 'active'
+                  ? 'checkmark-circle-outline'
+                  : 'time-outline'
+            }
             title={
               query.trim()
                 ? 'No matching jobs found'
                 : segment === 'active'
-                ? 'No active jobs'
-                : 'No completed jobs yet'
+                  ? 'No active jobs'
+                  : 'No completed jobs yet'
             }
             message={
               query.trim()
                 ? `No jobs matched "${query}".`
                 : segment === 'active'
-                ? 'New assignments will appear here.'
-                : 'Jobs you finish will show up here.'
+                  ? 'New assignments will appear here.'
+                  : 'Jobs you finish will show up here.'
             }
           />
         ) : (
-          displayedJobs.map((t) => (
-            <TicketCard
-              key={t.ticketId}
-              ticket={t}
-              subtitle={infoFor(t.residentId)}
-              onPress={() => router.push(`/(maintenance)/job/${t.ticketId}`)}
-            />
-          ))
+          <>
+            {displayedJobs.length > 0 && <Text style={styles.listLabel}>Private services</Text>}
+            {displayedJobs.map((t) => (
+              <TicketCard
+                key={t.ticketId}
+                ticket={t}
+                subtitle={infoFor(t.residentId)}
+                onPress={() => router.push(`/(maintenance)/job/${t.ticketId}`)}
+              />
+            ))}
+            {publicJobs.length > 0 && <Text style={styles.listLabel}>Public services</Text>}
+            {publicJobs.map((service) => (
+              <PublicServiceCard
+                key={service.id}
+                service={service}
+                onPress={() => router.push(`/(maintenance)/public/${service.id}`)}
+              />
+            ))}
+          </>
         )}
       </View>
     </Screen>
@@ -163,5 +202,10 @@ const getStyles = (Colors: ThemeColors) =>
     },
     list: {
       gap: Spacing.sm,
+    },
+    listLabel: {
+      ...Type.captionBold,
+      color: Colors.inkSecondary,
+      marginTop: Spacing.xs,
     },
   });
