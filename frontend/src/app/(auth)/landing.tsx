@@ -3,8 +3,9 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
+  LayoutChangeEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -188,10 +189,26 @@ export default function LandingPage() {
   const goLogin = useCallback(() => router.push('/(auth)/customer-login'), []);
   const goRegister = useCallback(() => router.push('/(auth)/register'), []);
 
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsets = useRef<Record<string, number>>({});
+
+  const registerSection = useCallback(
+    (key: string) => (e: LayoutChangeEvent) => {
+      sectionOffsets.current[key] = e.nativeEvent.layout.y;
+    },
+    []
+  );
+
+  const scrollToSection = useCallback((key: string) => {
+    const y = sectionOffsets.current[key];
+    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(y - 24, 0), animated: true });
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: P.white }}>
       <StatusBar style="dark" />
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}>
@@ -236,26 +253,27 @@ export default function LandingPage() {
             ]}>
             <View style={s.heroAiTag}>
               <Ionicons name="sparkles" size={13} color="#9ADBD5" />
-              <Text style={s.heroAiTagText}>AI-First Maintenance Platform</Text>
+              <Text style={s.heroAiTagText}>AI-Powered Facility Operations</Text>
             </View>
 
             <Text style={[s.heroTitle, isDesktop && { fontSize: 54, lineHeight: 60 }]}>
-              {'Maintenance complaints,\n'}
-              <Text style={{ color: '#7DD9D0' }}>resolved before they escalate.</Text>
+              {'Run maintenance operations,\n'}
+              <Text style={{ color: '#7DD9D0' }}>not a WhatsApp group.</Text>
             </Text>
 
             <Text style={[s.heroSub, isDesktop && { fontSize: 17, lineHeight: 28 }]}>
-              Simplifix gives residents a frictionless way to report issues, and gives your team
-              the intelligence to resolve them — faster, smarter, and with full transparency.
+              AI-triaged complaints, automatic worker assignment, and the analytics and audit
+              trail to prove your operation is under control — replacing scattered calls,
+              chats, and paper registers with one system of record.
             </Text>
 
             <View style={[s.heroButtons, !isWide && { flexDirection: 'column' }]}>
               <Btn label="Get Started Free" onPress={goRegister} variant="primary" size="lg" />
-              <Btn label="Log In to Dashboard" onPress={goLogin} variant="outlineLight" size="lg" />
+              <Btn label="Log In" onPress={goLogin} variant="outlineLight" size="lg" />
             </View>
 
             <View style={s.heroPillRow}>
-              {['Snap & Submit', 'AI Triage', 'Real-Time Tracking', 'Instant Alerts'].map((p) => (
+              {['AI Triage', 'Auto-Assignment', 'Overdue Escalation', 'Full Audit Trail'].map((p) => (
                 <View key={p} style={s.heroPill}>
                   <Text style={s.heroPillText}>{p}</Text>
                 </View>
@@ -268,10 +286,10 @@ export default function LandingPage() {
         <View style={s.statsBar}>
           <View style={[s.container, s.statsGrid, !isWide && { flexWrap: 'wrap' }]}>
             {[
-              { num: '5', label: 'Status Stages' },
-              { num: '4', label: 'User Roles' },
-              { num: '100%', label: 'AI-Powered Triage' },
-              { num: '<24h', label: 'SLA for Critical Issues' },
+              { num: '100%', label: 'Complaints AI-Triaged' },
+              { num: '5', label: 'Status Stages Tracked' },
+              { num: 'Auto', label: 'Overdue Escalation' },
+              { num: 'Full', label: 'Audit Trail' },
             ].map((stat) => (
               <View key={stat.label} style={[s.stat, !isWide && { width: '50%' }]}>
                 <Text style={s.statNum}>{stat.num}</Text>
@@ -288,8 +306,8 @@ export default function LandingPage() {
               <SectionEyebrow>The Simplifix Platform</SectionEyebrow>
               <SectionHeading>One platform. Every stakeholder. Zero chaos.</SectionHeading>
               <Text style={s.sectionSub}>
-                From the moment a resident snaps a photo to the moment a technician uploads proof of
-                repair — every step is tracked, intelligent, and transparent.
+                From the moment a resident reports an issue to the moment your technician closes
+                it out — every step is AI-assisted, tracked, and visible to your team.
               </Text>
             </View>
 
@@ -301,14 +319,14 @@ export default function LandingPage() {
               />
               <View style={[s.cardBody, isWide && { flex: 1, justifyContent: 'center' }]}>
                 <AiBadge label="AI Complaint Engine" />
-                <Text style={s.cardTitle}>Residents just snap. AI does the rest.</Text>
+                <Text style={s.cardTitle}>Residents snap a photo. Your team gets a triaged ticket.</Text>
                 <Text style={s.cardDesc}>
-                  Upload a photo or video of your issue — our AI instantly generates a detailed
-                  description, selects the right category, and assigns a priority. No forms.
-                  No guesswork. No follow-up calls.
+                  Every complaint arrives with an AI-written description, category, and priority
+                  already attached — so your facility team spends time resolving issues, not
+                  decoding them.
                 </Text>
                 <View style={s.cardFeatureRow}>
-                  {['Auto-categorization', 'Priority scoring', 'AI Summarizer'].map((tag) => (
+                  {['Auto-Categorization', 'Priority Scoring', 'Instant Confirmation'].map((tag) => (
                     <View key={tag} style={s.cardTag}>
                       <Text style={s.cardTagText}>{tag}</Text>
                     </View>
@@ -322,11 +340,11 @@ export default function LandingPage() {
                 <Image source={managerImg} style={s.cardImg} contentFit="cover" />
                 <View style={s.cardBody}>
                   <AiBadge label="Smart Dashboard" />
-                  <Text style={s.cardTitle}>Your team, always in control.</Text>
+                  <Text style={s.cardTitle}>Your team reviews. You see everything.</Text>
                   <Text style={s.cardDesc}>
-                    Facility employees review AI-processed tickets, override details where
-                    needed, assign the right technician, and monitor every SLA — from a single
-                    pane of glass.
+                    Facility employees verify AI-generated details, reassign tickets based on
+                    real workload, and escalate anything overdue — while you get full visibility
+                    into every decision, every ticket, every technician.
                   </Text>
                 </View>
               </View>
@@ -337,7 +355,7 @@ export default function LandingPage() {
                   <Text style={s.cardTitle}>Workers arrive prepared, not surprised.</Text>
                   <Text style={s.cardDesc}>
                     Maintenance staff see the AI-generated complaint summary before they set
-                    foot on site — right tools, right parts, right first time.
+                    foot on site — right tools, right parts, right the first time.
                   </Text>
                 </View>
               </View>
@@ -350,9 +368,10 @@ export default function LandingPage() {
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>Powered by AI</SectionEyebrow>
-              <SectionHeading>Intelligence built into every step</SectionHeading>
+              <SectionHeading>Intelligence at intake, not an afterthought</SectionHeading>
               <Text style={s.sectionSub}>
-                {'Simplifix doesn\'t bolt AI on as an afterthought. It\'s woven into the entire complaint lifecycle — from intake to closure.'}
+                The moment a resident submits a complaint, Simplifix already knows what it is,
+                how urgent it is, and who should handle it.
               </Text>
             </View>
 
@@ -383,7 +402,9 @@ export default function LandingPage() {
         </View>
 
         {/* ───── HOW IT WORKS ───── */}
-        <View style={[s.section, { backgroundColor: P.primaryDark }]}>
+        <View
+          onLayout={registerSection('howItWorks')}
+          style={[s.section, { backgroundColor: P.primaryDark }]}>
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow dark>How It Works</SectionEyebrow>
@@ -418,11 +439,13 @@ export default function LandingPage() {
         </View>
 
         {/* ───── FEATURES GRID ───── */}
-        <View style={[s.section, { backgroundColor: P.offWhite }]}>
+        <View
+          onLayout={registerSection('features')}
+          style={[s.section, { backgroundColor: P.offWhite }]}>
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>Core Features</SectionEyebrow>
-              <SectionHeading>Everything your community needs</SectionHeading>
+              <SectionHeading>Everything you need to run a tighter operation</SectionHeading>
             </View>
             <View
               style={[
@@ -449,14 +472,16 @@ export default function LandingPage() {
         </View>
 
         {/* ───── ROLES / WHO IT'S FOR ───── */}
-        <View style={[s.section, { backgroundColor: P.white }]}>
+        <View
+          onLayout={registerSection('whoItsFor')}
+          style={[s.section, { backgroundColor: P.white }]}>
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>{"Who It's For"}</SectionEyebrow>
               <SectionHeading>Built for everyone in the workflow</SectionHeading>
               <Text style={s.sectionSub}>
                 Simplifix delivers a precisely tailored experience for each person involved —
-                from the resident who spots the issue to the manager who closes the loop.
+                from the manager running the operation to the resident who first spots the issue.
               </Text>
             </View>
             <View style={[{ gap: 16 }, isWide && { flexDirection: 'row' }]}>
@@ -531,18 +556,18 @@ export default function LandingPage() {
               <SectionEyebrow>Cross-Platform</SectionEyebrow>
               <SectionHeading align="left">One app. Every role. Any device.</SectionHeading>
               <Text style={[s.sectionSub, { textAlign: 'left', marginBottom: 24 }]}>
-                Built with React Native and Expo — residents, managers, and maintenance staff
-                share one codebase but experience their own focused interface. Available on
-                iOS, Android, and web.
+                Residents, facility teams, and maintenance staff share one system but see their
+                own focused interface — available on iOS, Android, and web, so no one needs to
+                be at a desk to stay on top of a complaint.
               </Text>
               <View style={s.techList}>
                 {[
-                  'React Native + Expo',
-                  'FastAPI Backend',
-                  'PostgreSQL',
-                  'AI (Gemini / GPT-4)',
-                  'Celery + Redis',
-                  'JWT Auth (RBAC)',
+                  'iOS, Android & Web',
+                  'Role-Based Permissions',
+                  'Secure Login',
+                  'AI-Powered Triage',
+                  'Real-Time Notifications',
+                  'Automated Escalation',
                 ].map((tech) => (
                   <View key={tech} style={s.techPill}>
                     <Text style={s.techPillText}>{tech}</Text>
@@ -554,7 +579,9 @@ export default function LandingPage() {
         </View>
 
         {/* ───── FAQ ───── */}
-        <View style={[s.section, { backgroundColor: P.offWhite }]}>
+        <View
+          onLayout={registerSection('faq')}
+          style={[s.section, { backgroundColor: P.offWhite }]}>
           <View style={s.container}>
             <View style={{ alignItems: 'center' }}>
               <SectionEyebrow>FAQ</SectionEyebrow>
@@ -564,26 +591,6 @@ export default function LandingPage() {
               {FAQS.map((faq) => (
                 <FaqItem key={faq.q} question={faq.q} answer={faq.a} />
               ))}
-            </View>
-          </View>
-        </View>
-
-        {/* ───── CTA ───── */}
-        <View style={[s.section, { backgroundColor: P.primary }]}>
-          <View style={[s.container, { alignItems: 'center' }]}>
-            <View style={s.ctaIcon}>
-              <Ionicons name="home" size={28} color={P.white} />
-            </View>
-            <Text style={s.ctaTitle}>
-              {'Ready to transform your community\'s maintenance?'}
-            </Text>
-            <Text style={s.ctaSub}>
-              Join the apartment communities that have moved from scattered WhatsApp threads
-              to a single, intelligent platform. Residents get peace of mind. Your team gets results.
-            </Text>
-            <View style={[s.heroButtons, !isWide && { flexDirection: 'column', width: '100%' }]}>
-              <Btn label="Create Your Account" onPress={goRegister} variant="ghost" size="lg" />
-              <Btn label="Log In" onPress={goLogin} variant="outlineLight" size="lg" />
             </View>
           </View>
         </View>
@@ -599,8 +606,8 @@ export default function LandingPage() {
                 <Text style={s.logoTextFooter}>Simplifix</Text>
               </View>
               <Text style={s.footerTagline}>
-                AI-assisted maintenance complaint management for residential communities.
-                Smarter resolution. Happier residents.
+                AI-assisted maintenance operations for residential communities. Full visibility
+                for your team. Less chaos for everyone.
               </Text>
             </View>
             {FOOTER_GROUPS.map((group) => (
@@ -608,11 +615,21 @@ export default function LandingPage() {
                 key={group.title}
                 style={[{ marginTop: isWide ? 0 : 28 }, isWide && { flex: 1 }]}>
                 <Text style={s.footerGroupTitle}>{group.title}</Text>
-                {group.links.map((link) => (
-                  <Text key={link} style={s.footerLink}>
-                    {link}
-                  </Text>
-                ))}
+                {group.links.map((link) => {
+                  const sectionKey = SECTION_KEYS[link];
+                  if (!sectionKey) {
+                    return (
+                      <Text key={link} style={s.footerLink}>
+                        {link}
+                      </Text>
+                    );
+                  }
+                  return (
+                    <Pressable key={link} onPress={() => scrollToSection(sectionKey)}>
+                      <Text style={s.footerLink}>{link}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             ))}
           </View>
@@ -643,72 +660,78 @@ const AI_FEATURES = [
   {
     icon: 'camera-outline',
     title: 'AI Complaint Generation',
-    desc: 'Residents upload a photo or video. Our AI instantly writes a precise complaint description, so maintenance staff know exactly what to bring before they arrive.',
+    desc: 'Residents upload a photo or video. Our AI writes the description, so your maintenance staff know exactly what they’re walking into before they leave the office.',
     bg: P.mintSoft,
-  },
-  {
-    icon: 'document-text-outline',
-    title: 'AI Complaint Summarizer',
-    desc: 'Long comment threads and status histories? Simplifix condenses every ticket into a crisp summary — helping managers make faster decisions without reading every line.',
-    bg: P.skyPastel,
   },
   {
     icon: 'warning-outline',
     title: 'Emergency Detection',
-    desc: 'When urgency keywords like "leak," "no power," or "fire" are detected, the system automatically escalates priority and alerts the team — before it becomes a crisis.',
+    desc: 'When urgency keywords like "leak," "no power," or "fire" are detected, priority is escalated automatically — so an emergency never sits in a queue behind routine requests.',
     bg: P.peachPastel,
   },
   {
     icon: 'grid-outline',
     title: 'Smart Categorization',
-    desc: 'Plumbing, electrical, civil, cleaning — the AI routes every complaint to the right category and the right specialist automatically, with a confidence score for full transparency.',
+    desc: 'Plumbing, electrical, civil, cleaning — every complaint is routed to the right category automatically, with a confidence score your team can double-check before assigning.',
     bg: P.lavenderPastel,
   },
 ];
 
 const FEATURES = [
   {
-    icon: 'person-circle-outline',
-    tint: P.mintSoft,
-    title: 'Role-Based Access',
-    desc: 'Tailored dashboards for Residents, Facility Employees, Maintenance Staff, and Facility Managers. Everyone sees exactly what they need.',
-  },
-  {
-    icon: 'pulse-outline',
-    tint: P.skyPastel,
-    title: 'Real-Time Tracking',
-    desc: 'Five-stage pipeline: Pending → Assigned → In Progress → Resolved → Closed. Every stakeholder knows where things stand — without a single phone call.',
-  },
-  {
-    icon: 'notifications-outline',
-    tint: P.peachPastel,
-    title: 'Automated Alerts',
-    desc: 'Status changes trigger instant in-app notifications. Overdue tickets surface automatically past their SLA — no manual chasing required.',
-  },
-  {
     icon: 'bar-chart-outline',
     tint: P.sagePastel,
     title: 'Manager Analytics',
-    desc: 'Resolution times, category trends, staff performance, and satisfaction scores — the data managers need to improve operations week over week.',
-  },
-  {
-    icon: 'chatbubbles-outline',
-    tint: P.lavenderPastel,
-    title: 'In-App AI Assistant',
-    desc: "Residents can ask our AI chat assistant about their complaint status, assigned technician, or cost responsibility — and get an instant, accurate answer.",
+    desc: 'See average resolution time, active load per worker, and resident ratings — broken down by staff member — so you know where the bottlenecks are before residents do.',
   },
   {
     icon: 'shield-checkmark-outline',
     tint: P.skyPastel,
     title: 'Full Audit Trail',
-    desc: 'Every assignment, status change, and remark is recorded. Disputes are resolved with facts, not memory.',
+    desc: 'Every assignment, status change, and remark is timestamped with who did it and when. Disputes get resolved with records, not memory.',
+  },
+  {
+    icon: 'notifications-outline',
+    tint: P.peachPastel,
+    title: 'Smart Escalation & Alerts',
+    desc: 'Complaints are auto-flagged as overdue — 24 hours for new requests, 72 hours for work in progress — and your team is notified the moment a job is marked complete.',
+  },
+  {
+    icon: 'search-outline',
+    tint: P.lavenderPastel,
+    title: 'Find Any Complaint, Instantly',
+    desc: "Search by resident, unit, or keyword, filter by status, and isolate everything that's overdue with one tap. No more scrolling through a group chat to find one complaint.",
+  },
+  {
+    icon: 'cash-outline',
+    tint: P.mintSoft,
+    title: 'Upfront Cost Transparency',
+    desc: "Every complaint states who's covering the repair — resident, owner, or society — before a technician is ever dispatched. No billing disputes after the fact.",
+  },
+  {
+    icon: 'pulse-outline',
+    tint: P.skyPastel,
+    title: 'Real-Time Status Tracking',
+    desc: 'Five-stage pipeline: Pending → Assigned → In Progress → Resolved → Closed. Nothing moves to Closed until the resident confirms the fix, so residents stop calling to check.',
+  },
+  {
+    icon: 'person-circle-outline',
+    tint: P.mintSoft,
+    title: 'Role-Based Access',
+    desc: 'Tailored dashboards for Residents, Facility Employees, Maintenance Staff, and Facility Managers. Everyone sees exactly what they need, nothing they don’t.',
+  },
+  {
+    icon: 'chatbubbles-outline',
+    tint: P.lavenderPastel,
+    title: 'In-App AI Assistant',
+    desc: 'Residents can ask about their complaint status, assigned technician, or repair cost — and get an instant answer without calling your office.',
   },
 ];
 
 const STEPS = [
   {
     title: 'Snap & Submit',
-    desc: 'The resident uploads a photo or video — or adds a voice note — directly from their phone.',
+    desc: 'The resident uploads a photo or video, with an optional note, directly from their phone.',
     badge: undefined as string | undefined,
   },
   {
@@ -735,42 +758,53 @@ const STEPS = [
 
 const ROLES = [
   {
-    icon: 'home-outline',
-    title: 'Residents',
-    subtitle: 'For apartment owners & tenants',
+    icon: 'bar-chart-outline',
+    title: 'Facility Managers',
+    subtitle: 'For running the operation',
     highlight: false,
     items: [
-      'Submit complaints with a photo, video, or voice note',
-      'Review & confirm AI-generated descriptions',
-      'Track status end-to-end in real time',
-      'Know who is assigned and when work begins',
-      'Verify completion and rate the service',
+      'See resolution times, complaint categories, and pending load at a glance',
+      'Monitor staff performance and workload to allocate resources better',
+      'Pull the full history of any complaint for disputes or audits',
+      'Spot recurring issues before they become bigger problems',
     ],
   },
   {
     icon: 'desktop-outline',
-    title: 'Facility Team',
-    subtitle: 'For managers & employees',
-    highlight: true,
+    title: 'Facility Employees',
+    subtitle: 'For day-to-day coordination',
+    highlight: false,
     items: [
-      'Centralized dashboard with all active tickets',
-      'Override AI categories, priority, and cost details',
-      'Smart worker assignment ranked by skill & workload',
-      'Auto-flagged overdue tickets — no manual monitoring',
-      'Analytics, audit trails, and performance reports',
+      'Every call, comment, and update lives in one place — not scattered across WhatsApp',
+      'Review and correct AI-generated details before assigning',
+      'Assign complaints to the right worker, based on real workload',
+      'Search and filter every complaint by resident, status, or keyword',
+      'Get alerted the moment a complaint goes overdue — or a job is marked done',
     ],
   },
   {
     icon: 'construct-outline',
     title: 'Maintenance Staff',
-    subtitle: 'For technicians & workers',
+    subtitle: 'For technicians on the ground',
     highlight: false,
     items: [
-      'AI complaint summary before arriving on site',
-      'Mobile-friendly view of active assignments',
-      'Update status: Assigned to In Progress to Resolved',
-      'Upload proof-of-work photos and remarks',
-      'Fewer repeat visits with better upfront information',
+      'View every assigned complaint with photos and AI-written details',
+      'Know what tools and parts to bring before leaving the office',
+      'Update status as work moves from assigned to in progress to resolved',
+      'Upload proof-of-work photos and remarks when the job is done',
+    ],
+  },
+  {
+    icon: 'home-outline',
+    title: 'Residents',
+    subtitle: 'For apartment owners & tenants',
+    highlight: false,
+    items: [
+      'Submit a complaint with a photo or video and an optional note',
+      'Get instant confirmation the moment it is submitted',
+      'See who is assigned and track status in real time',
+      'Verify the repair and rate the work before it is closed',
+      'Look back at every complaint filed in the past',
     ],
   },
 ];
@@ -778,35 +812,45 @@ const ROLES = [
 const FAQS = [
   {
     q: 'What is Simplifix?',
-    a: 'Simplifix is an AI-powered complaint management platform built for residential apartment communities. It covers the entire maintenance lifecycle — from a resident snapping a photo, to AI-powered triage, to worker assignment, resolution, and resident verification.',
+    a: 'Simplifix is an AI-powered maintenance complaint platform built for residential apartment communities. It covers the entire lifecycle — from a resident reporting an issue, to AI triage, to worker assignment, resolution, and resident verification — giving your facility team full visibility from day one.',
   },
   {
     q: 'How does the AI work?',
-    a: 'When a resident uploads media, our system analyzes it using a multimodal AI (GPT-4 / Gemini) to generate a precise complaint description, select the correct maintenance category, and assign a priority level. Urgency keywords like "leak" or "no power" automatically escalate the priority.',
+    a: 'When a resident uploads a photo or video, our AI generates a description, selects the right category, and assigns a priority level. Urgency keywords like "leak" or "no power" automatically escalate the priority, so an emergency never waits behind routine requests.',
   },
   {
-    q: 'What is the AI Summarizer?',
-    a: "The AI Summarizer condenses a complaint's full comment thread, status history, and assignment details into a concise summary. This helps managers quickly understand a ticket's situation without reading through every update.",
+    q: 'Can I see how my maintenance staff are performing?',
+    a: "Yes. Facility Managers get workload and performance visibility across every maintenance worker — active load, average resolution time, and resident ratings — so you can allocate resources before a small backlog becomes a big one.",
   },
   {
-    q: "Can managers override the AI's decisions?",
-    a: 'Absolutely. AI suggestions are a starting point, not a final word. Facility employees can review and override the generated description, category, priority, and cost responsibility before assigning any complaint.',
+    q: "Can my team override the AI's decisions?",
+    a: 'Yes — AI suggestions are a starting point, not the final word. Facility employees can review and override the generated description, category, priority, and repair-cost responsibility before assigning any complaint.',
+  },
+  {
+    q: 'How does Simplifix handle repair costs?',
+    a: "Every complaint can be tagged with who's responsible for the repair cost — resident, owner, or society — before a technician is ever dispatched. That means no surprise bills and no disputes after the work is done.",
   },
   {
     q: 'What user roles does Simplifix support?',
-    a: 'Simplifix supports four roles: Residents (submit and track complaints), Facility Employees (coordinate and assign), Maintenance Staff (execute repairs), and Facility Managers (monitor analytics and performance). Each role sees a focused, purpose-built interface.',
+    a: 'Simplifix supports four roles: Facility Managers (analytics and performance), Facility Employees (coordination and assignment), Maintenance Staff (execution), and Residents (reporting and tracking). Each role sees a focused, purpose-built interface.',
   },
   {
     q: 'Is Simplifix available on iOS and Android?',
-    a: 'Yes. Simplifix is built with React Native and Expo, making it fully cross-platform across iOS, Android, and web from a single codebase.',
+    a: "Yes — it's built with React Native and Expo, so it runs on iOS, Android, and web from a single codebase.",
   },
 ];
 
 const FOOTER_GROUPS = [
   { title: 'Product', links: ['Features', 'How It Works', "Who It's For", 'FAQ'] },
-  { title: 'Technology', links: ['React Native', 'FastAPI', 'PostgreSQL', 'AI (GPT-4 / Gemini)'] },
   { title: 'Team', links: ['Pied Piper', 'IIT Madras', 'MAY2026-048'] },
 ];
+
+const SECTION_KEYS: Record<string, string> = {
+  Features: 'features',
+  'How It Works': 'howItWorks',
+  "Who It's For": 'whoItsFor',
+  FAQ: 'faq',
+};
 
 // ─── Styles ──────────────────────────────────────────
 
@@ -1357,34 +1401,6 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: P.textMuted,
     lineHeight: 22,
-  },
-
-  // CTA
-  ctaIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  ctaTitle: {
-    fontSize: 28,
-    fontFamily: FontFamily.extraBold,
-    color: P.white,
-    textAlign: 'center',
-    marginBottom: 14,
-    ...(Platform.OS === 'web' ? { letterSpacing: -0.5 } : {}),
-    maxWidth: 520,
-  },
-  ctaSub: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.70)',
-    textAlign: 'center',
-    lineHeight: 26,
-    maxWidth: 480,
-    marginBottom: 32,
   },
 
   // Footer
