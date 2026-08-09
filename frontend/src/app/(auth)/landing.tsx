@@ -257,14 +257,14 @@ export default function LandingPage() {
             </View>
 
             <Text style={[s.heroTitle, isDesktop && { fontSize: 54, lineHeight: 60 }]}>
-              {'Run maintenance operations,\n'}
-              <Text style={{ color: '#7DD9D0' }}>not a WhatsApp group.</Text>
+              {'Maintenance operations,\n'}
+              <Text style={{ color: '#7DD9D0' }}>finally under control.</Text>
             </Text>
 
             <Text style={[s.heroSub, isDesktop && { fontSize: 17, lineHeight: 28 }]}>
               AI-triaged complaints, automatic worker assignment, and the analytics and audit
-              trail to prove your operation is under control — replacing scattered calls,
-              chats, and paper registers with one system of record.
+              trail to back it up — replacing scattered calls, chats, and paper registers with
+              one system of record.
             </Text>
 
             <View style={[s.heroButtons, !isWide && { flexDirection: 'column' }]}>
