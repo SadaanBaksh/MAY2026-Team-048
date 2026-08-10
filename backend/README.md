@@ -59,6 +59,8 @@ cd backend
 cp .env.example .env
 docker compose up --build
 docker compose exec api python -m scripts.seed_categories   # one-time
+docker compose exec api python -m scripts.seed_demo_users
+docker compose exec api python -m scripts.seed_demo_services
 ```
 
 API docs are then available at http://localhost:8000/docs.
