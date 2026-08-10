@@ -39,9 +39,9 @@ export default function ResidentHomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (token) refreshTickets(token);
-      if (token) refreshNotifications(token);
-      if (token) refreshNotices(token);
+      if (token) refreshTickets(token).catch(() => {});
+      if (token) refreshNotifications(token).catch(() => {});
+      if (token) refreshNotices(token).catch(() => {});
       if (token) {
         setSummaryLoading(true);
         fetchDashboardSummary(token)
