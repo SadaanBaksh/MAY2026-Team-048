@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # sibling. If Google deprecates this one too, check `GET /v1beta/models` with your own key for
     # what's currently available before picking a replacement.
     GEMINI_MODEL: str = "gemini-3.5-flash"
+    PUBLIC_SIMILARITY_THRESHOLD: float = 0.80
+    PUBLIC_SIMILARITY_CANDIDATE_LIMIT: int = 20
 
     @property
     def cors_origins(self) -> list[str]:

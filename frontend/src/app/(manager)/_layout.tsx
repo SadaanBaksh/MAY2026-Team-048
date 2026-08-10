@@ -39,6 +39,7 @@ export default function ManagerLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="complaint/[id]" />
+      <Stack.Screen name="public/[id]" />
     </Stack>
   </RoleShell>;
 }

@@ -13,6 +13,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { usePublicServiceStore } from '@/store/publicServiceStore';
 import type { MaintenanceStaff } from '@/types';
 
 export default function ManagerPerformanceScreen() {
@@ -21,6 +22,7 @@ export default function ManagerPerformanceScreen() {
   const isDesktop = useIsDesktop();
   const users = useAuthStore((s) => s.users);
   const tickets = useTicketStore((s) => s.tickets);
+  const publicServices = usePublicServiceStore((s) => s.services);
   const [query, setQuery] = useState('');
 
   const rows = useMemo(() => {
@@ -40,30 +42,42 @@ export default function ManagerPerformanceScreen() {
       })
       .map((w) => {
         const jobs = tickets.filter((t) => t.workerId === w.userId);
-        const active = jobs.filter(
-          (t) => t.status === 'Assigned' || t.status === 'In_Progress',
-        ).length;
-        const completed = jobs.filter(
-          (t) => t.status === 'Resolved' || t.status === 'Closed',
-        ).length;
+        const publicJobs = publicServices.filter((service) => service.workerId === w.userId);
+        const active =
+          jobs.filter((t) => t.status === 'Assigned' || t.status === 'In_Progress').length +
+          publicJobs.filter(
+            (service) => service.status === 'Assigned' || service.status === 'In_Progress',
+          ).length;
+        const completed =
+          jobs.filter((t) => t.status === 'Resolved' || t.status === 'Closed').length +
+          publicJobs.filter((service) => service.status === 'Resolved').length;
         const rated = jobs.filter((t) => t.residentRating != null);
         const avgRating = rated.length
           ? rated.reduce((s, t) => s + (t.residentRating ?? 0), 0) / rated.length
           : w.rating;
-        const resolved = jobs.filter((t) => t.dateOfResolution);
-        const avgHours = resolved.length
-          ? resolved.reduce(
-              (s, t) =>
-                s +
+        const resolutionHours = [
+          ...jobs
+            .filter((t) => t.dateOfResolution)
+            .map(
+              (t) =>
                 (new Date(t.dateOfResolution!).getTime() - new Date(t.dateOfRequest).getTime()) /
-                  36e5,
-              0,
-            ) / resolved.length
+                36e5,
+            ),
+          ...publicJobs
+            .filter((service) => service.resolvedAt)
+            .map(
+              (service) =>
+                (new Date(service.resolvedAt!).getTime() - new Date(service.createdAt).getTime()) /
+                36e5,
+            ),
+        ];
+        const avgHours = resolutionHours.length
+          ? resolutionHours.reduce((sum, hours) => sum + hours, 0) / resolutionHours.length
           : null;
         return { worker: w, active, completed, avgRating, avgHours };
       })
       .sort((a, b) => b.avgRating - a.avgRating);
-  }, [users, tickets, query]);
+  }, [users, tickets, publicServices, query]);
 
   const loadData = rows.map((r) => ({ label: r.worker.name.split(' ')[0], value: r.active }));
 

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
-import type { Priority, TicketStatus } from '@/types';
+import type { Priority, PublicServiceStatus, TicketStatus } from '@/types';
 
 export function Badge({
   label,
@@ -22,17 +22,18 @@ export function Badge({
   );
 }
 
-const STATUS_LABELS: Record<TicketStatus, string> = {
+const STATUS_LABELS: Record<TicketStatus | PublicServiceStatus, string> = {
   Pending: 'Pending',
   Assigned: 'Assigned',
   In_Progress: 'In Progress',
   Resolved: 'Resolved',
   Closed: 'Closed',
+  Merged: 'Merged',
 };
 
-export function StatusBadge({ status }: { status: TicketStatus }) {
+export function StatusBadge({ status }: { status: TicketStatus | PublicServiceStatus }) {
   const { StatusColors } = useTheme();
-  const c = StatusColors[status];
+  const c = status === 'Merged' ? StatusColors.Closed : StatusColors[status];
   return (
     <View style={[styles.base, styles.withDot, { backgroundColor: c.soft }]}>
       <View style={[styles.dot, { backgroundColor: c.dot }]} />

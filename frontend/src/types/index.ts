@@ -6,6 +6,8 @@ export type Priority = 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency';
 
 export type TicketStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed';
 
+export type PublicServiceStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Merged';
+
 export type MediaType = 'Image' | 'Video';
 
 export type CostResponsibility = 'Owner' | 'Resident' | 'Society' | 'Pending Review';
@@ -90,9 +92,75 @@ export interface AppNotification {
   notificationId: string;
   userId: string;
   ticketId?: string;
+  publicServiceId?: string;
   title: string;
   message: string;
   isRead: boolean;
+  createdAt: string;
+}
+
+export interface PublicReportMedia {
+  id: string;
+  mediaUrl: string;
+  uploadedAt: string;
+}
+
+export interface PublicReport {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorBuilding: string | null;
+  title: string;
+  description: string;
+  location: string;
+  createdAt: string;
+  media: PublicReportMedia[];
+}
+
+export interface PublicService {
+  id: string;
+  createdById: string;
+  creatorName: string;
+  creatorBuilding: string | null;
+  workerId: string | null;
+  categoryId: string;
+  title: string;
+  description: string;
+  location: string;
+  aiSummary: string;
+  priority: Priority;
+  status: PublicServiceStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  resolutionRemarks: string | null;
+  resolutionProofUrl: string | null;
+  mergedIntoId: string | null;
+  reports: PublicReport[];
+  commentCount: number;
+}
+
+export interface PublicServiceComment {
+  id: string;
+  serviceId: string;
+  userId: string;
+  authorName: string;
+  authorRole: UserRole;
+  message: string;
+  postedAt: string;
+}
+
+export interface PublicSimilaritySuggestion {
+  id: string;
+  serviceA: PublicService;
+  serviceB: PublicService;
+  score: number;
+  rationale: string;
+  modelName: string;
+  status: 'Pending' | 'Accepted' | 'Declined';
+  reviewedById: string | null;
+  reviewedAt: string | null;
+  mergedServiceId: string | null;
   createdAt: string;
 }
 

@@ -1,7 +1,8 @@
 # Simplifix Backend
 
 FastAPI + PostgreSQL backend for Simplifix. Provides authentication and CRUD APIs for apartments,
-users, categories, maintenance tickets, ticket history, comments, and notifications, matching the
+users, categories, private maintenance tickets, public services, history, comments, and
+notifications, matching the
 domain model already used by the [frontend](../frontend).
 
 ## Tech Stack
@@ -75,6 +76,11 @@ GEMINI_MODEL=gemini-2.5-flash
 The API rate-limits complaint analysis to 6 requests/minute and resident chat to 15 requests/minute
 per client.
 
+New public reports are also compared with recent unresolved public services. Scores strictly above
+`PUBLIC_SIMILARITY_THRESHOLD` (default `0.80`) create an employee review suggestion and
+notification. AI never merges reports automatically: an employee must accept or decline the popup.
+An accepted suggestion creates a new public service page containing every contributing report.
+
 **On model availability**: Google has restricted some model variants (e.g. `gemini-2.5-flash-lite`)
 from new users/projects even though they still appear in the API's `ListModels` response — the
 only reliable way to confirm a model actually works for *your* key is to call it directly:
@@ -107,8 +113,18 @@ The initial migration (`alembic/versions/`) already creates all tables described
 | `tickets`         | Core complaint/ticket record                                       |
 | `ticket_media`    | Extra photo/video attachments beyond the primary one on the ticket |
 | `ticket_history`  | Status-change audit trail per ticket                                |
-| `comments`        | Ticket discussion thread                                           |
 | `notifications`   | Per-user notifications, optionally linked to a ticket               |
+| `public_services` | Society-wide service pages with assignment, resolution, and merge state |
+| `public_reports` | Original resident reports contained by a public service page |
+| `public_report_media` | Photos attached to individual public reports |
+| `public_service_comments` | Society discussion for an active public service |
+| `public_service_history` | Auditable public-service lifecycle and merge events |
+| `public_similarity_suggestions` | AI scores, employee decisions, and resulting merged page |
+
+Public services are intentionally separate from private `tickets`. Residents can see every public
+service in this single-society deployment, while maintenance staff see only assigned public jobs.
+Resolved discussions are read-only. Managers can inspect public services and analytics but cannot
+change public-service status.
 
 ## Auth
 
@@ -179,7 +195,7 @@ One command does everything:
 3. Maps each captured concrete path back to its OpenAPI template (e.g. `/api/v1/tickets/abc123` →
    `/api/v1/tickets/{ticket_id}`, query strings ignored) and aggregates every observed status per
    operation.
-4. Classifies each of the 24 operations as **PASS** (every observed status is documented),
+4. Classifies each API operation as **PASS** (every observed status is documented),
    **MISMATCH** (a status was observed that isn't documented), or **NOT TESTED** (no test hit it at
    all — documented-but-unexercised statuses alone are *not* a mismatch), and writes
    `reports/api_validation_report.html`.

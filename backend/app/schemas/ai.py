@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from app.models.enums import Priority
@@ -41,3 +43,14 @@ class ResidentChatRead(BaseModel):
 
 class DashboardSummaryRead(BaseModel):
     summary: str
+
+
+class ChatMessageRead(BaseModel):
+    id: str
+    role: str
+    text: str
+    related_ticket_id: str | None = None
+    suggestions: list[str] | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

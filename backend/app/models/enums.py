@@ -30,6 +30,20 @@ class TicketStatus(str, enum.Enum):
     Closed = "Closed"
 
 
+class PublicServiceStatus(str, enum.Enum):
+    Pending = "Pending"
+    Assigned = "Assigned"
+    In_Progress = "In_Progress"
+    Resolved = "Resolved"
+    Merged = "Merged"
+
+
+class SimilaritySuggestionStatus(str, enum.Enum):
+    Pending = "Pending"
+    Accepted = "Accepted"
+    Declined = "Declined"
+
+
 class MediaType(str, enum.Enum):
     Image = "Image"
     Video = "Video"
