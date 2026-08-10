@@ -66,6 +66,8 @@ export default function NewComplaintScreen() {
   const [newTicketId, setNewTicketId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [aiUnavailable, setAiUnavailable] = useState(false);
+  const [isManualEntry, setIsManualEntry] = useState(false);
 
   const pulse = useMemo(() => new Animated.Value(0.4), []);
 
@@ -180,6 +182,7 @@ export default function NewComplaintScreen() {
     }
     setStep('analyzing');
     setSubmitError('');
+    setAiUnavailable(false);
     try {
       const photoUrls =
         uploadedPhotoUrls ??
@@ -207,17 +210,37 @@ export default function NewComplaintScreen() {
       setDescription(result.ai_description);
       setCategoryId(result.category_id);
       setPriority(result.priority);
+      setIsManualEntry(false);
       setStep('review');
     } catch (err) {
       setSubmitError(
         err instanceof ApiError ? err.message : 'Could not analyze the complaint. Please try again.',
       );
+      setAiUnavailable(true);
       setStep('capture');
     }
   };
 
+  // Lets the resident proceed when AI analysis is down (rate-limited, Gemini outage, etc.)
+  // instead of being stuck unable to submit at all. Photo/voice-note uploads from the failed
+  // analyze attempt (if any) are preserved and reused here.
+  const handleContinueManually = () => {
+    setAiResult({ categoryId: '', aiDescription: note, priority: 'Medium', confidence: 0 });
+    setDescription(note);
+    setCategoryId('');
+    setPriority('Medium');
+    setIsManualEntry(true);
+    setAiUnavailable(false);
+    setSubmitError('');
+    setStep('review');
+  };
+
   const handleSubmit = async () => {
-    if (photos.length === 0 || !aiResult || !token || submitting) return;
+    if (!aiResult || !token || submitting) return;
+    if (!categoryId) {
+      setSubmitError('Please select a category.');
+      return;
+    }
     setSubmitError('');
     setSubmitting(true);
     try {
@@ -410,6 +433,15 @@ export default function NewComplaintScreen() {
               onPress={handleAnalyze}
             />
             {!!submitError && <Text style={styles.error}>{submitError}</Text>}
+            {aiUnavailable && (
+              <Button
+                label="Continue Without AI"
+                icon="create-outline"
+                variant="secondary"
+                fullWidth
+                onPress={handleContinueManually}
+              />
+            )}
           </>
         )}
 
@@ -435,10 +467,12 @@ export default function NewComplaintScreen() {
               priority={priority}
               onChangePriority={setPriority}
               editable
+              isManual={isManualEntry}
             />
             <Text style={styles.helper}>
-              Review the AI-generated details above. You can edit the description, category, or
-              priority before sending it to the facility team.
+              {isManualEntry
+                ? 'AI analysis was unavailable, so fill in the category, priority, and description yourself before sending it to the facility team.'
+                : 'Review the AI-generated details above. You can edit the description, category, or priority before sending it to the facility team.'}
             </Text>
             {!!submitError && <Text style={styles.error}>{submitError}</Text>}
             <Button

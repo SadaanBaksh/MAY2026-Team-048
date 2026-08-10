@@ -17,6 +17,8 @@ export interface AIDescriptionCardProps {
   categoryId: string;
   priority: Priority;
   editable?: boolean;
+  /** True when the AI analysis step was skipped (e.g. it failed) and these are manual entries. */
+  isManual?: boolean;
   onChangeDescription?: (text: string) => void;
   onChangeCategory?: (categoryId: string) => void;
   onChangePriority?: (priority: Priority) => void;
@@ -28,6 +30,7 @@ export function AIDescriptionCard({
   categoryId,
   priority,
   editable,
+  isManual,
   onChangeDescription,
   onChangeCategory,
   onChangePriority,
@@ -41,16 +44,20 @@ export function AIDescriptionCard({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.sparkleWrap}>
-            <Ionicons name="sparkles" size={14} color={Colors.primary} />
+            <Ionicons name={isManual ? 'create-outline' : 'sparkles'} size={14} color={Colors.primary} />
           </View>
-          <Text style={styles.headerTitle}>AI Analysis</Text>
+          <Text style={styles.headerTitle}>{isManual ? 'Complaint Details' : 'AI Analysis'}</Text>
         </View>
-        <Text style={styles.confidence}>{Math.round(confidence * 100)}% confidence</Text>
+        {!isManual && (
+          <Text style={styles.confidence}>{Math.round(confidence * 100)}% confidence</Text>
+        )}
       </View>
 
-      <View style={styles.confidenceTrack}>
-        <View style={[styles.confidenceFill, { width: `${Math.round(confidence * 100)}%` }]} />
-      </View>
+      {!isManual && (
+        <View style={styles.confidenceTrack}>
+          <View style={[styles.confidenceFill, { width: `${Math.round(confidence * 100)}%` }]} />
+        </View>
+      )}
 
       {editable && onChangeDescription ? (
         <TextInput
