@@ -15,9 +15,21 @@ const STEPS: { status: TicketStatus; label: string }[] = [
 ];
 
 export function StatusStepper({ status }: { status: TicketStatus }) {
-  const { Colors } = useTheme();
+  const { Colors, StatusColors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const currentIndex = STEPS.findIndex((s) => s.status === status);
+
+  if (status === 'Cancelled') {
+    const c = StatusColors.Cancelled;
+    return (
+      <View style={styles.cancelledRow}>
+        <Ionicons name="close-circle" size={20} color={c.dot} />
+        <Text style={[styles.cancelledText, { color: c.text }]}>
+          This complaint was cancelled before any work started.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.row}>
@@ -52,6 +64,15 @@ const getStyles = (Colors: ThemeColors) =>
     row: {
       flexDirection: 'row',
       alignItems: 'flex-start',
+    },
+    cancelledRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    cancelledText: {
+      ...Type.body,
+      flex: 1,
     },
     stepGroup: {
       flex: 1,

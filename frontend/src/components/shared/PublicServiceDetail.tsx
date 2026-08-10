@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { PublicComments } from '@/components/shared/PublicComments';
@@ -88,22 +88,23 @@ export function PublicServiceDetail() {
     }
   };
 
-  const residentResolve = () =>
-    Alert.alert(
-      'Mark this issue resolved?',
-      'The discussion will close and the issue will remain visible in public history.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mark Resolved',
-          onPress: () =>
-            doUpdate({
-              status: 'Resolved',
-              resolution_remarks: 'Marked resolved by a contributing resident.',
-            }),
-        },
-      ],
-    );
+  const residentResolve = () => {
+    const resolve = () =>
+      doUpdate({
+        status: 'Resolved',
+        resolution_remarks: 'Marked resolved by a contributing resident.',
+      });
+    const message = 'The discussion will close and the issue will remain visible in public history.';
+    // Alert.alert's buttons/onPress never fire on web - react-native-web ships it as a no-op.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Mark this issue resolved?\n\n${message}`)) resolve();
+      return;
+    }
+    Alert.alert('Mark this issue resolved?', message, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Mark Resolved', onPress: resolve },
+    ]);
+  };
 
   return (
     <View style={styles.root}>

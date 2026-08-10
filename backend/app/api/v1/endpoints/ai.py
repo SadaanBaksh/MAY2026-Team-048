@@ -297,7 +297,11 @@ def dashboard_summary(
     for t in tickets:
         status_counts[t.status.value] = status_counts.get(t.status.value, 0) + 1
 
-    overdue = sum(1 for t in tickets if getattr(t, "is_overdue", False) and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
+    # Cancelled tickets were withdrawn by the resident before any work started - they shouldn't
+    # count as outstanding work in any of the "still needs attention" stats below.
+    _INACTIVE_STATUSES = (TicketStatus.Resolved, TicketStatus.Closed, TicketStatus.Cancelled)
+
+    overdue = sum(1 for t in tickets if getattr(t, "is_overdue", False) and t.status not in _INACTIVE_STATUSES)
     
     stats_text = f"Total tickets: {len(tickets)}\nCounts by status: {status_counts}\nOverdue tickets: {overdue}\n"
 
@@ -309,8 +313,8 @@ def dashboard_summary(
             days_ago = (now - _as_aware_utc(most_recent.date_of_request)).days
             stats_text += f"Most recent ticket: '{most_recent.title}' ({most_recent.status.value}), created {days_ago} days ago\n"
     elif current_user.role in (UserRole.facility_employee, UserRole.facility_manager):
-        unassigned = sum(1 for t in tickets if t.worker_id is None and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
-        high_priority_open = sum(1 for t in tickets if t.priority in (Priority.High, Priority.Critical, Priority.Emergency) and t.status not in (TicketStatus.Resolved, TicketStatus.Closed))
+        unassigned = sum(1 for t in tickets if t.worker_id is None and t.status not in _INACTIVE_STATUSES)
+        high_priority_open = sum(1 for t in tickets if t.priority in (Priority.High, Priority.Critical, Priority.Emergency) and t.status not in _INACTIVE_STATUSES)
         created_today = sum(1 for t in tickets if t.date_of_request.date() == today)
         stats_text += (
             f"Unassigned tickets: {unassigned}\n"
@@ -337,7 +341,10 @@ def dashboard_summary(
         )
         if current_user.role == UserRole.facility_manager:
             resolved_closed = status_counts.get(TicketStatus.Resolved.value, 0) + status_counts.get(TicketStatus.Closed.value, 0)
-            resolution_rate = f"{(resolved_closed / len(tickets) * 100):.1f}%" if tickets else "0%"
+            # Cancelled tickets were withdrawn, not left unresolved - excluding them keeps the
+            # rate a measure of "of complaints we actually pursued, how many got resolved."
+            pursued_tickets = len(tickets) - status_counts.get(TicketStatus.Cancelled.value, 0)
+            resolution_rate = f"{(resolved_closed / pursued_tickets * 100):.1f}%" if pursued_tickets else "0%"
             
             resolved_tickets = [t for t in tickets if t.status == TicketStatus.Resolved and t.date_of_resolution]
             if resolved_tickets:

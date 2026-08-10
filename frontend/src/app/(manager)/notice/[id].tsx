@@ -55,6 +55,14 @@ function askConfirmation(title: string, message: string, action: () => void) {
   ]);
 }
 
+function notify(title: string, message?: string) {
+  if (Platform.OS === 'web') {
+    globalThis.alert(message ? `${title}\n\n${message}` : title);
+    return;
+  }
+  Alert.alert(title, message);
+}
+
 export default function NoticeComposerScreen() {
   const { id = 'new' } = useLocalSearchParams<{ id: string }>();
   const isNew = id === 'new';
@@ -213,7 +221,7 @@ export default function NoticeComposerScreen() {
           const saved = await persist();
           const sent = await send(token, saved.id);
           setLoadedNotice(sent);
-          Alert.alert('Notice sent', `Delivered to ${sent.recipientCount} residents.`);
+          notify('Notice sent', `Delivered to ${sent.recipientCount} residents.`);
         }),
     );
 
@@ -237,7 +245,7 @@ export default function NoticeComposerScreen() {
           const saved = await persist();
           const scheduled = await schedule(token, saved.id, delivery!.toISOString());
           setLoadedNotice(scheduled);
-          Alert.alert('Notice scheduled', `Delivery is set for ${delivery!.toLocaleString()}.`);
+          notify('Notice scheduled', `Delivery is set for ${delivery!.toLocaleString()}.`);
         }),
     );
   };
@@ -452,7 +460,7 @@ export default function NoticeComposerScreen() {
                 onPress={() =>
                   withBusy(async () => {
                     await persist();
-                    Alert.alert('Draft saved');
+                    notify('Draft saved');
                   })
                 }
               />

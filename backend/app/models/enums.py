@@ -28,6 +28,7 @@ class TicketStatus(str, enum.Enum):
     In_Progress = "In_Progress"
     Resolved = "Resolved"
     Closed = "Closed"
+    Cancelled = "Cancelled"
 
 
 class PublicServiceStatus(str, enum.Enum):

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -37,6 +37,7 @@ export default function ResidentComplaintDetailScreen() {
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
   const verifyAndClose = useTicketStore((s) => s.verifyAndClose);
+  const cancelTicket = useTicketStore((s) => s.cancelTicket);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshComments = useTicketStore((s) => s.refreshComments);
   const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
@@ -53,6 +54,8 @@ export default function ResidentComplaintDetailScreen() {
   const [feedback, setFeedback] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   const ticket = tickets.find((t) => t.ticketId === id);
 
@@ -84,6 +87,37 @@ export default function ResidentComplaintDetailScreen() {
     } finally {
       setVerifying(false);
     }
+  };
+
+  const doCancel = async () => {
+    if (!token || cancelling) return;
+    setCancelError('');
+    setCancelling(true);
+    try {
+      await cancelTicket(token, ticket.ticketId);
+      router.back();
+    } catch (err) {
+      setCancelError(
+        err instanceof ApiError ? err.message : 'Could not cancel this request. Please try again.',
+      );
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleCancelPress = () => {
+    const message =
+      'This will withdraw your complaint. The facility team will be notified and no technician will be dispatched. This cannot be undone.';
+    // Alert.alert's buttons/onPress never fire on web - react-native-web ships it as a no-op
+    // (see node_modules/react-native-web/src/exports/Alert), so this needs a web-specific path.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Cancel this request?\n\n${message}`)) doCancel();
+      return;
+    }
+    Alert.alert('Cancel this request?', message, [
+      { text: 'Keep Request', style: 'cancel' },
+      { text: 'Cancel Request', style: 'destructive', onPress: doCancel },
+    ]);
   };
 
   return (
@@ -222,6 +256,20 @@ export default function ResidentComplaintDetailScreen() {
             <CommentsThread comments={ticketComments} ticketId={ticket.ticketId} />
           </Card>
         </View>
+
+        {ticket.status === 'Pending' && (
+          <View style={styles.section}>
+            {!!cancelError && <Text style={styles.error}>{cancelError}</Text>}
+            <Button
+              label={cancelling ? 'Cancelling…' : 'Cancel Request'}
+              icon="trash-outline"
+              variant="danger"
+              fullWidth
+              disabled={cancelling}
+              onPress={handleCancelPress}
+            />
+          </View>
+        )}
       </Screen>
     </View>
   );

@@ -249,6 +249,50 @@ def test_resident_cannot_set_arbitrary_status(client, auth_headers, resident_use
     assert response.status_code == 403
 
 
+def test_resident_can_cancel_pending_ticket(
+    client, auth_headers, resident_user, employee_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Cancelled"},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "Cancelled"
+
+    history = client.get(
+        f"/api/v1/tickets/{ticket['id']}/history", headers=auth_headers(resident_user)
+    ).json()
+    assert [h["new_status"] for h in history] == ["Pending", "Cancelled"]
+
+    notifications = client.get(
+        "/api/v1/notifications/me", headers=auth_headers(employee_user)
+    ).json()
+    assert any(n["title"] == "Complaint cancelled" for n in notifications)
+
+
+def test_resident_cannot_cancel_assigned_ticket(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Cancelled"},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 403
+
+
 def test_resident_cannot_update_other_fields(client, auth_headers, resident_user, category):
     ticket = _create_ticket(client, auth_headers, resident_user, category)
 

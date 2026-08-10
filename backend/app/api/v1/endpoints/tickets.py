@@ -136,11 +136,19 @@ def update_ticket(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Residents can only rate and give feedback on their own tickets",
             )
-        if "status" in updates and updates["status"] != TicketStatus.Closed:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Residents can only close a resolved ticket",
-            )
+        if "status" in updates:
+            new_status_value = updates["status"]
+            if new_status_value == TicketStatus.Cancelled:
+                if ticket.status != TicketStatus.Pending:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Only a pending complaint can be cancelled - it's already being worked on",
+                    )
+            elif new_status_value != TicketStatus.Closed:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Residents can only close a resolved ticket or cancel a pending one",
+                )
     elif current_user.role == UserRole.maintenance_staff:
         allowed = {"status", "resolution_remarks", "resolution_proof_url"}
         if not set(updates).issubset(allowed) or ticket.worker_id != current_user.id:
@@ -214,6 +222,16 @@ def update_ticket(
                     ticket_id=ticket.id,
                     title="Work completed",
                     message=f"{current_user.name} completed: {ticket.title}.",
+                )
+        elif new_status == TicketStatus.Cancelled:
+            employees = db.query(User).filter(User.role == UserRole.facility_employee).all()
+            for employee in employees:
+                notify_user(
+                    db,
+                    user_id=employee.id,
+                    ticket_id=ticket.id,
+                    title="Complaint cancelled",
+                    message=f"{current_user.name} cancelled: {ticket.title}.",
                 )
         elif new_status == TicketStatus.Closed and "resident_rating" in updates:
             if ticket.worker_id:

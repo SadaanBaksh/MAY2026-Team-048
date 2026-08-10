@@ -37,7 +37,9 @@ export default function ResidentComplaintsScreen() {
   const displayedTickets = useMemo(() => {
     const list = query.trim() ? matchingComplaints : myTickets;
     return list.filter((t) =>
-      segment === 'active' ? t.status !== 'Closed' : t.status === 'Closed',
+      segment === 'active'
+        ? t.status !== 'Closed' && t.status !== 'Cancelled'
+        : t.status === 'Closed' || t.status === 'Cancelled',
     );
   }, [query, matchingComplaints, myTickets, segment]);
 
