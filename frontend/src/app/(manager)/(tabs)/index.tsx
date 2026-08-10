@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
 import { Card } from '@/components/ui/Card';
@@ -8,7 +8,6 @@ import { DonutChart } from '@/components/ui/DonutChart';
 import { BarChart } from '@/components/ui/BarChart';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
-import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { CATEGORIES } from '@/data/categories';
 import { Spacing, Type } from '@/constants/theme';
@@ -132,7 +131,6 @@ export default function ManagerAnalyticsScreen() {
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        {Platform.OS !== 'android' && <BurgerMenu />}
         <View style={styles.headerText}>
           <Text style={styles.title}>Analytics</Text>
           <Text style={styles.subtitle}>

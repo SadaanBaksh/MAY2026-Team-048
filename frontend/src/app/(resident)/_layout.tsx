@@ -1,7 +1,6 @@
-import { Redirect, Slot, Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { type SidebarNavItem } from '@/components/shared/SidebarNav';
 import { RoleShell } from '@/components/shared/RoleShell';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -13,24 +12,15 @@ const NAV_ITEMS: SidebarNavItem[] = [
 
 export default function ResidentLayout() {
   const user = useAuthStore((s) => s.currentUser);
-  const isDesktop = useIsDesktop();
   if (!user || user.role !== 'resident') return <Redirect href="/(auth)/customer-login" />;
 
-  if (isDesktop) return <RoleShell title="Resident dashboard" items={NAV_ITEMS}><Slot /></RoleShell>;
-
-  return (
+  return <RoleShell title="Resident dashboard" items={NAV_ITEMS}>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="complaint/[id]" />
-      <Stack.Screen
-        name="new-complaint"
-        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
-      />
-      <Stack.Screen
-        name="emergency"
-        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
-      />
+      <Stack.Screen name="new-complaint" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="emergency" options={{ presentation: 'card', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="notifications" />
     </Stack>
-  );
+  </RoleShell>;
 }

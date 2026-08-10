@@ -1,8 +1,7 @@
-import { Redirect, Slot, Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 
 import { RoleShell } from '@/components/shared/RoleShell';
 import { type SidebarNavItem } from '@/components/shared/SidebarNav';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useAuthStore } from '@/store/authStore';
 
 const NAV_ITEMS: SidebarNavItem[] = [
@@ -12,17 +11,14 @@ const NAV_ITEMS: SidebarNavItem[] = [
 
 export default function MaintenanceLayout() {
   const user = useAuthStore((s) => s.currentUser);
-  const isDesktop = useIsDesktop();
   if (!user || user.role !== 'maintenance_staff') return <Redirect href="/(auth)/employee-login" />;
   if (user.accountStatus !== 'active') return <Redirect href="/(auth)/pending-approval" />;
 
-  if (isDesktop) return <RoleShell title="Maintenance dashboard" items={NAV_ITEMS}><Slot /></RoleShell>;
-
-  return (
+  return <RoleShell title="Maintenance dashboard" items={NAV_ITEMS}>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="job/[id]" />
       <Stack.Screen name="notifications" />
     </Stack>
-  );
+  </RoleShell>;
 }

@@ -1,7 +1,6 @@
-import { Redirect, Slot, Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { RoleShell } from '@/components/shared/RoleShell';
 import { type SidebarNavItem } from '@/components/shared/SidebarNav';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
@@ -34,22 +33,12 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
 
 export default function ManagerLayout() {
   const user = useAuthStore((s) => s.currentUser);
-  const isDesktop = useIsDesktop();
-
   if (!user || user.role !== 'facility_manager') return <Redirect href="/(auth)/landing" />;
 
-  if (isDesktop) {
-    return (
-      <RoleShell title="Manager dashboard" items={DESKTOP_NAV_ITEMS}>
-        <Slot />
-      </RoleShell>
-    );
-  }
-
-  return (
+  return <RoleShell title="Manager dashboard" items={DESKTOP_NAV_ITEMS}>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="complaint/[id]" />
     </Stack>
-  );
+  </RoleShell>;
 }

@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
+import { SimplifixLogo } from '@/components/ui/SimplifixLogo';
 import { Radius, Spacing, Type } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -37,7 +39,8 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
   const user = useAuthStore((s) => s.currentUser);
   const logout = useAuthStore((s) => s.logout);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const [collapsed, setCollapsed] = useState(false);
+  const isDesktop = useIsDesktop();
+  const [collapsed, setCollapsed] = useState(!isDesktop);
 
   const handleLogout = () => {
     const role = user?.role;
@@ -48,9 +51,11 @@ export function SidebarNav({ title, items }: SidebarNavProps) {
   return (
     <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
       <View style={styles.brandBlock}>
-        {!collapsed && <Text style={styles.brand}>{title}</Text>}
-        {!collapsed && <Text style={styles.brandSubtitle}>Facility operations</Text>}
-        {collapsed && <Text style={styles.brandCompact}>S</Text>}
+        <View style={[styles.brandRow, collapsed && styles.brandRowCollapsed]}>
+          <SimplifixLogo width={collapsed ? 32 : 28} height={collapsed ? 32 : 28} />
+          {!collapsed && <Text style={styles.brand}>{title}</Text>}
+        </View>
+        {!collapsed && <Text style={styles.brandSubtitle}>AI-powered maintenance.</Text>}
       </View>
       <Pressable
         style={[styles.collapseButton, collapsed && styles.collapseButtonCollapsed]}
@@ -148,9 +153,10 @@ const getStyles = (Colors: ThemeColors) =>
       width: 76,
     },
     brandBlock: { paddingHorizontal: Spacing.sm, marginBottom: Spacing.xl },
+    brandRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    brandRowCollapsed: { justifyContent: 'center' },
     brand: { ...Type.title, color: Colors.ink },
     brandSubtitle: { ...Type.tiny, color: Colors.inkTertiary, marginTop: 2 },
-    brandCompact: { ...Type.title, color: Colors.primary, textAlign: 'center' },
     collapseButton: {
       flexDirection: 'row',
       alignItems: 'center',

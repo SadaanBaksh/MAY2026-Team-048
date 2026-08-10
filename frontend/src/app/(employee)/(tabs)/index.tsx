@@ -7,7 +7,6 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { StatCard } from '@/components/ui/StatCard';
-import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
@@ -75,7 +74,6 @@ export default function EmployeeDashboardScreen() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <BurgerMenu />
           <Pressable
             style={styles.headerProfile}
             onPress={() => router.push('/(employee)/(tabs)/profile')}
