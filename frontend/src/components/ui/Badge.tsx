@@ -28,6 +28,7 @@ const STATUS_LABELS: Record<TicketStatus | PublicServiceStatus, string> = {
   In_Progress: 'In Progress',
   Resolved: 'Resolved',
   Closed: 'Closed',
+  Cancelled: 'Cancelled',
   Merged: 'Merged',
 };
 

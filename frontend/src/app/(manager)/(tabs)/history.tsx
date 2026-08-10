@@ -22,6 +22,7 @@ const STATUS_FILTERS: StatusFilter[] = [
   'In_Progress',
   'Resolved',
   'Closed',
+  'Cancelled',
 ];
 
 export default function ManagerHistoryScreen() {

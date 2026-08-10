@@ -494,6 +494,37 @@ def test_dashboard_summary_manager_with_resolved_tickets(
     assert response.status_code == 200
 
 
+def test_dashboard_summary_excludes_cancelled_from_open_stats(
+    client, auth_headers, resident_user, manager_user, category, monkeypatch
+):
+    """A cancelled ticket was withdrawn before any work started - it shouldn't inflate
+    'unassigned'/'overdue' counts or drag down the resolution rate for the facility team."""
+    created = client.post(
+        "/api/v1/tickets/",
+        json={"title": "Leaking faucet", "category_id": category.id},
+        headers=auth_headers(resident_user),
+    ).json()
+    cancelled = client.patch(
+        f"/api/v1/tickets/{created['id']}",
+        json={"status": "Cancelled"},
+        headers=auth_headers(resident_user),
+    )
+    assert cancelled.status_code == 200, cancelled.text
+
+    captured = {}
+
+    def _capture(**kwargs):
+        captured["prompt"] = kwargs["prompt"]
+        return {"summary": "Test summary."}
+
+    monkeypatch.setattr("app.api.v1.endpoints.ai.generate_json", _capture)
+
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(manager_user))
+    assert response.status_code == 200, response.text
+    assert "Unassigned tickets: 0" in captured["prompt"]
+    assert "Resolution rate: 0%" in captured["prompt"]
+
+
 def test_dashboard_summary_gemini_error_becomes_503(client, auth_headers, resident_user, monkeypatch):
     def _raise(**_):
         raise GeminiError("AI is temporarily busy. Please try again in a minute.")

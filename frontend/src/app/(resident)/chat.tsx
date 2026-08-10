@@ -76,7 +76,9 @@ export default function ResidentChatScreen() {
     ),
   ]);
 
-  const activeCount = myTickets.filter((ticket) => ticket.status !== 'Closed').length;
+  const activeCount = myTickets.filter(
+    (ticket) => ticket.status !== 'Closed' && ticket.status !== 'Cancelled',
+  ).length;
   const reviewCount = myTickets.filter(
     (ticket) => ticket.status === 'Resolved' && ticket.residentRating == null,
   ).length;

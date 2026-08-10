@@ -72,6 +72,8 @@ interface TicketState {
     ticketId: string,
     changes: { rating: number; feedback: string },
   ) => Promise<void>;
+  /** Lets a resident withdraw their own complaint - only valid while it's still Pending. */
+  cancelTicket: (token: string, ticketId: string) => Promise<void>;
   /** Posts a new comment to the backend and appends it to local state. */
   postCommentAction: (token: string, ticketId: string, message: string) => Promise<void>;
 }
@@ -259,6 +261,12 @@ export const useTicketStore = create<TicketState>()(
             resident_rating: changes.rating,
             resident_feedback: changes.feedback,
           });
+          applyUpdatedTicket(apiTicket);
+          await get().refreshTicketHistory(token, ticketId);
+        },
+
+        cancelTicket: async (token, ticketId) => {
+          const apiTicket = await updateTicket(token, ticketId, { status: 'Cancelled' });
           applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
         },
