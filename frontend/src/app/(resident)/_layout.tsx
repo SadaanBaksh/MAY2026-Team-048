@@ -19,6 +19,7 @@ export default function ResidentLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="complaint/[id]" />
       <Stack.Screen name="public/[id]" />
+      <Stack.Screen name="notice/[id]" />
       <Stack.Screen
         name="public/new"
         options={{ presentation: 'card', animation: 'slide_from_bottom' }}

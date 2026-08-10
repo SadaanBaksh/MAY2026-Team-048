@@ -1,8 +1,8 @@
 # Simplifix Backend
 
 FastAPI + PostgreSQL backend for Simplifix. Provides authentication and CRUD APIs for apartments,
-users, categories, private maintenance tickets, public services, history, comments, and
-notifications, matching the
+users, categories, private maintenance tickets, public services, manager notices, history,
+comments, and notifications, matching the
 domain model already used by the [frontend](../frontend).
 
 ## Tech Stack
@@ -26,7 +26,7 @@ backend/
 │  │  ├─ deps.py        # auth dependencies (get_current_user, require_roles)
 │  │  └─ v1/
 │  │     ├─ api.py      # router aggregator
-│  │     └─ endpoints/  # auth, users, apartments, categories, tickets, comments, notifications
+│  │     └─ endpoints/  # auth, users, apartments, tickets, notices, AI, and notifications
 │  └─ main.py           # FastAPI app entrypoint
 ├─ alembic/             # migrations (env.py + versions/)
 ├─ scripts/
@@ -75,8 +75,10 @@ GEMINI_API_KEY=your-key-here
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-The API rate-limits complaint analysis to 6 requests/minute and resident chat to 15 requests/minute
-per client.
+The API rate-limits complaint analysis to 6 requests/minute, resident chat to 15 requests/minute,
+and manager notice drafting to 8 requests/minute per client. Notice drafting sends the manager's
+brief and selected tower names to Gemini, then returns an editable title and message; Gemini never
+sends a notice itself.
 
 New public reports are also compared with recent unresolved public services. Scores strictly above
 `PUBLIC_SIMILARITY_THRESHOLD` (default `0.80`) create an employee review suggestion and
@@ -115,7 +117,9 @@ The initial migration (`alembic/versions/`) already creates all tables described
 | `tickets`         | Core complaint/ticket record                                       |
 | `ticket_media`    | Extra photo/video attachments beyond the primary one on the ticket |
 | `ticket_history`  | Status-change audit trail per ticket                                |
-| `notifications`   | Per-user notifications, optionally linked to a ticket               |
+| `notifications`   | Per-user notifications linked to a ticket, public service, or notice |
+| `notices`         | Manager drafts, schedules, sent notices, expiry, and delivery metadata |
+| `notice_targets`  | Towers selected for each notice                                      |
 | `public_services` | Society-wide service pages with assignment, resolution, and merge state |
 | `public_reports` | Original resident reports contained by a public service page |
 | `public_report_media` | Photos attached to individual public reports |
@@ -127,6 +131,11 @@ Public services are intentionally separate from private `tickets`. Residents can
 service in this single-society deployment, while maintenance staff see only assigned public jobs.
 Resolved discussions are read-only. Managers can inspect public services and analytics but cannot
 change public-service status.
+
+Manager notices use the lifecycle `Draft -> Scheduled -> Sent -> Expired` (with cancellation before
+delivery). Device-local selections are converted to UTC; a backend scheduler checks every 30
+seconds and creates one in-app notification for each active resident in the selected towers. The
+backend must be running for scheduled delivery.
 
 ## Auth
 

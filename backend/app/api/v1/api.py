@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     categories,
     comments,
     notifications,
+    notices,
     public_services,
     tickets,
     uploads,
@@ -22,6 +23,7 @@ api_router.include_router(categories.router, prefix="/categories", tags=["catego
 api_router.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
 api_router.include_router(comments.router, prefix="/tickets", tags=["comments"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(notices.router, prefix="/notices", tags=["notices"])
 api_router.include_router(
     public_services.router, prefix="/public-services", tags=["public-services"]
 )

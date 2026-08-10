@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
+import { NoticeCard } from '@/components/shared/NoticeCard';
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { APARTMENTS } from '@/data/seed';
 import { Radius, Spacing, Type } from '@/constants/theme';
@@ -17,6 +18,7 @@ import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
+import { useNoticeStore } from '@/store/noticeStore';
 import { fetchDashboardSummary } from '@/api/client';
 import type { Resident } from '@/types';
 
@@ -28,6 +30,8 @@ export default function ResidentHomeScreen() {
   const tickets = useTicketStore((s) => s.tickets);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshNotifications = useNotificationStore((s) => s.refreshNotifications);
+  const notices = useNoticeStore((s) => s.notices);
+  const refreshNotices = useNoticeStore((s) => s.refreshNotices);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [aiSummary, setAiSummary] = useState<string | null>(null);
@@ -37,6 +41,7 @@ export default function ResidentHomeScreen() {
     useCallback(() => {
       if (token) refreshTickets(token);
       if (token) refreshNotifications(token);
+      if (token) refreshNotices(token);
       if (token) {
         setSummaryLoading(true);
         fetchDashboardSummary(token)
@@ -44,7 +49,7 @@ export default function ResidentHomeScreen() {
           .catch(() => setAiSummary(null))
           .finally(() => setSummaryLoading(false));
       }
-    }, [token, refreshTickets, refreshNotifications]),
+    }, [token, refreshTickets, refreshNotifications, refreshNotices]),
   );
 
   const apartment = APARTMENTS.find((a) => a.apartmentId === user.apartmentId);
@@ -104,63 +109,85 @@ export default function ResidentHomeScreen() {
               </Card>
             </Pressable>
 
-        {needsAttention.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Needs your review</Text>
-            <View style={styles.list}>
-              {needsAttention.map((t) => (
-                <TicketCard
-                  key={t.ticketId}
-                  ticket={t}
-                  subtitle="Verify the fix and rate the work"
-                  onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
-                  compact
+            {notices.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>Latest notices</Text>
+                  <Text
+                    style={styles.viewAll}
+                    onPress={() => router.push('/(resident)/(tabs)/public')}
+                  >
+                    View all
+                  </Text>
+                </View>
+                <NoticeCard
+                  notice={notices[0]}
+                  onPress={() => router.push(`/(resident)/notice/${notices[0].id}`)}
                 />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {summaryLoading ? (
-          <AISummaryCard summary="Generating summary…" variant="resident" label="My Complaints Summary" />
-        ) : aiSummary ? (
-          <AISummaryCard summary={aiSummary} variant="resident" label="My Complaints Summary" />
-        ) : null}
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Recent Complaints</Text>
-            {myTickets.length > 0 && (
-              <Text
-                style={styles.viewAll}
-                onPress={() => router.push('/(resident)/(tabs)/complaints')}
-              >
-                View all
-              </Text>
+              </View>
             )}
-          </View>
-          {myTickets.length === 0 ? (
-            <EmptyState
-              icon="document-text-outline"
-              title="No complaints yet"
-              message="Report your first maintenance issue and our AI will help describe it."
-              actionLabel="Report an Issue"
-              onAction={() => router.push('/(resident)/new-complaint')}
-            />
-          ) : (
-            <View style={styles.list}>
-              {myTickets.slice(0, 3).map((t) => (
-                <TicketCard
-                  key={t.ticketId}
-                  ticket={t}
-                  onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
-                  compact
+
+            {needsAttention.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Needs your review</Text>
+                <View style={styles.list}>
+                  {needsAttention.map((t) => (
+                    <TicketCard
+                      key={t.ticketId}
+                      ticket={t}
+                      subtitle="Verify the fix and rate the work"
+                      onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+                      compact
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {summaryLoading ? (
+              <AISummaryCard
+                summary="Generating summary…"
+                variant="resident"
+                label="My Complaints Summary"
+              />
+            ) : aiSummary ? (
+              <AISummaryCard summary={aiSummary} variant="resident" label="My Complaints Summary" />
+            ) : null}
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Recent Complaints</Text>
+                {myTickets.length > 0 && (
+                  <Text
+                    style={styles.viewAll}
+                    onPress={() => router.push('/(resident)/(tabs)/complaints')}
+                  >
+                    View all
+                  </Text>
+                )}
+              </View>
+              {myTickets.length === 0 ? (
+                <EmptyState
+                  icon="document-text-outline"
+                  title="No complaints yet"
+                  message="Report your first maintenance issue and our AI will help describe it."
+                  actionLabel="Report an Issue"
+                  onAction={() => router.push('/(resident)/new-complaint')}
                 />
-              ))}
+              ) : (
+                <View style={styles.list}>
+                  {myTickets.slice(0, 3).map((t) => (
+                    <TicketCard
+                      key={t.ticketId}
+                      ticket={t}
+                      onPress={() => router.push(`/(resident)/complaint/${t.ticketId}`)}
+                      compact
+                    />
+                  ))}
+                </View>
+              )}
             </View>
-          )}
-        </View>
-        </>
+          </>
         )}
       </Screen>
 

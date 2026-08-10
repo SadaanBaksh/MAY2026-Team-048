@@ -26,6 +26,7 @@ Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Close
 ## Key Features
 
 - AI-assisted complaint description, category, and priority suggestions
+- AI-assisted manager notices with tower targeting, editable drafts, scheduled delivery, and expiry
 - Media-based complaint reporting with image/video attachments
 - Role-based app experience for residents, facility employees, maintenance staff, and facility managers
 - Complaint status tracking from submission to closure
@@ -54,6 +55,7 @@ Implemented frontend capabilities include:
 - Maintenance job update flows
 - Manager analytics, history, and performance views
 - Public service creation, discussion, assignment, resolution, merge review, and analytics flows
+- Manager notice drafting/scheduling and targeted resident notice feeds
 
 The frontend needs no API key. To enable AI features, add `GEMINI_API_KEY` to `backend/.env`;
 keep it server-side and never use an `EXPO_PUBLIC_` variable for it.

@@ -5,6 +5,12 @@ import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
   {
+    href: '/(manager)/(tabs)/notices',
+    label: 'Notices',
+    icon: 'megaphone',
+    match: (p) => p === '/notices' || p.startsWith('/notice/'),
+  },
+  {
     href: '/(manager)/(tabs)',
     label: 'Analytics',
     icon: 'stats-chart',
@@ -46,6 +52,7 @@ export default function ManagerLayout() {
       <Stack.Screen name="insights" />
       <Stack.Screen name="complaint/[id]" />
       <Stack.Screen name="public/[id]" />
+      <Stack.Screen name="notice/[id]" />
     </Stack>
   </RoleShell>;
 }

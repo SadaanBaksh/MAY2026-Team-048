@@ -7,6 +7,8 @@ from app.models import (  # noqa: F401
     ChatMessage,
     Comment,
     Notification,
+    Notice,
+    NoticeTarget,
     PublicReport,
     PublicReportMedia,
     PublicService,
