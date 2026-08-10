@@ -7,7 +7,12 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
-  { href: '/(manager)/(tabs)', label: 'Analytics', icon: 'stats-chart', match: (p) => p === '/' },
+  {
+    href: '/(manager)/(tabs)',
+    label: 'Analytics',
+    icon: 'stats-chart',
+    match: (p) => p === '/' || p === '/insights',
+  },
   {
     href: '/(manager)/(tabs)/requests',
     label: 'Requests',
@@ -55,6 +60,7 @@ export default function ManagerLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="insights" />
       <Stack.Screen name="complaint/[id]" />
       <Stack.Screen name="public/[id]" />
     </Stack>

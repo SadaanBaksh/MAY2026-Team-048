@@ -6,6 +6,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { Screen } from '@/components/ui/Screen';
@@ -184,6 +185,9 @@ export default function ManagerAnalyticsScreen() {
     [publicServices],
   );
 
+  const openInsights = (tab: 'backlog' | 'aging' | 'categories' | 'demand') =>
+    router.push({ pathname: '/(manager)/insights', params: { tab } });
+
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
@@ -194,6 +198,14 @@ export default function ManagerAnalyticsScreen() {
             Good to see you, {user.name.split(' ')[0]}. Here&rsquo;s what needs attention.
           </Text>
         </View>
+        <Button
+          label={isDesktop ? 'Explore analytics' : 'Explore'}
+          icon="bar-chart-outline"
+          iconPosition="right"
+          size="sm"
+          variant="secondary"
+          onPress={() => openInsights('backlog')}
+        />
       </View>
 
       <DashboardSearch query={searchQuery} onChangeQuery={setSearchQuery} />
@@ -207,6 +219,7 @@ export default function ManagerAnalyticsScreen() {
               value={openTickets.length}
               detail={`${stats.urgent} high priority`}
               tone={stats.urgent > 0 ? Colors.warning : Colors.primary}
+              onPress={() => openInsights('backlog')}
             />
             <MetricCard
               icon="alert-circle-outline"
@@ -214,6 +227,7 @@ export default function ManagerAnalyticsScreen() {
               value={stats.overdue}
               detail={stats.overdue ? 'Past SLA · act now' : 'All within SLA'}
               tone={stats.overdue ? Colors.danger : Colors.success}
+              onPress={() => openInsights('aging')}
             />
             <MetricCard
               icon="person-add-outline"
@@ -221,6 +235,7 @@ export default function ManagerAnalyticsScreen() {
               value={stats.unassigned}
               detail={stats.unassigned ? 'Waiting for an owner' : 'Every issue has an owner'}
               tone={stats.unassigned ? Colors.warning : Colors.success}
+              onPress={() => openInsights('aging')}
             />
             <MetricCard
               icon="timer-outline"
@@ -232,6 +247,7 @@ export default function ManagerAnalyticsScreen() {
                   : 'Across resolved complaints'
               }
               tone={Colors.info}
+              onPress={() => openInsights('categories')}
             />
           </View>
 
@@ -302,6 +318,8 @@ export default function ManagerAnalyticsScreen() {
               <SectionHeader
                 title="Incoming vs completed"
                 subtitle={`Activity in the last ${range} days`}
+                action="Full trend"
+                onAction={() => openInsights('backlog')}
               />
               <SegmentedControl
                 options={[
@@ -385,6 +403,8 @@ export default function ManagerAnalyticsScreen() {
               <SectionHeader
                 title="Open work by category"
                 subtitle="Risk and age, not just volume"
+                action="Explore"
+                onAction={() => openInsights('categories')}
               />
               {categoryInsights.length ? (
                 categoryInsights.map((row) => (
@@ -497,25 +517,30 @@ function MetricCard({
   value,
   detail,
   tone,
+  onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string | number;
   detail: string;
   tone: string;
+  onPress?: () => void;
 }) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   return (
-    <Card style={styles.metricCard}>
+    <Card style={styles.metricCard} onPress={onPress}>
       <View style={[styles.metricIcon, { backgroundColor: `${tone}16` }]}>
         <Ionicons name={icon} size={18} color={tone} />
       </View>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={[styles.metricDetail, { color: tone }]} numberOfLines={1}>
-        {detail}
-      </Text>
+      <View style={styles.metricDetailRow}>
+        <Text style={[styles.metricDetail, { color: tone }]} numberOfLines={1}>
+          {detail}
+        </Text>
+        {onPress && <Ionicons name="arrow-forward" size={13} color={tone} />}
+      </View>
     </Card>
   );
 }
@@ -596,7 +621,8 @@ const getStyles = (Colors: ThemeColors) =>
     },
     metricValue: { ...Type.title, color: Colors.ink },
     metricLabel: { ...Type.caption, color: Colors.inkSecondary },
-    metricDetail: { ...Type.tiny, marginTop: 2 },
+    metricDetail: { ...Type.tiny, marginTop: 2, flexShrink: 1 },
+    metricDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     twoColumn: { flexDirection: 'row', alignItems: 'stretch', gap: Spacing.md },
     stack: { gap: Spacing.md },
     flexCard: { flex: 1, minWidth: 0 },
