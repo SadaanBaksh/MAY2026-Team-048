@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,7 +22,9 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
     S3_BUCKET_NAME: str = ""
 
-    # Kept server-side only. Never expose this value through the Expo app.
+    # All AI credentials are server-side only. Never expose them through the Expo app.
+    AI_PROVIDER: Literal["gemini", "aipipe"] = "gemini"
+
     GEMINI_API_KEY: str = ""
     # Not "-flash-lite": Google restricted that variant from new users/projects partway through
     # this project (confirmed via a 404 "no longer available to new users" from the Gemini API
@@ -28,6 +32,11 @@ class Settings(BaseSettings):
     # sibling. If Google deprecates this one too, check `GET /v1beta/models` with your own key for
     # what's currently available before picking a replacement.
     GEMINI_MODEL: str = "gemini-3.5-flash"
+
+    AIPIPE_TOKEN: str = ""
+    # AI Pipe's Gemini-compatible endpoint accepts the same generateContent payload, which lets
+    # every AI feature (including multimodal complaint analysis) use either provider unchanged.
+    AIPIPE_MODEL: str = "gemini-2.5-flash-lite"
     PUBLIC_SIMILARITY_THRESHOLD: float = 0.80
     PUBLIC_SIMILARITY_CANDIDATE_LIMIT: int = 20
 

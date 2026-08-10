@@ -65,20 +65,30 @@ docker compose exec api python -m scripts.seed_demo_services
 
 API docs are then available at http://localhost:8000/docs.
 
-## Gemini AI features
+## AI features
 
-Complaint analysis and the resident assistant are served from `/api/v1/ai`. Add a Gemini API key
-to `backend/.env` (not the frontend):
+Complaint analysis, resident chat, manager notice drafting, dashboard summaries, and public-report
+duplicate detection can use Google Gemini directly or the AI Pipe Gemini-compatible proxy. Select
+one in `backend/.env` (credentials must never be placed in the frontend):
 
 ```env
+AI_PROVIDER=gemini
 GEMINI_API_KEY=your-key-here
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash
+
+# Or use AI Pipe:
+# AI_PROVIDER=aipipe
+# AIPIPE_TOKEN=your-token-here
+# AIPIPE_MODEL=gemini-2.5-flash-lite
 ```
+
+Recreate the API container after changing providers so it reloads `.env`:
+`docker compose up -d --force-recreate api`.
 
 The API rate-limits complaint analysis to 6 requests/minute, resident chat to 15 requests/minute,
 and manager notice drafting to 8 requests/minute per client. Notice drafting sends the manager's
-brief and selected tower names to Gemini, then returns an editable title and message; Gemini never
-sends a notice itself.
+brief and selected tower names to the configured AI provider, then returns an editable title and
+message; the provider never sends a notice itself.
 
 New public reports are also compared with recent unresolved public services. Scores strictly above
 `PUBLIC_SIMILARITY_THRESHOLD` (default `0.80`) create an employee review suggestion and
@@ -93,10 +103,9 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/<model>:generateCo
   -H "Content-Type: application/json" -H "x-goog-api-key: <your key>" \
   -d '{"contents":[{"role":"user","parts":[{"text":"say hello"}]}]}'
 ```
-If `GEMINI_MODEL` ever starts returning `503 "The AI service could not complete that request."`
-from this app, that generic message is intentional (the backend deliberately doesn't forward
-provider error bodies to clients) — run the `curl` above with the configured model/key to see the
-real error before assuming it's an app bug.
+If the selected model starts returning an AI-related `503`, inspect the API logs for the provider's
+status and message. The backend deliberately keeps detailed provider errors server-side so tokens
+and internal request data are never returned to clients.
 
 ## Migrations
 

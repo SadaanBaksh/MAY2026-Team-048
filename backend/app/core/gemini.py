@@ -1,4 +1,8 @@
-"""Small, dependency-free Gemini gateway used by the resident AI features."""
+"""Dependency-free Gemini-compatible gateway for all Simplifix AI features.
+
+Requests can go directly to Google Gemini or through AI Pipe. Both providers accept the same
+``generateContent`` payload, so structured output and multimodal behavior stay consistent.
+"""
 
 import base64
 import json
@@ -15,46 +19,81 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiError(Exception):
+    """Backward-compatible name for errors from the configured AI provider."""
+
     pass
 
 
-def _request_json(payload: dict) -> dict:
-    if not settings.GEMINI_API_KEY:
-        raise GeminiError("AI is not configured. Ask an administrator to add GEMINI_API_KEY.")
+def _provider_request() -> tuple[str, str, dict[str, str]]:
+    if settings.AI_PROVIDER == "gemini":
+        if not settings.GEMINI_API_KEY:
+            raise GeminiError(
+                "AI is not configured. Ask an administrator to add GEMINI_API_KEY."
+            )
+        return (
+            "Gemini",
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{settings.GEMINI_MODEL}:generateContent",
+            {"x-goog-api-key": settings.GEMINI_API_KEY},
+        )
 
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{settings.GEMINI_MODEL}:generateContent"
+    if not settings.AIPIPE_TOKEN:
+        raise GeminiError("AI is not configured. Ask an administrator to add AIPIPE_TOKEN.")
+    return (
+        "AI Pipe",
+        f"https://aipipe.org/geminiv1beta/models/{settings.AIPIPE_MODEL}:generateContent",
+        # AI Pipe's Gemini proxy follows the native Gemini authentication shape. Its current API
+        # guide requires the AI Pipe token in x-goog-api-key (unlike its OpenAI/OpenRouter routes,
+        # which use Authorization: Bearer).
+        {"x-goog-api-key": settings.AIPIPE_TOKEN},
     )
+
+
+def _request_json(payload: dict) -> dict:
+    provider, url, auth_headers = _provider_request()
     request = Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
-            "x-goog-api-key": settings.GEMINI_API_KEY,
+            # AI Pipe is fronted by Cloudflare, which rejects urllib's default Python user-agent
+            # with error 1010. A curl-compatible API client user-agent is accepted.
+            "User-Agent": "curl/8.5.0",
+            **auth_headers,
         },
         method="POST",
     )
     try:
-        with urlopen(request, timeout=40) as response:  # nosec B310 - fixed Google endpoint
+        with urlopen(request, timeout=40) as response:  # nosec B310 - fixed provider endpoints
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
-        # Return a concise provider reason; this makes setup mistakes diagnosable without ever
-        # exposing the request payload or API key.
+        # Return a concise provider reason without exposing the request payload or credential.
         provider_status = ""
+        provider_message = ""
         try:
-            error = json.loads(exc.read().decode("utf-8")).get("error", {})
+            error_body = json.loads(exc.read().decode("utf-8"))
+            # Gemini nests details under "error"; AI Pipe's own validation errors are top-level.
+            error = error_body.get("error") or error_body
             provider_status = str(error.get("status") or "")
-        except (UnicodeDecodeError, json.JSONDecodeError):
+            provider_message = str(error.get("message") or "")
+        except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
             pass
+        logger.warning(
+            "%s request failed with HTTP %s (%s): %s",
+            provider,
+            exc.code,
+            provider_status or "unknown status",
+            provider_message or exc.reason,
+        )
         if exc.code == 429:
             raise GeminiError("AI is temporarily busy. Please try again in a minute.") from exc
         detail = f" ({provider_status})" if provider_status else ""
         raise GeminiError(
-            f"Gemini rejected the request with HTTP {exc.code}{detail}. "
-            "Check GEMINI_MODEL and the server logs."
+            f"{provider} rejected the request with HTTP {exc.code}{detail}. "
+            "Check the selected AI model and the server logs."
         ) from exc
     except (URLError, TimeoutError) as exc:
+        logger.warning("%s request unavailable: %s", provider, exc)
         raise GeminiError("The AI service is currently unavailable. Please try again.") from exc
 
 
