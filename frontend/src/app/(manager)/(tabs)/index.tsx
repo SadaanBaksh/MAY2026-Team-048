@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
 import { BurgerMenu } from '@/components/shared/BurgerMenu';
@@ -14,6 +15,11 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { fetchDashboardSummary } from '@/api/client';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
+import { StatCard } from '@/components/ui/StatCard';
+import { DashboardSearch } from '@/components/shared/DashboardSearch';
+import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
+import { CATEGORIES } from '@/data/categories';
+import { Spacing, Type } from '@/constants/theme';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -191,7 +197,6 @@ export default function ManagerAnalyticsScreen() {
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        {Platform.OS !== 'android' && <BurgerMenu />}
         <View style={styles.headerText}>
           <Text style={styles.title}>Operations overview</Text>
           <Text style={styles.subtitle}>

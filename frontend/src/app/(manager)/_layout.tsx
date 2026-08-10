@@ -1,9 +1,6 @@
-import { Redirect, Slot, Stack } from 'expo-router';
-import { View } from 'react-native';
-
-import { SidebarNav, type SidebarNavItem } from '@/components/shared/SidebarNav';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { useTheme } from '@/hooks/useTheme';
+import { Redirect, Stack } from 'expo-router';
+import { RoleShell } from '@/components/shared/RoleShell';
+import { type SidebarNavItem } from '@/components/shared/SidebarNav';
 import { useAuthStore } from '@/store/authStore';
 
 const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
@@ -41,28 +38,14 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
 
 export default function ManagerLayout() {
   const user = useAuthStore((s) => s.currentUser);
-  const { Colors } = useTheme();
-  const isDesktop = useIsDesktop();
-
   if (!user || user.role !== 'facility_manager') return <Redirect href="/(auth)/landing" />;
 
-  if (isDesktop) {
-    return (
-      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.surfaceMuted }}>
-        <SidebarNav title="Simplifix" items={DESKTOP_NAV_ITEMS} />
-        <View style={{ flex: 1 }}>
-          <Slot />
-        </View>
-      </View>
-    );
-  }
-
-  return (
+  return <RoleShell title="Manager dashboard" items={DESKTOP_NAV_ITEMS}>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="insights" />
       <Stack.Screen name="complaint/[id]" />
       <Stack.Screen name="public/[id]" />
     </Stack>
-  );
+  </RoleShell>;
 }

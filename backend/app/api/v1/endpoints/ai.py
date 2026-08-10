@@ -10,6 +10,7 @@ from app.core.limiter import limiter, rate_limit_key_for_user
 from app.core.storage import upload_belongs_to
 from app.db.session import get_db
 from app.models.category import Category
+from app.models.chat_message import ChatMessage
 from app.models.enums import (
     AccountStatus,
     Priority,
@@ -23,6 +24,7 @@ from app.models.user import User
 from datetime import datetime, timezone
 
 from app.schemas.ai import (
+    ChatMessageRead,
     ComplaintAnalysisRead,
     ComplaintAnalysisRequest,
     DashboardSummaryRead,
@@ -150,11 +152,56 @@ def resident_chat(
         result["related_ticket_id"] = (
             result.get("related_ticket_id") if result.get("related_ticket_id") in {ticket.id for ticket in tickets} else None
         )
-        return ResidentChatRead.model_validate(result)
+        reply = ResidentChatRead.model_validate(result)
     except GeminiError as exc:
         raise _ai_error(exc) from exc
     except ValidationError as exc:
         raise HTTPException(status_code=503, detail="The AI service returned an invalid response.") from exc
+
+    db.add(ChatMessage(user_id=current_user.id, role="resident", text=payload.message.strip()))
+    db.add(
+        ChatMessage(
+            user_id=current_user.id,
+            role="assistant",
+            text=reply.reply,
+            related_ticket_id=reply.related_ticket_id,
+            suggestions=reply.suggestions,
+        )
+    )
+    db.commit()
+
+    return reply
+
+
+@router.get(
+    "/chat-history",
+    response_model=list[ChatMessageRead],
+    responses={**FORBIDDEN, **UNAUTHORIZED},
+)
+def chat_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.resident)),
+) -> list[ChatMessage]:
+    return (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == current_user.id)
+        .order_by(ChatMessage.created_at.asc())
+        .limit(200)
+        .all()
+    )
+
+
+@router.delete(
+    "/chat-history",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**FORBIDDEN, **UNAUTHORIZED},
+)
+def clear_chat_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.resident)),
+) -> None:
+    db.query(ChatMessage).filter(ChatMessage.user_id == current_user.id).delete()
+    db.commit()
 
 
 _SUMMARY_SCHEMA = {
