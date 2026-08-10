@@ -40,6 +40,7 @@ def _gemini_response(text: str) -> bytes:
 
 
 def _configure_gemini(monkeypatch, api_key: str = "test-key") -> None:
+    monkeypatch.setattr(gemini.settings, "AI_PROVIDER", "gemini")
     monkeypatch.setattr(gemini.settings, "GEMINI_API_KEY", api_key)
 
 
@@ -61,6 +62,38 @@ def test_request_json_success(monkeypatch):
     _configure_gemini(monkeypatch)
     monkeypatch.setattr(gemini, "urlopen", lambda *a, **k: _FakeResponse(b'{"ok": true}'))
     assert gemini._request_json({"contents": []}) == {"ok": True}
+
+
+def test_request_json_uses_aipipe_endpoint_and_api_key_header(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "AI_PROVIDER", "aipipe")
+    monkeypatch.setattr(gemini.settings, "AIPIPE_TOKEN", "pipe-token")
+    monkeypatch.setattr(gemini.settings, "AIPIPE_MODEL", "gemini-test-model")
+    captured = {}
+
+    def _open(request, **_):
+        captured["url"] = request.full_url
+        captured["authorization"] = request.get_header("Authorization")
+        captured["aipipe_key"] = request.get_header("X-goog-api-key")
+        captured["user_agent"] = request.get_header("User-agent")
+        return _FakeResponse(b'{"ok": true}')
+
+    monkeypatch.setattr(gemini, "urlopen", _open)
+
+    assert gemini._request_json({"contents": []}) == {"ok": True}
+    assert captured == {
+        "url": "https://aipipe.org/geminiv1beta/models/gemini-test-model:generateContent",
+        "authorization": None,
+        "aipipe_key": "pipe-token",
+        "user_agent": "curl/8.5.0",
+    }
+
+
+def test_request_json_requires_aipipe_token(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "AI_PROVIDER", "aipipe")
+    monkeypatch.setattr(gemini.settings, "AIPIPE_TOKEN", "")
+
+    with pytest.raises(gemini.GeminiError, match="AIPIPE_TOKEN"):
+        gemini._request_json({})
 
 
 def test_request_json_rate_limited(monkeypatch):
