@@ -38,6 +38,14 @@ class PublicServiceStatus(str, enum.Enum):
     Merged = "Merged"
 
 
+class NoticeStatus(str, enum.Enum):
+    Draft = "Draft"
+    Scheduled = "Scheduled"
+    Sent = "Sent"
+    Expired = "Expired"
+    Cancelled = "Cancelled"
+
+
 class SimilaritySuggestionStatus(str, enum.Enum):
     Pending = "Pending"
     Accepted = "Accepted"

@@ -31,7 +31,8 @@ export default function ResidentNotificationsScreen() {
           notifications={notifications}
           onPressItem={(n) => {
             if (token) markNotificationReadAction(token, n.notificationId);
-            if (n.publicServiceId) router.push(`/(resident)/public/${n.publicServiceId}`);
+            if (n.noticeId) router.push(`/(resident)/notice/${n.noticeId}`);
+            else if (n.publicServiceId) router.push(`/(resident)/public/${n.publicServiceId}`);
             else if (n.ticketId) router.push(`/(resident)/complaint/${n.ticketId}`);
           }}
         />

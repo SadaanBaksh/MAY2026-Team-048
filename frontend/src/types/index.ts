@@ -8,6 +8,8 @@ export type TicketStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' |
 
 export type PublicServiceStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Merged';
 
+export type NoticeStatus = 'Draft' | 'Scheduled' | 'Sent' | 'Expired' | 'Cancelled';
+
 export type MediaType = 'Image' | 'Video';
 
 export type CostResponsibility = 'Owner' | 'Resident' | 'Society' | 'Pending Review';
@@ -93,10 +95,33 @@ export interface AppNotification {
   userId: string;
   ticketId?: string;
   publicServiceId?: string;
+  noticeId?: string;
   title: string;
   message: string;
   isRead: boolean;
   createdAt: string;
+}
+
+export interface Notice {
+  id: string;
+  createdById: string;
+  title: string;
+  body: string;
+  briefPoints: string[];
+  targetBuildings: string[];
+  status: NoticeStatus;
+  timezone: string;
+  scheduledAt: string | null;
+  sentAt: string | null;
+  expiresAt: string | null;
+  recipientCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoticeTower {
+  building: string;
+  residentCount: number;
 }
 
 export interface PublicReportMedia {

@@ -21,6 +21,7 @@ from app.models.enums import (
 from app.models.public_service import PublicService
 from app.models.ticket import Ticket
 from app.models.user import User
+from app.models.apartment import Apartment
 from datetime import datetime, timezone
 
 from app.schemas.ai import (
@@ -31,6 +32,7 @@ from app.schemas.ai import (
     ResidentChatRead,
     ResidentChatRequest,
 )
+from app.schemas.notice import NoticeDraftRead, NoticeDraftRequest
 
 router = APIRouter()
 
@@ -55,6 +57,15 @@ _CHAT_SCHEMA = {
         "suggestions": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
     "required": ["reply", "related_ticket_id", "suggestions"],
+}
+
+_NOTICE_DRAFT_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "title": {"type": "STRING"},
+        "body": {"type": "STRING"},
+    },
+    "required": ["title", "body"],
 }
 
 
@@ -202,6 +213,54 @@ def clear_chat_history(
 ) -> None:
     db.query(ChatMessage).filter(ChatMessage.user_id == current_user.id).delete()
     db.commit()
+
+
+@router.post(
+    "/draft-notice",
+    response_model=NoticeDraftRead,
+    responses={**FORBIDDEN, **RATE_LIMITED, **SERVICE_UNAVAILABLE},
+)
+@limiter.limit("8/minute", key_func=rate_limit_key_for_user)
+def draft_notice(
+    request: Request,
+    payload: NoticeDraftRequest,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.facility_manager)),
+) -> NoticeDraftRead:
+    known_buildings = {
+        building
+        for (building,) in db.query(Apartment.building)
+        .filter(Apartment.building.in_(payload.target_buildings))
+        .distinct()
+        .all()
+    }
+    missing = sorted(set(payload.target_buildings) - known_buildings)
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Unknown tower(s): {', '.join(missing)}")
+
+    brief = "\n".join(f"- {point}" for point in payload.brief_points)
+    timing = (
+        f"Scheduled delivery: {payload.scheduled_at.isoformat() if payload.scheduled_at else 'immediate'}\n"
+        f"Expiry: {payload.expires_at.isoformat() if payload.expires_at else 'none'}\n"
+        f"Manager timezone: {payload.timezone}"
+    )
+    prompt = (
+        "You write clear, professional notices from apartment facility management to residents. "
+        "Use only the supplied facts; never invent dates, causes, contacts, safety claims, or work "
+        "details. Mention the targeted towers naturally when relevant. Return a short descriptive "
+        "title (max 100 characters) and a polished message (max 350 words). Preserve every material "
+        "instruction and time from the brief. Delivery and expiry metadata below are context only; "
+        "do not mention them unless the brief explicitly asks. Do not add markdown headings, "
+        "signatures, or placeholders.\n\n"
+        f"Target towers: {', '.join(payload.target_buildings)}\n{timing}\n\nBrief:\n{brief}"
+    )
+    try:
+        result = generate_json(prompt=prompt, schema=_NOTICE_DRAFT_SCHEMA, max_output_tokens=600)
+        return NoticeDraftRead.model_validate(result)
+    except GeminiError as exc:
+        raise _ai_error(exc) from exc
+    except ValidationError as exc:
+        raise HTTPException(status_code=503, detail="The AI service returned an invalid response.") from exc
 
 
 _SUMMARY_SCHEMA = {

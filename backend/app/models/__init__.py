@@ -3,6 +3,7 @@ from app.models.category import Category
 from app.models.chat_message import ChatMessage
 from app.models.comment import Comment
 from app.models.notification import Notification
+from app.models.notice import Notice, NoticeTarget
 from app.models.public_service import PublicReport, PublicReportMedia, PublicService
 from app.models.public_service_comment import PublicServiceComment
 from app.models.public_service_history import PublicServiceHistory
@@ -18,6 +19,8 @@ __all__ = [
     "ChatMessage",
     "Comment",
     "Notification",
+    "Notice",
+    "NoticeTarget",
     "PublicReport",
     "PublicReportMedia",
     "PublicService",

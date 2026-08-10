@@ -10,6 +10,7 @@ class NotificationRead(BaseModel):
     user_id: str
     ticket_id: str | None
     public_service_id: str | None
+    notice_id: str | None
     title: str
     message: str
     is_read: bool

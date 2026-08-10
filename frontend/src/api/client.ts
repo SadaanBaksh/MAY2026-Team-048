@@ -5,6 +5,8 @@ import type {
   AppUser,
   CostResponsibility,
   MediaType,
+  Notice,
+  NoticeTower,
   Priority,
   PublicService,
   PublicServiceComment,
@@ -425,10 +427,138 @@ export interface ApiNotification {
   user_id: string;
   ticket_id: string | null;
   public_service_id?: string | null;
+  notice_id?: string | null;
   title: string;
   message: string;
   is_read: boolean;
   created_at: string;
+}
+
+interface ApiNotice {
+  id: string;
+  created_by_id: string;
+  title: string;
+  body: string;
+  brief_points: string[];
+  target_buildings: string[];
+  status: Notice['status'];
+  timezone: string;
+  scheduled_at: string | null;
+  sent_at: string | null;
+  expires_at: string | null;
+  recipient_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+function mapApiNotice(value: ApiNotice): Notice {
+  return {
+    id: value.id,
+    createdById: value.created_by_id,
+    title: value.title,
+    body: value.body,
+    briefPoints: value.brief_points,
+    targetBuildings: value.target_buildings,
+    status: value.status,
+    timezone: value.timezone,
+    scheduledAt: value.scheduled_at,
+    sentAt: value.sent_at,
+    expiresAt: value.expires_at,
+    recipientCount: value.recipient_count,
+    createdAt: value.created_at,
+    updatedAt: value.updated_at,
+  };
+}
+
+export interface SaveNoticePayload {
+  title: string;
+  body: string;
+  brief_points: string[];
+  target_buildings: string[];
+  timezone: string;
+  expires_at: string | null;
+}
+
+export async function fetchNotices(token: string): Promise<Notice[]> {
+  return (await apiFetch<ApiNotice[]>('/api/v1/notices/', { token })).map(mapApiNotice);
+}
+
+export async function fetchNotice(token: string, id: string): Promise<Notice> {
+  return mapApiNotice(await apiFetch<ApiNotice>(`/api/v1/notices/${id}`, { token }));
+}
+
+export async function fetchNoticeTowers(token: string): Promise<NoticeTower[]> {
+  const values = await apiFetch<{ building: string; resident_count: number }[]>(
+    '/api/v1/notices/towers',
+    { token },
+  );
+  return values.map((value) => ({
+    building: value.building,
+    residentCount: value.resident_count,
+  }));
+}
+
+export async function createNotice(token: string, payload: SaveNoticePayload): Promise<Notice> {
+  return mapApiNotice(
+    await apiFetch<ApiNotice>('/api/v1/notices/', { method: 'POST', token, json: payload }),
+  );
+}
+
+export async function updateNotice(
+  token: string,
+  id: string,
+  payload: SaveNoticePayload,
+): Promise<Notice> {
+  return mapApiNotice(
+    await apiFetch<ApiNotice>(`/api/v1/notices/${id}`, {
+      method: 'PATCH',
+      token,
+      json: payload,
+    }),
+  );
+}
+
+export async function draftNotice(
+  token: string,
+  payload: {
+    brief_points: string[];
+    target_buildings: string[];
+    scheduled_at: string | null;
+    expires_at: string | null;
+    timezone: string;
+  },
+): Promise<{ title: string; body: string }> {
+  return apiFetch<{ title: string; body: string }>('/api/v1/ai/draft-notice', {
+    method: 'POST',
+    token,
+    json: payload,
+  });
+}
+
+export async function sendNotice(token: string, id: string): Promise<Notice> {
+  return mapApiNotice(
+    await apiFetch<ApiNotice>(`/api/v1/notices/${id}/send`, { method: 'POST', token }),
+  );
+}
+
+export async function scheduleNotice(
+  token: string,
+  id: string,
+  scheduledAt: string,
+): Promise<Notice> {
+  return mapApiNotice(
+    await apiFetch<ApiNotice>(`/api/v1/notices/${id}/schedule`, {
+      method: 'POST',
+      token,
+      json: { scheduled_at: scheduledAt },
+    }),
+  );
+}
+
+export async function cancelNotice(token: string, id: string): Promise<Notice> {
+  return mapApiNotice(
+    await apiFetch<ApiNotice>(`/api/v1/notices/${id}/cancel`, { method: 'POST', token }),
+  );
 }
 
 interface ApiPublicReport {

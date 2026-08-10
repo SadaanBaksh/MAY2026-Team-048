@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
+import { NoticeCard } from '@/components/shared/NoticeCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -11,6 +12,7 @@ import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { usePublicServiceStore } from '@/store/publicServiceStore';
+import { useNoticeStore } from '@/store/noticeStore';
 
 export default function ResidentPublicServicesScreen() {
   const { Colors } = useTheme();
@@ -19,12 +21,17 @@ export default function ResidentPublicServicesScreen() {
   const services = usePublicServiceStore((state) => state.services);
   const loading = usePublicServiceStore((state) => state.loading);
   const refresh = usePublicServiceStore((state) => state.refreshServices);
+  const notices = useNoticeStore((state) => state.notices);
+  const refreshNotices = useNoticeStore((state) => state.refreshNotices);
   const [query, setQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
-      if (token) refresh(token).catch(() => {});
-    }, [token, refresh]),
+      if (token) {
+        refresh(token).catch(() => {});
+        refreshNotices(token).catch(() => {});
+      }
+    }, [token, refresh, refreshNotices]),
   );
 
   const filtered = services.filter((service) => {
@@ -34,6 +41,14 @@ export default function ResidentPublicServicesScreen() {
       service.title.toLowerCase().includes(value) ||
       service.description.toLowerCase().includes(value) ||
       service.location.toLowerCase().includes(value)
+    );
+  });
+  const filteredNotices = notices.filter((notice) => {
+    const value = query.trim().toLowerCase();
+    return (
+      !value ||
+      notice.title.toLowerCase().includes(value) ||
+      notice.body.toLowerCase().includes(value)
     );
   });
 
@@ -46,14 +61,30 @@ export default function ResidentPublicServicesScreen() {
       >
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Community Issues</Text>
-            <Text style={styles.subtitle}>Shared maintenance reports for our society</Text>
+            <Text style={styles.title}>Community</Text>
+            <Text style={styles.subtitle}>Official notices and shared maintenance reports</Text>
           </View>
           <Pressable style={styles.addButton} onPress={() => router.push('/(resident)/public/new')}>
             <Ionicons name="add" size={24} color={Colors.white} />
           </Pressable>
         </View>
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search issues or locations" />
+        {filteredNotices.length > 0 && (
+          <View style={styles.noticeSection}>
+            <View style={styles.sectionHeading}>
+              <Ionicons name="megaphone" size={18} color={Colors.teal} />
+              <Text style={styles.sectionTitle}>Official notices</Text>
+            </View>
+            {filteredNotices.map((notice) => (
+              <NoticeCard
+                key={notice.id}
+                notice={notice}
+                onPress={() => router.push(`/(resident)/notice/${notice.id}`)}
+              />
+            ))}
+          </View>
+        )}
+        <Text style={styles.sectionTitle}>Community issues</Text>
         {filtered.length === 0 ? (
           <EmptyState
             icon="people-circle-outline"
@@ -93,4 +124,7 @@ const getStyles = (Colors: ThemeColors) =>
       backgroundColor: Colors.teal,
     },
     list: { gap: Spacing.sm },
+    noticeSection: { gap: Spacing.sm },
+    sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    sectionTitle: { ...Type.subtitle, color: Colors.ink },
   });
