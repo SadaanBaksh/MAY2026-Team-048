@@ -189,6 +189,67 @@ def test_resident_chat_rejects_invalid_history_role(client, auth_headers, reside
     assert response.status_code == 422
 
 
+def test_resident_chat_persists_turns_and_is_retrievable(
+    client, auth_headers, resident_user, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"reply": "Sure thing.", "related_ticket_id": None, "suggestions": ["ok"]},
+    )
+
+    response = client.post(
+        "/api/v1/ai/resident-chat",
+        json={"message": "Anything new?"},
+        headers=auth_headers(resident_user),
+    )
+    assert response.status_code == 200, response.text
+
+    history_response = client.get("/api/v1/ai/chat-history", headers=auth_headers(resident_user))
+    assert history_response.status_code == 200, history_response.text
+    entries = history_response.json()
+    assert [e["role"] for e in entries] == ["resident", "assistant"]
+    assert entries[0]["text"] == "Anything new?"
+    assert entries[1]["text"] == "Sure thing."
+    assert entries[1]["suggestions"] == ["ok"]
+
+
+def test_chat_history_is_scoped_per_resident(
+    client, auth_headers, resident_user, make_user, monkeypatch
+):
+    other_resident = make_user(role=UserRole.resident)
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"reply": "Hi.", "related_ticket_id": None, "suggestions": []},
+    )
+    client.post(
+        "/api/v1/ai/resident-chat",
+        json={"message": "hello"},
+        headers=auth_headers(resident_user),
+    )
+
+    response = client.get("/api/v1/ai/chat-history", headers=auth_headers(other_resident))
+    assert response.status_code == 200, response.text
+    assert response.json() == []
+
+
+def test_clear_chat_history(client, auth_headers, resident_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: {"reply": "Hi.", "related_ticket_id": None, "suggestions": []},
+    )
+    client.post(
+        "/api/v1/ai/resident-chat",
+        json={"message": "hello"},
+        headers=auth_headers(resident_user),
+    )
+
+    delete_response = client.delete("/api/v1/ai/chat-history", headers=auth_headers(resident_user))
+    assert delete_response.status_code == 204
+
+    history_response = client.get("/api/v1/ai/chat-history", headers=auth_headers(resident_user))
+    assert history_response.json() == []
+
+
 class _FakeS3GetResponse:
     """Stands in for the urlopen() response media_part() reads from S3."""
 

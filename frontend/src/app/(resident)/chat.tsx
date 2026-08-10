@@ -14,7 +14,7 @@ import {
 
 import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { askResidentAssistant, ApiError } from '@/api/client';
+import { askResidentAssistant, fetchChatHistory, ApiError } from '@/api/client';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -58,6 +58,7 @@ export default function ResidentChatScreen() {
   const tickets = useTicketStore((state) => state.tickets);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   const myTickets = useMemo(
     () =>
@@ -85,9 +86,40 @@ export default function ResidentChatScreen() {
     return () => cancelAnimationFrame(handle);
   }, [messages.length, isThinking]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!token) {
+        setIsLoadingHistory(false);
+        return;
+      }
+      try {
+        const history = await fetchChatHistory(token);
+        if (cancelled || history.length === 0) return;
+        setMessages(
+          history.map((entry) =>
+            makeMessage(entry.role, entry.text, {
+              relatedTicketId: entry.related_ticket_id ?? undefined,
+              suggestions: entry.suggestions ?? undefined,
+              createdAt: new Date(entry.created_at),
+            }),
+          ),
+        );
+      } catch {
+        // Keep the default greeting if history can't be loaded.
+      } finally {
+        if (!cancelled) setIsLoadingHistory(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   const sendMessage = async (rawText: string) => {
     const text = rawText.trim();
-    if (!text || isThinking) return;
+    if (!text || isThinking || isLoadingHistory) return;
 
     setMessages((current) => [...current, makeMessage('resident', text)]);
     setInput('');
@@ -254,8 +286,8 @@ export default function ResidentChatScreen() {
                 onPress={() => sendMessage(input)}
                 style={({ pressed }) => [
                   styles.sendButton,
-                  (!input.trim() || isThinking) && styles.sendButtonDisabled,
-                  pressed && input.trim() && !isThinking && styles.pressed,
+                  (!input.trim() || isThinking || isLoadingHistory) && styles.sendButtonDisabled,
+                  pressed && input.trim() && !isThinking && !isLoadingHistory && styles.pressed,
                 ]}
               >
                 <Ionicons name="send" size={18} color={Colors.white} />

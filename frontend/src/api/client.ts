@@ -327,6 +327,23 @@ export async function askResidentAssistant(
   });
 }
 
+export interface ApiChatMessage {
+  id: string;
+  role: 'resident' | 'assistant';
+  text: string;
+  related_ticket_id: string | null;
+  suggestions: string[] | null;
+  created_at: string;
+}
+
+export async function fetchChatHistory(token: string): Promise<ApiChatMessage[]> {
+  return apiFetch<ApiChatMessage[]>('/api/v1/ai/chat-history', { token });
+}
+
+export async function clearChatHistory(token: string): Promise<void> {
+  await apiFetch<void>('/api/v1/ai/chat-history', { method: 'DELETE', token });
+}
+
 export async function fetchDashboardSummary(token: string): Promise<string> {
   const { summary } = await apiFetch<{ summary: string }>('/api/v1/ai/dashboard-summary', {
     token,
