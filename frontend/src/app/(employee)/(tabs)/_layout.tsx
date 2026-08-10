@@ -1,4 +1,8 @@
-import { Slot } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Slot, Tabs } from 'expo-router';
+
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function EmployeeTabsLayout() {
   const { Colors } = useTheme();

@@ -1,11 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
-import { BurgerMenu } from '@/components/shared/BurgerMenu';
 import { AISummaryCard } from '@/components/ui/AISummaryCard';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -15,11 +13,6 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { fetchDashboardSummary } from '@/api/client';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
-import { StatCard } from '@/components/ui/StatCard';
-import { DashboardSearch } from '@/components/shared/DashboardSearch';
-import { PublicServiceCard } from '@/components/shared/PublicServiceCard';
-import { CATEGORIES } from '@/data/categories';
-import { Spacing, Type } from '@/constants/theme';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';

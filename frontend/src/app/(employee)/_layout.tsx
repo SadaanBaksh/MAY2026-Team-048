@@ -1,7 +1,7 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Slot, Stack } from 'expo-router';
 import { View } from 'react-native';
-import { RoleShell } from '@/components/shared/RoleShell';
-import { type SidebarNavItem } from '@/components/shared/SidebarNav';
+
+import { SidebarNav, type SidebarNavItem } from '@/components/shared/SidebarNav';
 import { EmergencyAlertBar } from '@/components/shared/EmergencyAlertBar';
 import { SimilarityReviewModal } from '@/components/shared/SimilarityReviewModal';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -38,6 +38,9 @@ const DESKTOP_NAV_ITEMS: SidebarNavItem[] = [
 
 export default function EmployeeLayout() {
   const user = useAuthStore((s) => s.currentUser);
+  const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
+
   if (!user || user.role !== 'facility_employee') return <Redirect href="/(auth)/landing" />;
   if (user.accountStatus !== 'active') return <Redirect href="/(auth)/pending-approval" />;
 
@@ -65,5 +68,5 @@ export default function EmployeeLayout() {
       <SimilarityReviewModal />
       <EmergencyAlertBar />
     </View>
-  </RoleShell>;
+  );
 }

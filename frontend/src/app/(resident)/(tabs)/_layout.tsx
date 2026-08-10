@@ -1,4 +1,7 @@
-import { Slot } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+
+import { useTheme } from '@/hooks/useTheme';
 
 export default function ResidentTabsLayout() {
   const { Colors } = useTheme();
