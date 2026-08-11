@@ -297,7 +297,7 @@ export default function LandingPage() {
         ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: false,
