@@ -164,6 +164,60 @@ export async function loginUser(email: string, password: string): Promise<string
   return accessToken;
 }
 
+export async function sendOtp(
+  email: string,
+  purpose: 'register' | 'forgot_password',
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/send-otp', {
+    method: 'POST',
+    json: { email, purpose },
+  });
+}
+
+export async function verifyOtp(
+  email: string,
+  otp: string,
+  purpose: 'register' | 'forgot_password',
+): Promise<{ verified: boolean; reset_token?: string }> {
+  return apiFetch<{ verified: boolean; reset_token?: string }>('/api/v1/auth/verify-otp', {
+    method: 'POST',
+    json: { email, otp, purpose },
+  });
+}
+
+export async function resetPassword(
+  resetToken: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/reset-password', {
+    method: 'POST',
+    json: { reset_token: resetToken, new_password: newPassword },
+  });
+}
+
+export async function sendChangePasswordOtp(
+  token: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/change-password/send-otp', {
+    method: 'POST',
+    token,
+    json: {},
+  });
+}
+
+export async function verifyAndChangePassword(
+  token: string,
+  otp: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/auth/change-password/verify-and-change', {
+    method: 'POST',
+    token,
+    json: { otp, current_password: currentPassword, new_password: newPassword },
+  });
+}
+
 export async function getCurrentUser(token: string): Promise<ApiUser> {
   return apiFetch<ApiUser>('/api/v1/users/me', { token });
 }

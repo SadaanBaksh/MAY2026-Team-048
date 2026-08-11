@@ -155,6 +155,9 @@ export function AuthLoginScreen({
                 value={password}
                 onChangeText={setPassword}
               />
+              <Pressable onPress={() => router.push('/(auth)/forgot-password')} style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </Pressable>
               {!!error && <Text style={styles.error}>{error}</Text>}
               <Button
                 label={buttonLabel}
@@ -317,6 +320,14 @@ const getStyles = (Colors: ThemeColors) =>
     },
     loginButton: {
       backgroundColor: Colors.teal,
+    },
+    forgotPassword: {
+      alignSelf: 'flex-end',
+      marginTop: -Spacing.xxs,
+    },
+    forgotPasswordText: {
+      ...Type.caption,
+      color: Colors.teal,
     },
     error: {
       ...Type.caption,

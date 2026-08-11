@@ -1,10 +1,16 @@
 import random
+from datetime import datetime, timedelta, timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.api.response_docs import CONFLICT, RATE_LIMITED, UNAUTHORIZED
+from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
@@ -13,6 +19,39 @@ from app.models.enums import AccountStatus, UserRole
 from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserRead, normalize_phone
+from app.services.email import send_otp_email
+from app.services.otp import clear_verification, generate_otp, is_email_verified, verify_otp
+
+def _validate_pwd(value: str) -> str:
+    if len(value.encode("utf-8")) > 72:
+        raise ValueError("Password must be 72 bytes or fewer.")
+    return value
+
+class OtpRequest(BaseModel):
+    email: EmailStr
+    purpose: Literal["register", "forgot_password"]
+
+class OtpVerify(BaseModel):
+    email: EmailStr
+    otp: str
+    purpose: Literal["register", "forgot_password"]
+
+class ResetPassword(BaseModel):
+    reset_token: str
+    new_password: str
+
+    @field_validator("new_password")
+    def validate_password(cls, v: str) -> str:
+        return _validate_pwd(v)
+
+class ChangePassword(BaseModel):
+    otp: str
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    def validate_password(cls, v: str) -> str:
+        return _validate_pwd(v)
 
 router = APIRouter()
 
@@ -71,6 +110,12 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
             detail="An account with this phone number already exists",
         )
 
+    if not is_email_verified(payload.email, "register"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not verified. Please verify your email with OTP first.",
+        )
+
     apartment_id = (
         _resolve_apartment_id(db, payload.building, payload.unit_number)
         if payload.role == UserRole.resident
@@ -97,6 +142,7 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     db.add(user)
     db.commit()
     db.refresh(user)
+    clear_verification(payload.email, "register")
     return user
 
 
@@ -119,3 +165,72 @@ def login(
     # gate access based on `account_status` from /users/me (pending-approval flow).
     access_token = create_access_token(subject=user.id)
     return Token(access_token=access_token)
+
+
+@router.post("/send-otp")
+@limiter.limit("3/minute")
+def send_otp_endpoint(request: Request, payload: OtpRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+    if payload.purpose == "register":
+        if user is not None:
+            raise HTTPException(status_code=400, detail="An account with this email already exists")
+    elif payload.purpose == "forgot_password":
+        if user is None:
+            raise HTTPException(status_code=404, detail="No account found with this email")
+            
+    otp = generate_otp(payload.email, payload.purpose)
+    send_otp_email(payload.email, otp, payload.purpose)
+    return {"message": "OTP sent successfully"}
+
+@router.post("/verify-otp")
+@limiter.limit("5/minute")
+def verify_otp_endpoint(request: Request, payload: OtpVerify, db: Session = Depends(get_db)):
+    if not verify_otp(payload.email, payload.otp, payload.purpose):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+    if payload.purpose == "forgot_password":
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        to_encode = {"sub": payload.email, "purpose": "reset_password", "exp": expire}
+        reset_token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return {"verified": True, "reset_token": reset_token}
+        
+    return {"verified": True}
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPassword, db: Session = Depends(get_db)):
+    try:
+        token_payload = jwt.decode(payload.reset_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email = token_payload.get("sub")
+        purpose = token_payload.get("purpose")
+        if not email or purpose != "reset_password":
+            raise ValueError("Invalid purpose")
+    except (JWTError, ValueError):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+        
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Password reset successfully"}
+
+@router.post("/change-password/send-otp")
+@limiter.limit("3/minute")
+def change_password_send_otp(request: Request, current_user: User = Depends(get_current_user)):
+    otp = generate_otp(current_user.email, "change_password")
+    send_otp_email(current_user.email, otp, "change_password")
+    return {"message": "OTP sent successfully"}
+
+@router.post("/change-password/verify-and-change")
+@limiter.limit("5/minute")
+def change_password_verify(request: Request, payload: ChangePassword, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not verify_otp(current_user.email, payload.otp, "change_password"):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+        
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}

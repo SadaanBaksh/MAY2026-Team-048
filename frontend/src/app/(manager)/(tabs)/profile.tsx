@@ -28,6 +28,13 @@ export default function ManagerProfileScreen() {
       <ProfileHeader user={user} meta={user.title} />
       <DarkModeToggle />
       <Button
+        label="Change Password"
+        variant="outline"
+        onPress={() => router.push('/(auth)/change-password')}
+        fullWidth
+        icon="key-outline"
+      />
+      <Button
         label="Log Out"
         variant="outline"
         onPress={handleLogout}

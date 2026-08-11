@@ -1,0 +1,423 @@
+BEGIN;
+
+CREATE TABLE alembic_version (
+    version_num VARCHAR(32) NOT NULL, 
+    CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+);
+
+-- Running upgrade  -> eae1e81b0cf9
+
+CREATE TABLE apartments (
+    unit_number VARCHAR(50) NOT NULL, 
+    building VARCHAR(100) NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id)
+);
+
+CREATE INDEX ix_apartments_id ON apartments (id);
+
+CREATE TABLE categories (
+    id VARCHAR(50) NOT NULL, 
+    name VARCHAR(100) NOT NULL, 
+    icon VARCHAR(100) NOT NULL, 
+    PRIMARY KEY (id)
+);
+
+CREATE TYPE userrole AS ENUM ('resident', 'facility_employee', 'maintenance_staff', 'facility_manager');
+
+CREATE TYPE accountstatus AS ENUM ('active', 'pending', 'rejected');
+
+CREATE TABLE users (
+    name VARCHAR(150) NOT NULL, 
+    email VARCHAR(255) NOT NULL, 
+    phone VARCHAR(30) NOT NULL, 
+    hashed_password VARCHAR(255) NOT NULL, 
+    role userrole NOT NULL, 
+    avatar_color VARCHAR(20) NOT NULL, 
+    avatar_uri VARCHAR(500), 
+    account_status accountstatus NOT NULL, 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    apartment_id VARCHAR(36), 
+    title VARCHAR(150), 
+    specialization VARCHAR(150), 
+    active_jobs INTEGER, 
+    rating FLOAT, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(apartment_id) REFERENCES apartments (id)
+);
+
+CREATE UNIQUE INDEX ix_users_email ON users (email);
+
+CREATE INDEX ix_users_id ON users (id);
+
+CREATE TYPE mediatype AS ENUM ('Image', 'Video');
+
+CREATE TYPE priority AS ENUM ('Low', 'Medium', 'High', 'Critical', 'Emergency');
+
+CREATE TYPE ticketstatus AS ENUM ('Pending', 'Assigned', 'In_Progress', 'Resolved', 'Closed');
+
+CREATE TYPE costresponsibility AS ENUM ('Owner', 'Resident', 'Society', 'Pending_Review');
+
+CREATE TABLE tickets (
+    title VARCHAR(200) NOT NULL, 
+    resident_id VARCHAR(36) NOT NULL, 
+    worker_id VARCHAR(36), 
+    category_id VARCHAR(50) NOT NULL, 
+    image_url VARCHAR(500), 
+    media_type mediatype, 
+    resident_note TEXT NOT NULL, 
+    voice_note_url VARCHAR(500), 
+    voice_note_duration_sec INTEGER, 
+    ai_description TEXT NOT NULL, 
+    ai_confidence FLOAT NOT NULL, 
+    priority priority NOT NULL, 
+    status ticketstatus NOT NULL, 
+    cost_responsibility costresponsibility NOT NULL, 
+    date_of_request TIMESTAMP WITH TIME ZONE NOT NULL, 
+    date_of_resolution TIMESTAMP WITH TIME ZONE, 
+    resolution_remarks TEXT, 
+    resolution_proof_url VARCHAR(500), 
+    resident_rating INTEGER, 
+    resident_feedback TEXT, 
+    is_overdue BOOLEAN NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(category_id) REFERENCES categories (id), 
+    FOREIGN KEY(resident_id) REFERENCES users (id), 
+    FOREIGN KEY(worker_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_tickets_id ON tickets (id);
+
+CREATE TABLE comments (
+    ticket_id VARCHAR(36) NOT NULL, 
+    user_id VARCHAR(36) NOT NULL, 
+    message TEXT NOT NULL, 
+    posted_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(ticket_id) REFERENCES tickets (id), 
+    FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_comments_id ON comments (id);
+
+CREATE TABLE notifications (
+    user_id VARCHAR(36) NOT NULL, 
+    ticket_id VARCHAR(36), 
+    title VARCHAR(200) NOT NULL, 
+    message TEXT NOT NULL, 
+    is_read BOOLEAN NOT NULL, 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(ticket_id) REFERENCES tickets (id), 
+    FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_notifications_id ON notifications (id);
+
+CREATE TABLE ticket_history (
+    ticket_id VARCHAR(36) NOT NULL, 
+    old_status ticketstatus, 
+    new_status ticketstatus NOT NULL, 
+    remarks TEXT NOT NULL, 
+    changed_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    actor_id VARCHAR(36), 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(actor_id) REFERENCES users (id), 
+    FOREIGN KEY(ticket_id) REFERENCES tickets (id)
+);
+
+CREATE INDEX ix_ticket_history_id ON ticket_history (id);
+
+CREATE TABLE ticket_media (
+    ticket_id VARCHAR(36) NOT NULL, 
+    media_url VARCHAR(500) NOT NULL, 
+    media_type mediatype NOT NULL, 
+    uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(ticket_id) REFERENCES tickets (id)
+);
+
+CREATE INDEX ix_ticket_media_id ON ticket_media (id);
+
+INSERT INTO alembic_version (version_num) VALUES ('eae1e81b0cf9') RETURNING alembic_version.version_num;
+
+-- Running upgrade eae1e81b0cf9 -> 213b41865a45
+
+CREATE UNIQUE INDEX ix_users_phone ON users (phone);
+
+UPDATE alembic_version SET version_num='213b41865a45' WHERE alembic_version.version_num = 'eae1e81b0cf9';
+
+-- Running upgrade 213b41865a45 -> 6f8c2d91a4be
+
+CREATE TYPE publicservicestatus AS ENUM ('Pending', 'Assigned', 'In_Progress', 'Resolved', 'Merged');
+
+CREATE TABLE public_services (
+    created_by_id VARCHAR(36) NOT NULL, 
+    worker_id VARCHAR(36), 
+    category_id VARCHAR(50) NOT NULL, 
+    title VARCHAR(200) NOT NULL, 
+    description TEXT NOT NULL, 
+    location VARCHAR(300) NOT NULL, 
+    ai_summary TEXT NOT NULL, 
+    priority priority NOT NULL, 
+    status publicservicestatus NOT NULL, 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    resolved_at TIMESTAMP WITH TIME ZONE, 
+    resolution_remarks TEXT, 
+    resolution_proof_url VARCHAR(500), 
+    merged_into_id VARCHAR(36), 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(category_id) REFERENCES categories (id), 
+    FOREIGN KEY(created_by_id) REFERENCES users (id), 
+    FOREIGN KEY(merged_into_id) REFERENCES public_services (id), 
+    FOREIGN KEY(worker_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_public_services_id ON public_services (id);
+
+CREATE INDEX ix_public_services_status ON public_services (status);
+
+CREATE INDEX ix_public_services_created_at ON public_services (created_at);
+
+CREATE INDEX ix_public_services_merged_into_id ON public_services (merged_into_id);
+
+CREATE INDEX ix_public_services_worker_id ON public_services (worker_id);
+
+CREATE INDEX ix_public_services_category_id ON public_services (category_id);
+
+CREATE TABLE public_reports (
+    service_id VARCHAR(36) NOT NULL, 
+    author_id VARCHAR(36) NOT NULL, 
+    title VARCHAR(200) NOT NULL, 
+    description TEXT NOT NULL, 
+    location VARCHAR(300) NOT NULL, 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(author_id) REFERENCES users (id), 
+    FOREIGN KEY(service_id) REFERENCES public_services (id)
+);
+
+CREATE INDEX ix_public_reports_id ON public_reports (id);
+
+CREATE INDEX ix_public_reports_service_id ON public_reports (service_id);
+
+CREATE TABLE public_report_media (
+    report_id VARCHAR(36) NOT NULL, 
+    media_url VARCHAR(500) NOT NULL, 
+    uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(report_id) REFERENCES public_reports (id)
+);
+
+CREATE INDEX ix_public_report_media_id ON public_report_media (id);
+
+CREATE INDEX ix_public_report_media_report_id ON public_report_media (report_id);
+
+CREATE TABLE public_service_comments (
+    service_id VARCHAR(36) NOT NULL, 
+    user_id VARCHAR(36) NOT NULL, 
+    message TEXT NOT NULL, 
+    posted_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(service_id) REFERENCES public_services (id), 
+    FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_public_service_comments_id ON public_service_comments (id);
+
+CREATE INDEX ix_public_service_comments_service_id ON public_service_comments (service_id);
+
+CREATE TABLE public_service_history (
+    service_id VARCHAR(36) NOT NULL, 
+    old_status publicservicestatus, 
+    new_status publicservicestatus NOT NULL, 
+    remarks TEXT NOT NULL, 
+    actor_id VARCHAR(36), 
+    changed_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(actor_id) REFERENCES users (id), 
+    FOREIGN KEY(service_id) REFERENCES public_services (id)
+);
+
+CREATE INDEX ix_public_service_history_id ON public_service_history (id);
+
+CREATE INDEX ix_public_service_history_service_id ON public_service_history (service_id);
+
+CREATE TYPE similaritysuggestionstatus AS ENUM ('Pending', 'Accepted', 'Declined');
+
+CREATE TABLE public_similarity_suggestions (
+    service_a_id VARCHAR(36) NOT NULL, 
+    service_b_id VARCHAR(36) NOT NULL, 
+    score FLOAT NOT NULL, 
+    rationale TEXT NOT NULL, 
+    model_name VARCHAR(100) NOT NULL, 
+    status similaritysuggestionstatus NOT NULL, 
+    reviewed_by_id VARCHAR(36), 
+    reviewed_at TIMESTAMP WITH TIME ZONE, 
+    merged_service_id VARCHAR(36), 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(merged_service_id) REFERENCES public_services (id), 
+    FOREIGN KEY(reviewed_by_id) REFERENCES users (id), 
+    FOREIGN KEY(service_a_id) REFERENCES public_services (id), 
+    FOREIGN KEY(service_b_id) REFERENCES public_services (id), 
+    CONSTRAINT uq_public_similarity_pair UNIQUE (service_a_id, service_b_id)
+);
+
+CREATE INDEX ix_public_similarity_suggestions_id ON public_similarity_suggestions (id);
+
+CREATE INDEX ix_public_similarity_suggestions_service_a_id ON public_similarity_suggestions (service_a_id);
+
+CREATE INDEX ix_public_similarity_suggestions_service_b_id ON public_similarity_suggestions (service_b_id);
+
+CREATE INDEX ix_public_similarity_suggestions_status ON public_similarity_suggestions (status);
+
+ALTER TABLE notifications ADD COLUMN public_service_id VARCHAR(36);
+
+ALTER TABLE notifications ADD CONSTRAINT fk_notifications_public_service_id FOREIGN KEY(public_service_id) REFERENCES public_services (id);
+
+ALTER TABLE notifications ADD CONSTRAINT ck_notification_single_target CHECK (ticket_id IS NULL OR public_service_id IS NULL);
+
+UPDATE alembic_version SET version_num='6f8c2d91a4be' WHERE alembic_version.version_num = '213b41865a45';
+
+-- Running upgrade 213b41865a45 -> 3a1f9e2b4c8d
+
+ALTER TABLE tickets ADD COLUMN is_public BOOLEAN DEFAULT '0' NOT NULL;
+
+ALTER TABLE tickets ADD COLUMN parent_ticket_id VARCHAR(36);
+
+CREATE INDEX ix_tickets_parent_ticket_id ON tickets (parent_ticket_id);
+
+ALTER TABLE tickets ADD CONSTRAINT fk_tickets_parent_ticket_id FOREIGN KEY(parent_ticket_id) REFERENCES tickets (id) ON DELETE SET NULL;
+
+INSERT INTO alembic_version (version_num) VALUES ('3a1f9e2b4c8d') RETURNING alembic_version.version_num;
+
+-- Running upgrade 3a1f9e2b4c8d, 6f8c2d91a4be -> e4266389046f
+
+DELETE FROM alembic_version WHERE alembic_version.version_num = '3a1f9e2b4c8d';
+
+UPDATE alembic_version SET version_num='e4266389046f' WHERE alembic_version.version_num = '6f8c2d91a4be';
+
+-- Running upgrade e4266389046f -> 8b7c6d5e4f3a
+
+CREATE TYPE noticestatus AS ENUM ('Draft', 'Scheduled', 'Sent', 'Expired', 'Cancelled');
+
+CREATE TABLE notices (
+    created_by_id VARCHAR(36) NOT NULL, 
+    title VARCHAR(200) NOT NULL, 
+    body TEXT NOT NULL, 
+    brief_points JSON NOT NULL, 
+    status noticestatus NOT NULL, 
+    timezone VARCHAR(100) NOT NULL, 
+    scheduled_at TIMESTAMP WITH TIME ZONE, 
+    sent_at TIMESTAMP WITH TIME ZONE, 
+    expires_at TIMESTAMP WITH TIME ZONE, 
+    recipient_count INTEGER NOT NULL, 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(created_by_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_notices_id ON notices (id);
+
+CREATE INDEX ix_notices_created_by_id ON notices (created_by_id);
+
+CREATE INDEX ix_notices_status ON notices (status);
+
+CREATE INDEX ix_notices_scheduled_at ON notices (scheduled_at);
+
+CREATE INDEX ix_notices_expires_at ON notices (expires_at);
+
+CREATE INDEX ix_notices_created_at ON notices (created_at);
+
+CREATE TABLE notice_targets (
+    notice_id VARCHAR(36) NOT NULL, 
+    building VARCHAR(100) NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(notice_id) REFERENCES notices (id) ON DELETE CASCADE, 
+    CONSTRAINT uq_notice_target_building UNIQUE (notice_id, building)
+);
+
+CREATE INDEX ix_notice_targets_notice_id ON notice_targets (notice_id);
+
+CREATE INDEX ix_notice_targets_building ON notice_targets (building);
+
+CREATE INDEX ix_notice_targets_id ON notice_targets (id);
+
+ALTER TABLE notifications ADD COLUMN notice_id VARCHAR(36);
+
+ALTER TABLE notifications ADD CONSTRAINT fk_notifications_notice_id FOREIGN KEY(notice_id) REFERENCES notices (id);
+
+CREATE INDEX ix_notifications_notice_id ON notifications (notice_id);
+
+ALTER TABLE notifications DROP CONSTRAINT ck_notification_single_target;
+
+ALTER TABLE notifications ADD CONSTRAINT ck_notification_single_target CHECK ((CASE WHEN ticket_id IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN public_service_id IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN notice_id IS NOT NULL THEN 1 ELSE 0 END) <= 1);
+
+ALTER TABLE notifications ADD CONSTRAINT uq_notification_user_notice UNIQUE (user_id, notice_id);
+
+UPDATE alembic_version SET version_num='8b7c6d5e4f3a' WHERE alembic_version.version_num = 'e4266389046f';
+
+-- Running upgrade 8b7c6d5e4f3a -> 4a4af86d7b70
+
+ALTER TYPE ticketstatus ADD VALUE IF NOT EXISTS 'Cancelled';
+
+UPDATE alembic_version SET version_num='4a4af86d7b70' WHERE alembic_version.version_num = '8b7c6d5e4f3a';
+
+-- Running upgrade e4266389046f -> 28f271b9b743
+
+CREATE TABLE chat_messages (
+    user_id VARCHAR(36) NOT NULL, 
+    role VARCHAR(20) NOT NULL, 
+    text TEXT NOT NULL, 
+    related_ticket_id VARCHAR(36), 
+    suggestions JSON, 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+    id VARCHAR(36) NOT NULL, 
+    PRIMARY KEY (id), 
+    FOREIGN KEY(related_ticket_id) REFERENCES tickets (id), 
+    FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_chat_messages_created_at ON chat_messages (created_at);
+
+CREATE INDEX ix_chat_messages_id ON chat_messages (id);
+
+CREATE INDEX ix_chat_messages_user_id ON chat_messages (user_id);
+
+INSERT INTO alembic_version (version_num) VALUES ('28f271b9b743') RETURNING alembic_version.version_num;
+
+-- Running upgrade 28f271b9b743, 4a4af86d7b70 -> 35295e5c0448
+
+DELETE FROM alembic_version WHERE alembic_version.version_num = '28f271b9b743';
+
+UPDATE alembic_version SET version_num='35295e5c0448' WHERE alembic_version.version_num = '4a4af86d7b70';
+
+-- Running upgrade 28f271b9b743, 4a4af86d7b70 -> 2483405fd49c
+
+INSERT INTO alembic_version (version_num) VALUES ('2483405fd49c') RETURNING alembic_version.version_num;
+
+-- Running upgrade 2483405fd49c, 35295e5c0448 -> f9a6e3b43182
+
+DELETE FROM alembic_version WHERE alembic_version.version_num = '2483405fd49c';
+
+UPDATE alembic_version SET version_num='f9a6e3b43182' WHERE alembic_version.version_num = '35295e5c0448';
+
+COMMIT;
+
