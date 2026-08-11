@@ -444,7 +444,12 @@ export default function LandingPage() {
 
             <View style={[s.managerShowcase, isDesktop && s.managerShowcaseWide]}>
               <View style={[s.managerImageWrap, isDesktop && { width: '58%' }]}>
-                <Image source={managerOperationsImg} style={s.coverImage} contentFit="cover" />
+                <Image
+                  source={managerOperationsImg}
+                  style={s.coverImage}
+                  contentFit="cover"
+                  contentPosition={{ left: '64%', top: '50%' }}
+                />
                 <LinearGradient
                   colors={['transparent', 'rgba(5,35,31,0.76)']}
                   style={StyleSheet.absoluteFill}
@@ -635,7 +640,12 @@ export default function LandingPage() {
               </View>
 
               <View style={[s.workflowCard, s.communityCard, isDesktop && { flex: 1 }]}>
-                <Image source={communityServicesImg} style={s.communityImage} contentFit="cover" />
+                <Image
+                  source={communityServicesImg}
+                  style={s.communityImage}
+                  contentFit="cover"
+                  contentPosition={{ left: '36%', top: '50%' }}
+                />
                 <LinearGradient
                   colors={['transparent', 'rgba(4,37,33,0.91)']}
                   style={s.communityGradient}
