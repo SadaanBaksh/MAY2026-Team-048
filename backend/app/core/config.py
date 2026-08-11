@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     PUBLIC_SIMILARITY_THRESHOLD: float = 0.80
     PUBLIC_SIMILARITY_CANDIDATE_LIMIT: int = 20
 
+    SMTP_EMAIL: str = ""
+    SMTP_APP_PASSWORD: str = ""
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",") if origin.strip()]
