@@ -35,6 +35,8 @@ export interface BaseUser {
 export interface Resident extends BaseUser {
   role: 'resident';
   apartmentId: string;
+  building?: string;
+  unitNumber?: string;
 }
 
 export interface FacilityEmployee extends BaseUser {

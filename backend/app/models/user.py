@@ -29,7 +29,15 @@ class User(UUIDPKMixin, Base):
     apartment_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("apartments.id"), nullable=True
     )
-    apartment: Mapped["Apartment | None"] = relationship(back_populates="residents")  # noqa: F821
+    apartment: Mapped["Apartment | None"] = relationship(back_populates="residents", lazy="joined")  # noqa: F821
+
+    @property
+    def building(self) -> str | None:
+        return self.apartment.building if self.apartment else None
+
+    @property
+    def unit_number(self) -> str | None:
+        return self.apartment.unit_number if self.apartment else None
 
     # Facility employee / facility manager
     title: Mapped[str | None] = mapped_column(String(150), nullable=True)
