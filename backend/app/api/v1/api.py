@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     auth,
     categories,
     comments,
+    exports,
     notifications,
     notices,
     public_services,
@@ -18,6 +19,7 @@ api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(exports.router, prefix="/exports", tags=["exports"])
 api_router.include_router(apartments.router, prefix="/apartments", tags=["apartments"])
 api_router.include_router(categories.router, prefix="/categories", tags=["categories"])
 api_router.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
