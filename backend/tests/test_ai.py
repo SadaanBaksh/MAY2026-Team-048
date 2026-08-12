@@ -544,3 +544,68 @@ def test_dashboard_summary_malformed_result_becomes_503(client, auth_headers, re
     response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
 
     assert response.status_code == 503
+
+
+def test_dashboard_summary_second_call_hits_cache(client, auth_headers, resident_user, monkeypatch):
+    """Same user, unchanged stats -> same fingerprint -> the second request must be
+    served from app.core.ai_cache without calling generate_json again."""
+    calls = []
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_json",
+        lambda **_: calls.append(1) or {"summary": "Cached summary."},
+    )
+
+    first = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
+    second = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(resident_user))
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json() == {"summary": "Cached summary."}
+    assert len(calls) == 1
+
+
+def test_draft_notice_rejects_unknown_tower(client, auth_headers, manager_user):
+    response = client.post(
+        "/api/v1/ai/draft-notice",
+        json={"brief_points": ["Test point"], "target_buildings": ["Nonexistent Tower"]},
+        headers=auth_headers(manager_user),
+    )
+
+    assert response.status_code == 422
+    assert "Unknown tower" in response.json()["detail"]
+
+
+def test_draft_notice_gemini_error_becomes_503(
+    client, auth_headers, manager_user, make_apartment, monkeypatch
+):
+    make_apartment(building="Tower A")
+
+    def _raise(**_):
+        raise GeminiError("AI is temporarily busy. Please try again in a minute.")
+
+    monkeypatch.setattr("app.api.v1.endpoints.ai.generate_json", _raise)
+
+    response = client.post(
+        "/api/v1/ai/draft-notice",
+        json={"brief_points": ["Test point"], "target_buildings": ["Tower A"]},
+        headers=auth_headers(manager_user),
+    )
+
+    assert response.status_code == 503
+    assert "temporarily busy" in response.json()["detail"]
+
+
+def test_draft_notice_malformed_result_becomes_503(
+    client, auth_headers, manager_user, make_apartment, monkeypatch
+):
+    """Missing the required 'title'/'body' keys - valid JSON, wrong shape."""
+    make_apartment(building="Tower A")
+    monkeypatch.setattr("app.api.v1.endpoints.ai.generate_json", lambda **_: {})
+
+    response = client.post(
+        "/api/v1/ai/draft-notice",
+        json={"brief_points": ["Test point"], "target_buildings": ["Tower A"]},
+        headers=auth_headers(manager_user),
+    )
+
+    assert response.status_code == 503

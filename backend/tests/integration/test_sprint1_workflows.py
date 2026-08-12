@@ -29,7 +29,7 @@ def _create_ticket(client, auth_headers, resident, category, **overrides) -> dic
     return response.json()
 
 
-def test_int_001_resident_registration_login_and_profile_workflow(client):
+def test_int_001_resident_registration_login_and_profile_workflow(client, register_user):
     registration = {
         "name": "Sprint Resident",
         "email": "sprint.resident@example.com",
@@ -40,7 +40,7 @@ def test_int_001_resident_registration_login_and_profile_workflow(client):
         "unit_number": "301",
     }
 
-    register_response = client.post("/api/v1/auth/register", json=registration)
+    register_response = register_user(registration)
     assert register_response.status_code == 201
     assert register_response.json()["account_status"] == "active"
 
@@ -219,10 +219,6 @@ def test_int_005_uploaded_photo_is_attached_to_new_ticket(
     assert len(mock_s3) == 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Expected HTTP 409, but the API currently returns 200 and closes a Pending ticket",
-)
 def test_int_006_resident_cannot_close_ticket_before_resolution(
     client,
     auth_headers,

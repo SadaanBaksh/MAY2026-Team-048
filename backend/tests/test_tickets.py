@@ -404,12 +404,8 @@ def test_resident_cannot_close_before_resolved(client, auth_headers, resident_us
         headers=auth_headers(resident_user),
     )
 
-    # Not resolved yet, but the endpoint's own rule is "residents may only ever
-    # request Closed" - it still 200s the (no-op-ish) transition since there's no
-    # explicit resolved-first check server-side beyond the role/field allowlist.
-    # This test documents current behavior so a future tightening is a deliberate change.
-    assert response.status_code == 200
-    assert response.json()["status"] == "Closed"
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Only resolved tickets can be closed"
 
 
 # --- history -----------------------------------------------------------------

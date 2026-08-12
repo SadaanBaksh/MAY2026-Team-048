@@ -18,6 +18,7 @@ from app.models.apartment import Apartment
 from app.models.category import Category
 from app.models.enums import AccountStatus, UserRole
 from app.models.user import User
+from app.services.otp import generate_otp, verify_otp
 
 # --- API execution capture (used by scripts/generate_api_report.py) --------------
 #
@@ -185,6 +186,21 @@ def maintenance_user(make_user):
 @pytest.fixture()
 def manager_user(make_user):
     return make_user(role=UserRole.facility_manager)
+
+
+@pytest.fixture()
+def register_user(client):
+    """POSTs to /auth/register, first pushing the email through the same OTP
+    verification /auth/register now requires (see app/api/v1/endpoints/auth.py) —
+    without this, every registration is rejected with "Email not verified".
+    """
+
+    def _register(payload: dict):
+        otp = generate_otp(payload["email"], "register")
+        assert verify_otp(payload["email"], otp, "register")
+        return client.post("/api/v1/auth/register", json=payload)
+
+    return _register
 
 
 @pytest.fixture()
