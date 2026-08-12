@@ -144,7 +144,13 @@ def update_ticket(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="Only a pending complaint can be cancelled - it's already being worked on",
                     )
-            elif new_status_value != TicketStatus.Closed:
+            elif new_status_value == TicketStatus.Closed:
+                if ticket.status != TicketStatus.Resolved:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Only resolved tickets can be closed",
+                    )
+            else:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Residents can only close a resolved ticket or cancel a pending one",

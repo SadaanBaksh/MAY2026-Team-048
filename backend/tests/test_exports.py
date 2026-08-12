@@ -62,6 +62,7 @@ def test_manager_can_export_public_service_details(
     resident_user,
     maintenance_user,
     make_category,
+    make_user,
     auth_headers,
     monkeypatch,
 ):
