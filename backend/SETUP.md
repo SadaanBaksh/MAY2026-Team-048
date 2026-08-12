@@ -235,4 +235,4 @@ curl http://localhost:8000/health
 | `psql: error: connection to server ... failed`                    | Postgres isn't running. Windows: check the "postgresql-x64-&lt;version&gt;" service in Services. macOS: `brew services start postgresql@16`. Linux: `sudo systemctl start postgresql`. |
 | `password authentication failed for user "simplifix"`             | `DATABASE_URL` in `.env` doesn't match the user/password you created in B.3 — fix one or the other. |
 | `ValueError: password cannot be longer than 72 bytes` on register  | Your `bcrypt` package version drifted from `requirements.txt`. Re-run `pip install -r requirements.txt` inside the venv. |
-| Alembic says "Target database is not up to date" / migration conflicts | Someone else added a migration you don't have yet — `git pull`, then `alembic upgrade head` again. |
+| Alembic says "Target database is not up to date" / migration conflicts | Someone else added a migration you don't have yet — `git pull`, rebuild the API image, then run `alembic upgrade head` again. Never delete or replace a migration that may already have run in another environment; add a merge migration instead. |

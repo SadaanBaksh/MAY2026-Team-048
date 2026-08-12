@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Share } from 'react-native';
 
 import type {
   AccountStatus,
@@ -203,9 +203,7 @@ export async function resetPassword(
   });
 }
 
-export async function sendChangePasswordOtp(
-  token: string,
-): Promise<{ message: string }> {
+export async function sendChangePasswordOtp(token: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>('/api/v1/auth/change-password/send-otp', {
     method: 'POST',
     token,
@@ -232,6 +230,43 @@ export async function getCurrentUser(token: string): Promise<ApiUser> {
 
 export async function listUsers(token: string): Promise<ApiUser[]> {
   return apiFetch<ApiUser[]>('/api/v1/users/', { token });
+}
+
+export type ManagerExportDataset = 'employees' | 'residents' | 'services';
+
+/** Download a real CSV file in the browser, or open the native share sheet with
+ * CSV content on Android/iOS so it can be saved or sent to another office app. */
+export async function exportManagerCsv(
+  token: string,
+  dataset: ManagerExportDataset,
+): Promise<string> {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/exports/${dataset}.csv`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new ApiError(response.status, await extractErrorMessage(response));
+
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `simplifix-${dataset}.csv`;
+  const csv = await response.text();
+
+  if (Platform.OS === 'web') {
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } else {
+    await Share.share(
+      { title: filename, message: csv },
+      { dialogTitle: `Save or share ${filename}`, subject: filename },
+    );
+  }
+
+  return filename;
 }
 
 export async function updateUser(

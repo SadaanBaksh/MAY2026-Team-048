@@ -150,6 +150,8 @@ backend must be running for scheduled delivery.
 
 - `POST /api/v1/auth/register` — creates a user (residents are active immediately; other roles
   start `pending` until a facility employee/manager promotes their `account_status`).
+- `GET /api/v1/exports/{employees|residents|services}.csv` — manager-only CSV exports with
+  complete roster or public-service details and spreadsheet-safe text values.
 - `POST /api/v1/auth/login` — OAuth2 password flow, returns a JWT bearer token.
 - Protected endpoints read the token via `Authorization: Bearer <token>`.
 

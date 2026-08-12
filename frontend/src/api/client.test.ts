@@ -1,9 +1,10 @@
-import { Platform } from 'react-native';
+import { Platform, Share } from 'react-native';
 
 import {
   ApiError,
   apiUserToAppUser,
   createTicket,
+  exportManagerCsv,
   fetchComments,
   fetchNotifications,
   fetchTicketHistory,
@@ -129,6 +130,39 @@ describe('api/client', () => {
       expect(options.method).toBe('PATCH');
       expect(JSON.parse(options.body)).toEqual({ name: 'New' });
       expect(options.headers.Authorization).toBe('Bearer tok');
+    });
+  });
+
+  describe('exportManagerCsv', () => {
+    it('requests the manager export with auth and shares the returned CSV on native', async () => {
+      Platform.OS = 'ios';
+      const share = jest.spyOn(Share, 'share').mockResolvedValue({
+        action: Share.sharedAction,
+        activityType: null,
+      });
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({
+          'content-disposition': 'attachment; filename="simplifix-residents-2026-08-12.csv"',
+        }),
+        text: async () => '\ufeffresident_id,name\r\nu1,Jane\r\n',
+      } as Response);
+
+      const filename = await exportManagerCsv('manager-token', 'residents');
+
+      expect(filename).toBe('simplifix-residents-2026-08-12.csv');
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.example.com/api/v1/exports/residents.csv',
+        { headers: { Authorization: 'Bearer manager-token' } },
+      );
+      expect(share).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: filename,
+          message: '\ufeffresident_id,name\r\nu1,Jane\r\n',
+        }),
+        expect.objectContaining({ subject: filename }),
+      );
     });
   });
 
