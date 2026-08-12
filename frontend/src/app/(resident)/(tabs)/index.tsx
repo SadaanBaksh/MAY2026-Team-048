@@ -12,14 +12,12 @@ import { NotificationBell } from '@/components/shared/NotificationBell';
 import { TicketCard } from '@/components/shared/TicketCard';
 import { NoticeCard } from '@/components/shared/NoticeCard';
 import { DashboardSearch } from '@/components/shared/DashboardSearch';
-import { APARTMENTS } from '@/data/seed';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useTicketStore } from '@/store/ticketStore';
 import { useNoticeStore } from '@/store/noticeStore';
-import { fetchDashboardSummary } from '@/api/client';
 import type { Resident } from '@/types';
 
 export default function ResidentHomeScreen() {
@@ -34,25 +32,15 @@ export default function ResidentHomeScreen() {
   const refreshNotices = useNoticeStore((s) => s.refreshNotices);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       if (token) refreshTickets(token).catch(() => {});
       if (token) refreshNotifications(token).catch(() => {});
       if (token) refreshNotices(token).catch(() => {});
-      if (token) {
-        setSummaryLoading(true);
-        fetchDashboardSummary(token)
-          .then(setAiSummary)
-          .catch(() => setAiSummary(null))
-          .finally(() => setSummaryLoading(false));
-      }
     }, [token, refreshTickets, refreshNotifications, refreshNotices]),
   );
 
-  const apartment = APARTMENTS.find((a) => a.apartmentId === user.apartmentId);
 
   const myTickets = useMemo(
     () =>
@@ -79,7 +67,7 @@ export default function ResidentHomeScreen() {
               <View>
                 <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
                 <Text style={styles.unit}>
-                  {apartment ? `${apartment.unitNumber}, ${apartment.building}` : 'Resident'}
+                  {user.unitNumber && user.building ? `${user.unitNumber}, ${user.building}` : 'Resident'}
                 </Text>
               </View>
             </Pressable>
@@ -144,15 +132,7 @@ export default function ResidentHomeScreen() {
               </View>
             )}
 
-            {summaryLoading ? (
-              <AISummaryCard
-                summary="Generating summary…"
-                variant="resident"
-                label="My Complaints Summary"
-              />
-            ) : aiSummary ? (
-              <AISummaryCard summary={aiSummary} variant="resident" label="My Complaints Summary" />
-            ) : null}
+
 
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>

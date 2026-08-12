@@ -14,7 +14,7 @@ import {
 
 import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { askResidentAssistant, fetchChatHistory, ApiError } from '@/api/client';
+import { askResidentAssistant, fetchChatHistory, fetchDashboardSummary, ApiError } from '@/api/client';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -96,17 +96,39 @@ export default function ResidentChatScreen() {
         return;
       }
       try {
-        const history = await fetchChatHistory(token);
-        if (cancelled || history.length === 0) return;
-        setMessages(
-          history.map((entry) =>
-            makeMessage(entry.role, entry.text, {
-              relatedTicketId: entry.related_ticket_id ?? undefined,
-              suggestions: entry.suggestions ?? undefined,
-              createdAt: new Date(entry.created_at),
-            }),
-          ),
-        );
+        const [history, summary] = await Promise.all([
+          fetchChatHistory(token).catch(() => []),
+          fetchDashboardSummary(token).catch(() => null)
+        ]);
+
+        if (cancelled) return;
+
+        let initialMessages: ChatMessage[] = [];
+
+        if (summary) {
+          initialMessages.push(
+            makeMessage('assistant', `Here is a summary of your complaints:\n\n${summary}`, { suggestions: STARTER_PROMPTS })
+          );
+        } else {
+          initialMessages.push(
+            makeMessage('assistant', `Hi ${user.name.split(' ')[0]}. I can help you check service status, assigned professionals, pending reviews, and complaint details.`, { suggestions: STARTER_PROMPTS })
+          );
+        }
+
+        if (history.length > 0) {
+          initialMessages = [
+            ...initialMessages,
+            ...history.map((entry) =>
+              makeMessage(entry.role, entry.text, {
+                relatedTicketId: entry.related_ticket_id ?? undefined,
+                suggestions: entry.suggestions ?? undefined,
+                createdAt: new Date(entry.created_at),
+              })
+            ),
+          ];
+        }
+
+        setMessages(initialMessages);
       } catch {
         // Keep the default greeting if history can't be loaded.
       } finally {

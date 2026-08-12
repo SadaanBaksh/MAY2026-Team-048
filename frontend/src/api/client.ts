@@ -25,6 +25,8 @@ export interface ApiUser {
   avatar_color: string;
   avatar_uri: string | null;
   apartment_id: string | null;
+  building: string | null;
+  unit_number: string | null;
   title: string | null;
   specialization: string | null;
   account_status: AccountStatus;
@@ -132,7 +134,13 @@ export function apiUserToAppUser(user: ApiUser): AppUser {
 
   switch (user.role) {
     case 'resident':
-      return { ...base, role: 'resident', apartmentId: user.apartment_id ?? '' };
+      return {
+        ...base,
+        role: 'resident',
+        apartmentId: user.apartment_id ?? '',
+        building: user.building ?? undefined,
+        unitNumber: user.unit_number ?? undefined,
+      };
     case 'facility_manager':
       return { ...base, role: 'facility_manager', title: user.title ?? '' };
     case 'facility_employee':

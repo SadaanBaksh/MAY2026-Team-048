@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { ProfileHeader } from '@/components/shared/ProfileHeader';
-import { APARTMENTS } from '@/data/seed';
 import { Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -20,7 +19,6 @@ export default function ResidentProfileScreen() {
   const user = useAuthStore((s) => s.currentUser) as Resident;
   const logout = useAuthStore((s) => s.logout);
   const tickets = useTicketStore((s) => s.tickets).filter((t) => t.residentId === user.userId);
-  const apartment = APARTMENTS.find((a) => a.apartmentId === user.apartmentId);
 
   const handleLogout = () => {
     logout();
@@ -32,7 +30,7 @@ export default function ResidentProfileScreen() {
       <Text style={styles.title}>Profile</Text>
       <ProfileHeader
         user={user}
-        meta={apartment ? `${apartment.unitNumber}, ${apartment.building}` : undefined}
+        meta={user.unitNumber && user.building ? `${user.unitNumber}, ${user.building}` : undefined}
       />
 
       <Card style={styles.statsCard}>

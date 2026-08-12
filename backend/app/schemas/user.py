@@ -137,6 +137,8 @@ class UserRead(UserBase):
     created_at: datetime
     active_jobs: int | None = None
     rating: float | None = None
+    building: str | None = None
+    unit_number: str | None = None
 
 
 class UserUpdate(BaseModel):
