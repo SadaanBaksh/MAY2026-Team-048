@@ -102,7 +102,7 @@ function Btn({
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'ghost' | 'outlineLight' | 'outlineDark' | 'white';
-  size?: 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
   icon?: keyof typeof Ionicons.glyphMap;
 }) {
   const bg =
@@ -126,24 +126,34 @@ function Btn({
       ? 'rgba(255,255,255,0.55)'
       : variant === 'outlineDark'
         ? P.primary
-        : 'transparent';
+        : variant === 'ghost'
+          ? 'rgba(12,133,119,0.28)'
+          : 'transparent';
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         s.btn,
+        size === 'sm' && s.btnSm,
         size === 'lg' && s.btnLg,
         {
           backgroundColor: bg,
           borderColor,
-          borderWidth: variant === 'outlineLight' || variant === 'outlineDark' ? 2 : 0,
+          borderWidth: variant === 'outlineLight' || variant === 'outlineDark' || variant === 'ghost' ? 1.5 : 0,
           opacity: pressed ? 0.86 : 1,
           transform: [{ scale: pressed ? 0.98 : 1 }],
         },
       ]}
     >
-      <Text style={[s.btnText, size === 'lg' && { fontSize: 16 }, { color: textColor }]}>
+      <Text
+        style={[
+          s.btnText,
+          size === 'lg' && { fontSize: 16 },
+          size === 'sm' && { fontSize: 12 },
+          { color: textColor },
+        ]}
+      >
         {label}
       </Text>
       {icon && <Ionicons name={icon} size={16} color={textColor} />}
@@ -290,11 +300,45 @@ export default function LandingPage() {
 
   const revealProps = { scrollY, viewportHeight, reduceMotion };
 
+  // Web-only: swap the default scrollbar for a thin, low-contrast one that matches
+  // the landing page's dark ink palette, since the browser default looks out of place.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const style = document.createElement('style');
+    style.id = 'simplifix-landing-scrollbar';
+    style.textContent = `
+      #landing-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(20,32,30,0.35) transparent;
+      }
+      #landing-scroll::-webkit-scrollbar {
+        width: 8px;
+      }
+      #landing-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #landing-scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(20,32,30,0.35);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      #landing-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(20,32,30,0.55);
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => style.remove();
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: P.white }}>
       <StatusBar style="dark" />
       <Animated.ScrollView
         ref={scrollRef}
+        nativeID="landing-scroll"
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator
@@ -310,7 +354,7 @@ export default function LandingPage() {
               <View style={s.logoIconWrap}>
                 <SimplifixLogo width={28} height={28} />
               </View>
-              <Text style={s.logoText}>Simplifix</Text>
+              <Text style={[s.logoText, !isWide && { fontSize: 17 }]}>Simplifix</Text>
             </View>
             {isDesktop && (
               <View style={s.navLinks}>
@@ -325,9 +369,19 @@ export default function LandingPage() {
                 </Pressable>
               </View>
             )}
-            <View style={s.navActions}>
-              {isWide && <Btn label="Log In" onPress={goLogin} variant="ghost" size="md" />}
-              <Btn label="Get Started" onPress={goRegister} variant="primary" size="md" />
+            <View style={[s.navActions, !isWide && s.navActionsMobile]}>
+              <Btn
+                label="Log In"
+                onPress={goLogin}
+                variant="ghost"
+                size={isWide ? 'md' : 'sm'}
+              />
+              <Btn
+                label="Get Started"
+                onPress={goRegister}
+                variant="primary"
+                size={isWide ? 'md' : 'sm'}
+              />
             </View>
           </View>
         </View>
@@ -1315,6 +1369,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: P.borderLight,
     zIndex: 10,
+    ...(Platform.OS === 'web' ? ({ position: 'sticky', top: 0 } as object) : {}),
   },
   navInner: {
     width: '100%',
@@ -1325,10 +1380,11 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  navInnerMobile: { paddingHorizontal: 18 },
+  navInnerMobile: { paddingHorizontal: 14 },
   navLinks: { flexDirection: 'row', alignItems: 'center', gap: 48 },
   navLink: { color: P.textMuted, fontFamily: FontFamily.semiBold, fontSize: 14 },
   navActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  navActionsMobile: { gap: 6 },
   logoBadge: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logoIconWrap: {
     backgroundColor: P.primaryLight,
@@ -1355,7 +1411,8 @@ const s = StyleSheet.create({
     gap: 9,
   },
   btnLg: { paddingVertical: 16, paddingHorizontal: 34 },
-  btnText: { fontFamily: FontFamily.bold, fontSize: 14 },
+  btnSm: { paddingVertical: 9, paddingHorizontal: 14 },
+  btnText: { fontFamily: FontFamily.bold, fontSize: 14, textAlign: 'center' },
   hero: {
     minHeight: 520,
     justifyContent: 'center',
@@ -2125,7 +2182,7 @@ const s = StyleSheet.create({
   },
   phoneSpeaker: {
     position: 'absolute',
-    top: 8,
+    bottom: 8,
     left: '37%',
     width: '26%',
     height: 5,
