@@ -19,9 +19,11 @@ import { RatingStars } from '@/components/ui/RatingStars';
 import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
+import { SwipeToResolve } from '@/components/ui/SwipeToResolve';
 import { APARTMENTS } from '@/data/seed';
 import { getCategoryById } from '@/data/categories';
 import { Radius, Spacing, Type } from '@/constants/theme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
@@ -29,6 +31,7 @@ import { formatFullDate } from '@/utils/date';
 
 export default function MaintenanceJobDetailScreen() {
   const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.currentUser)!;
   const users = useAuthStore((s) => s.users);
@@ -127,7 +130,9 @@ export default function MaintenanceJobDetailScreen() {
       );
     } catch (err) {
       setResolveError(
-        err instanceof ApiError ? err.message : 'Could not submit the resolution. Please try again.',
+        err instanceof ApiError
+          ? err.message
+          : 'Could not submit the resolution. Please try again.',
       );
     } finally {
       setResolving(false);
@@ -240,14 +245,23 @@ export default function MaintenanceJobDetailScreen() {
               />
             </View>
             {!!resolveError && <Text style={styles.error}>{resolveError}</Text>}
-            <Button
-              label={resolving ? 'Submitting…' : 'Mark Resolved'}
-              icon="checkmark-done-outline"
-              fullWidth
-              size="lg"
-              disabled={!remarks.trim() || !proofUri || resolving}
-              onPress={handleResolve}
-            />
+            {isDesktop ? (
+              <Button
+                label={resolving ? 'Submitting…' : 'Mark Resolved'}
+                icon="checkmark-done-outline"
+                fullWidth
+                size="lg"
+                disabled={!remarks.trim() || !proofUri || resolving}
+                onPress={handleResolve}
+              />
+            ) : (
+              <SwipeToResolve
+                loading={resolving}
+                disabled={!remarks.trim() || !proofUri}
+                disabledHint="Add resolution details and a proof photo to enable the gesture."
+                onResolve={handleResolve}
+              />
+            )}
           </Card>
         )}
 

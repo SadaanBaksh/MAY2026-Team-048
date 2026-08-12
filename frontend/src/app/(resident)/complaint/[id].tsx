@@ -1,7 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -21,6 +30,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { getCategoryById } from '@/data/categories';
 import { Radius, Spacing, Type } from '@/constants/theme';
+import { MAINTENANCE_SUPPORT_PHONE } from '@/constants/contact';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
@@ -173,14 +183,25 @@ export default function ResidentComplaintDetailScreen() {
                 <Text style={styles.workerSpec}>{worker.specialization}</Text>
               )}
             </View>
-            <Pressable
-              style={styles.callIcon}
-              onPress={() => Linking.openURL(`tel:${worker.phone}`)}
-              accessibilityRole="button"
-              accessibilityLabel={`Call ${worker.name}`}
-            >
-              <Ionicons name="call-outline" size={16} color={Colors.primary} />
-            </Pressable>
+            <View style={styles.contactActions}>
+              <Pressable
+                style={styles.callIcon}
+                onPress={() => Linking.openURL(`tel:${worker.phone}`)}
+                accessibilityRole="button"
+                accessibilityLabel={`Call ${worker.name}`}
+              >
+                <Ionicons name="call-outline" size={16} color={Colors.primary} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.supportButton, pressed && styles.pressedButton]}
+                onPress={() => Linking.openURL(`tel:${MAINTENANCE_SUPPORT_PHONE}`)}
+                accessibilityRole="button"
+                accessibilityLabel="Call maintenance support"
+              >
+                <Ionicons name="headset-outline" size={16} color={Colors.primary} />
+                <Text style={styles.supportButtonText}>Support</Text>
+              </Pressable>
+            </View>
           </Card>
         )}
 
@@ -330,6 +351,27 @@ const getStyles = (Colors: ThemeColors) =>
       backgroundColor: Colors.primarySoft,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    contactActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    supportButton: {
+      height: 34,
+      borderRadius: Radius.pill,
+      paddingHorizontal: Spacing.sm,
+      backgroundColor: Colors.primarySoft,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    pressedButton: {
+      opacity: 0.75,
+    },
+    supportButtonText: {
+      ...Type.tiny,
+      color: Colors.primary,
     },
     costCard: {
       flexDirection: 'row',

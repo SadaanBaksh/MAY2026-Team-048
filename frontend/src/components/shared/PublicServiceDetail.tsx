@@ -12,8 +12,10 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Screen } from '@/components/ui/Screen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SwipeToResolve } from '@/components/ui/SwipeToResolve';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useAuthStore } from '@/store/authStore';
 import { usePublicServiceStore } from '@/store/publicServiceStore';
 import type { MaintenanceStaff, UserRole } from '@/types';
@@ -29,6 +31,7 @@ function publicRoute(role: UserRole, id: string): string {
 export function PublicServiceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { Colors } = useTheme();
+  const isDesktop = useIsDesktop();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   const user = useAuthStore((state) => state.currentUser)!;
   const users = useAuthStore((state) => state.users);
@@ -94,7 +97,8 @@ export function PublicServiceDetail() {
         status: 'Resolved',
         resolution_remarks: 'Marked resolved by a contributing resident.',
       });
-    const message = 'The discussion will close and the issue will remain visible in public history.';
+    const message =
+      'The discussion will close and the issue will remain visible in public history.';
     // Alert.alert's buttons/onPress never fire on web - react-native-web ships it as a no-op.
     if (Platform.OS === 'web') {
       if (window.confirm(`Mark this issue resolved?\n\n${message}`)) resolve();
@@ -230,13 +234,24 @@ export function PublicServiceDetail() {
               multiline
               style={styles.remarks}
             />
-            <Button
-              label="Mark Resolved"
-              fullWidth
-              loading={working}
-              disabled={!remarks.trim()}
-              onPress={() => doUpdate({ status: 'Resolved', resolution_remarks: remarks.trim() })}
-            />
+            {user.role === 'maintenance_staff' && !isDesktop ? (
+              <SwipeToResolve
+                loading={working}
+                disabled={!remarks.trim()}
+                disabledHint="Add resolution details to enable the gesture."
+                onResolve={() =>
+                  doUpdate({ status: 'Resolved', resolution_remarks: remarks.trim() })
+                }
+              />
+            ) : (
+              <Button
+                label="Mark Resolved"
+                fullWidth
+                loading={working}
+                disabled={!remarks.trim()}
+                onPress={() => doUpdate({ status: 'Resolved', resolution_remarks: remarks.trim() })}
+              />
+            )}
           </Card>
         )}
 
