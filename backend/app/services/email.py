@@ -20,19 +20,19 @@ class _IPv4SMTP(smtplib.SMTP):
     """
 
     def _get_socket(self, host, port, timeout):
+        # smtplib's default timeout is socket._GLOBAL_DEFAULT_TIMEOUT (a sentinel
+        # object, not None), so let create_connection handle it rather than
+        # reimplementing that sentinel check ourselves.
         exc = None
-        for family, socktype, proto, _, sockaddr in socket.getaddrinfo(
+        for family, _, _, _, sockaddr in socket.getaddrinfo(
             host, port, socket.AF_INET, socket.SOCK_STREAM
         ):
-            sock = socket.socket(family, socktype, proto)
             try:
-                if timeout is not None:
-                    sock.settimeout(timeout)
-                sock.connect(sockaddr)
-                return sock
+                return socket.create_connection(
+                    sockaddr[:2], timeout, source_address=self.source_address
+                )
             except OSError as e:
                 exc = e
-                sock.close()
         raise exc or OSError(f"No IPv4 address found for {host}")
 
 
