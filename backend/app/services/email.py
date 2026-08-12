@@ -1,11 +1,40 @@
 import logging
 import smtplib
+import socket
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class _IPv4SMTP(smtplib.SMTP):
+    """smtplib.SMTP, but the TCP connection is forced over IPv4.
+
+    Some hosts (Render's outbound network, notably) hand back an IPv6 address
+    for smtp.gmail.com with no working IPv6 route, which fails with
+    "[Errno 101] Network is unreachable" before STARTTLS/login ever run.
+    Overriding just the socket connect (not the hostname used for TLS SNI/cert
+    checks in starttls()) sidesteps that without weakening TLS verification.
+    """
+
+    def _get_socket(self, host, port, timeout):
+        exc = None
+        for family, socktype, proto, _, sockaddr in socket.getaddrinfo(
+            host, port, socket.AF_INET, socket.SOCK_STREAM
+        ):
+            sock = socket.socket(family, socktype, proto)
+            try:
+                if timeout is not None:
+                    sock.settimeout(timeout)
+                sock.connect(sockaddr)
+                return sock
+            except OSError as e:
+                exc = e
+                sock.close()
+        raise exc or OSError(f"No IPv4 address found for {host}")
+
 
 def send_otp_email(to_email: str, otp: str, purpose: str) -> None:
     if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
@@ -34,7 +63,7 @@ def send_otp_email(to_email: str, otp: str, purpose: str) -> None:
     msg.attach(MIMEText(body, 'html'))
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        with _IPv4SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(settings.SMTP_EMAIL, settings.SMTP_APP_PASSWORD)
             server.send_message(msg)
