@@ -1,12 +1,15 @@
 import { router } from 'expo-router';
 
 import { AuthLoginScreen, type DemoAccountItem } from '@/components/shared/AuthLoginScreen';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const DEMO_ACCOUNTS: DemoAccountItem[] = [
   { role: 'resident', shortLabel: 'Resident', icon: 'home-outline' },
 ];
 
 export default function CustomerLoginScreen() {
+  const isDesktop = useIsDesktop();
+
   return (
     <AuthLoginScreen
       headerTitle="Resident Log In"
@@ -26,6 +29,9 @@ export default function CustomerLoginScreen() {
           promptText: 'New resident?',
           linkText: 'Create an account',
           onPress: () => router.push('/(auth)/register'),
+          disabled: isDesktop,
+          disabledMessage:
+            "We don't allow residents to create new accounts on web yet. Please sign up from the app.",
         },
         {
           promptText: 'Are you an employee?',

@@ -34,6 +34,8 @@ export interface FooterLinkItem {
   promptText: string;
   linkText: string;
   onPress: () => void;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
 export interface AuthLoginScreenProps {
@@ -192,11 +194,19 @@ export function AuthLoginScreen({
           </Card>
 
           {footerLinks.map((link, idx) => (
-            <View key={idx} style={styles.footer}>
-              <Text style={styles.footerText}>{link.promptText}</Text>
-              <Text style={styles.footerLink} onPress={link.onPress}>
-                {link.linkText}
-              </Text>
+            <View key={idx}>
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>{link.promptText}</Text>
+                <Text
+                  style={[styles.footerLink, link.disabled && styles.footerLinkDisabled]}
+                  onPress={link.disabled ? undefined : link.onPress}
+                >
+                  {link.linkText}
+                </Text>
+              </View>
+              {link.disabled && !!link.disabledMessage && (
+                <Text style={styles.footerWarning}>{link.disabledMessage}</Text>
+              )}
             </View>
           ))}
         </ScrollView>
@@ -366,5 +376,14 @@ const getStyles = (Colors: ThemeColors) =>
     footerLink: {
       ...Type.captionBold,
       color: Colors.teal,
+    },
+    footerLinkDisabled: {
+      color: Colors.inkTertiary,
+    },
+    footerWarning: {
+      ...Type.caption,
+      color: Colors.danger,
+      textAlign: 'center',
+      marginTop: Spacing.xxs,
     },
   });

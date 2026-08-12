@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,9 +13,17 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.scheduler import notice_scheduler
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
+        logger.warning(
+            "SMTP_EMAIL / SMTP_APP_PASSWORD are not set — OTP emails (registration, "
+            "password reset) will NOT be sent. The API will still report success on "
+            "/auth/send-otp. See RENDER_DEPLOY.md, section 4, to configure them."
+        )
     scheduler_task = asyncio.create_task(notice_scheduler())
     try:
         yield
