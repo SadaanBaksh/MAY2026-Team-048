@@ -40,8 +40,10 @@ class Settings(BaseSettings):
     PUBLIC_SIMILARITY_THRESHOLD: float = 0.80
     PUBLIC_SIMILARITY_CANDIDATE_LIMIT: int = 20
 
-    SMTP_EMAIL: str = ""
-    SMTP_APP_PASSWORD: str = ""
+    SENDGRID_API_KEY: str = ""
+    # Must be an address verified under SendGrid's Single Sender Verification (or a
+    # domain-authenticated address) — SendGrid rejects sends from anything else.
+    SENDGRID_FROM_EMAIL: str = ""
 
     @property
     def cors_origins(self) -> list[str]:

@@ -1,49 +1,23 @@
 import logging
-import smtplib
-import socket
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
+import requests
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-
-class _IPv4SMTP(smtplib.SMTP):
-    """smtplib.SMTP, but the TCP connection is forced over IPv4.
-
-    Some hosts (Render's outbound network, notably) hand back an IPv6 address
-    for smtp.gmail.com with no working IPv6 route, which fails with
-    "[Errno 101] Network is unreachable" before STARTTLS/login ever run.
-    Overriding just the socket connect (not the hostname used for TLS SNI/cert
-    checks in starttls()) sidesteps that without weakening TLS verification.
-    """
-
-    def _get_socket(self, host, port, timeout):
-        # smtplib's default timeout is socket._GLOBAL_DEFAULT_TIMEOUT (a sentinel
-        # object, not None), so let create_connection handle it rather than
-        # reimplementing that sentinel check ourselves.
-        exc = None
-        for family, _, _, _, sockaddr in socket.getaddrinfo(
-            host, port, socket.AF_INET, socket.SOCK_STREAM
-        ):
-            try:
-                return socket.create_connection(
-                    sockaddr[:2], timeout, source_address=self.source_address
-                )
-            except OSError as e:
-                exc = e
-        raise exc or OSError(f"No IPv4 address found for {host}")
+SENDGRID_TIMEOUT_SECONDS = 10
+SENDGRID_SEND_URL = "https://api.sendgrid.com/v3/mail/send"
 
 
 def send_otp_email(to_email: str, otp: str, purpose: str) -> None:
-    if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
-        logger.warning("SMTP credentials not configured. Skipping email sending.")
+    if not settings.SENDGRID_API_KEY or not settings.SENDGRID_FROM_EMAIL:
+        logger.warning("SendGrid credentials not configured. Skipping email sending.")
         return
 
     subject = "Simplifix - OTP Verification"
     body = ""
-    
+
     if purpose == "register":
         subject = "Welcome to Simplifix! Your Verification Code"
         body = f"<p>Hello,</p><p>Your verification code for registration is: <strong>{otp}</strong></p><p>This code will expire in 15 minutes.</p>"
@@ -56,17 +30,25 @@ def send_otp_email(to_email: str, otp: str, purpose: str) -> None:
     else:
         body = f"<p>Your OTP code is: <strong>{otp}</strong></p>"
 
-    msg = MIMEMultipart()
-    msg['From'] = settings.SMTP_EMAIL
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'html'))
+    payload = {
+        "personalizations": [{"to": [{"email": to_email}]}],
+        "from": {"email": settings.SENDGRID_FROM_EMAIL, "name": "Simplifix"},
+        "subject": subject,
+        "content": [{"type": "text/html", "value": body}],
+    }
 
     try:
-        with _IPv4SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(settings.SMTP_EMAIL, settings.SMTP_APP_PASSWORD)
-            server.send_message(msg)
-            logger.info(f"OTP email sent successfully to {to_email} for purpose {purpose}")
-    except Exception as e:
-        logger.error(f"Failed to send OTP email to {to_email}: {e}")
+        response = requests.post(
+            SENDGRID_SEND_URL,
+            headers={
+                "Authorization": f"Bearer {settings.SENDGRID_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=SENDGRID_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        logger.info(f"OTP email sent successfully to {to_email} for purpose {purpose}")
+    except requests.RequestException as e:
+        detail = e.response.text if e.response is not None else str(e)
+        logger.error(f"Failed to send OTP email to {to_email}: {detail}")

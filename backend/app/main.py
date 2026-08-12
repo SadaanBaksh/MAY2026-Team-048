@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
+    if not settings.SENDGRID_API_KEY or not settings.SENDGRID_FROM_EMAIL:
         logger.warning(
-            "SMTP_EMAIL / SMTP_APP_PASSWORD are not set — OTP emails (registration, "
+            "SENDGRID_API_KEY / SENDGRID_FROM_EMAIL are not set — OTP emails (registration, "
             "password reset) will NOT be sent. The API will still report success on "
             "/auth/send-otp. See RENDER_DEPLOY.md, section 4, to configure them."
         )
