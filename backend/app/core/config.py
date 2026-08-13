@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
 
-    BACKEND_CORS_ORIGINS: str = "http://localhost:8081,http://localhost:19006"
+    BACKEND_CORS_ORIGINS: str = "http://localhost:8081,http://localhost:19006, https://may2026-team-048.onrender.com"
 
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
