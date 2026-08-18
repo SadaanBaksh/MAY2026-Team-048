@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -286,6 +286,23 @@ export default function ResidentHomeScreen() {
           )}
         </View>
       </Screen>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Request emergency service"
+        style={({ pressed }) => [styles.emergencyFab, pressed && styles.fabPressed]}
+        onPress={() => router.push('/(resident)/emergency' as Href)}
+      >
+        <Ionicons name="warning" size={24} color={Colors.white} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open AI assistant"
+        style={({ pressed }) => [styles.chatFab, pressed && styles.fabPressed]}
+        onPress={() => router.push('/(resident)/chat')}
+      >
+        <Ionicons name="sparkles" size={24} color={Colors.white} />
+      </Pressable>
     </View>
   );
 }
@@ -353,6 +370,41 @@ function StatCard({
 const getStyles = (Colors: ThemeColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: Colors.surfaceMuted },
+    chatFab: {
+      position: 'absolute',
+      right: Spacing.lg,
+      bottom: Spacing.xl,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: Colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
+      zIndex: 10,
+    },
+    emergencyFab: {
+      position: 'absolute',
+      right: Spacing.lg,
+      bottom: Spacing.xl + 68,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: Colors.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: Colors.danger,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
+      zIndex: 10,
+    },
+    fabPressed: { opacity: 0.8, transform: [{ scale: 0.96 }] },
     screenContent: {
       paddingHorizontal: Spacing.lg,
       paddingTop: Spacing.md,
