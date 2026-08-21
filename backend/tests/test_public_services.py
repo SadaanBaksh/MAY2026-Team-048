@@ -661,6 +661,83 @@ def test_employee_assigns_invalid_worker(
     assert response.status_code == 422
 
 
+def test_employee_can_reject_pending_public_service(
+    client, resident_user, employee_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    monkeypatch.setattr("app.api.v1.endpoints.public_services._score_candidates", lambda *_: [])
+    service = client.post(
+        "/api/v1/public-services/", json=public_payload(), headers=auth_headers(resident_user)
+    ).json()
+
+    response = client.patch(
+        f'/api/v1/public-services/{service["id"]}',
+        json={"status": "Rejected", "resolution_remarks": "Not a real public issue."},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "Rejected"
+    assert body["resolution_remarks"] == "Not a real public issue."
+
+    # Locked once rejected, just like Resolved/Merged.
+    follow_up = client.patch(
+        f'/api/v1/public-services/{service["id"]}',
+        json={"resolution_remarks": "second try"},
+        headers=auth_headers(employee_user),
+    )
+    assert follow_up.status_code == 409
+
+    comment = client.post(
+        f'/api/v1/public-services/{service["id"]}/comments',
+        json={"message": "still discussing?"},
+        headers=auth_headers(resident_user),
+    )
+    assert comment.status_code == 409
+
+
+def test_reject_public_service_requires_a_reason(
+    client, resident_user, employee_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    monkeypatch.setattr("app.api.v1.endpoints.public_services._score_candidates", lambda *_: [])
+    service = client.post(
+        "/api/v1/public-services/", json=public_payload(), headers=auth_headers(resident_user)
+    ).json()
+
+    response = client.patch(
+        f'/api/v1/public-services/{service["id"]}',
+        json={"status": "Rejected"},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 422
+
+
+def test_reject_public_service_forbidden_once_assigned(
+    client, resident_user, employee_user, maintenance_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    monkeypatch.setattr("app.api.v1.endpoints.public_services._score_candidates", lambda *_: [])
+    service = client.post(
+        "/api/v1/public-services/", json=public_payload(), headers=auth_headers(resident_user)
+    ).json()
+    client.patch(
+        f'/api/v1/public-services/{service["id"]}',
+        json={"worker_id": maintenance_user.id},
+        headers=auth_headers(employee_user),
+    )
+
+    response = client.patch(
+        f'/api/v1/public-services/{service["id"]}',
+        json={"status": "Rejected", "resolution_remarks": "too late"},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 409
+
+
 def test_employee_cannot_set_status_to_merged_directly(
     client, resident_user, employee_user, make_category, auth_headers, monkeypatch
 ):

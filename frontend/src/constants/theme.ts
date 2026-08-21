@@ -57,7 +57,7 @@ export type PriorityColorPalette = Record<
   PriorityColorEntry
 >;
 export type StatusColorPalette = Record<
-  'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed' | 'Cancelled',
+  'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed' | 'Cancelled' | 'Rejected',
   PriorityColorEntry
 >;
 
@@ -178,6 +178,7 @@ export const LightStatusColors: StatusColorPalette = {
   Resolved: { text: '#1C9C6E', soft: '#E4F7EF', dot: '#1C9C6E' },
   Closed: { text: '#5B5F6D', soft: '#EEF0F6', dot: '#9296A3' },
   Cancelled: { text: '#B23B3B', soft: '#FCE9E9', dot: '#DD4B4B' },
+  Rejected: { text: '#8A2E2E', soft: '#F5DEDE', dot: '#A13D3D' },
 };
 
 export const DarkStatusColors: StatusColorPalette = {
@@ -187,6 +188,7 @@ export const DarkStatusColors: StatusColorPalette = {
   Resolved: { text: '#3FBE8E', soft: '#173A2C', dot: '#3FBE8E' },
   Closed: { text: '#A9ADBB', soft: '#22242D', dot: '#7B7F8F' },
   Cancelled: { text: '#E6716F', soft: '#3D1D1C', dot: '#E6716F' },
+  Rejected: { text: '#D98A8A', soft: '#3A2020', dot: '#C24B4B' },
 };
 
 export const Spacing = {

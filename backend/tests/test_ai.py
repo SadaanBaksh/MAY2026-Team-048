@@ -35,6 +35,33 @@ def test_analyze_complaint_uses_structured_result(
     assert response.json()["priority"] == "High"
 
 
+def test_analyze_complaint_flags_media_unrelated_to_maintenance(
+    client, auth_headers, resident_user, category, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.ai.generate_multimodal_json",
+        lambda **_: {
+            "is_valid_complaint": False,
+            "rejection_reason": "The photo shows a cat, not a maintenance issue.",
+            "ai_description": "",
+            "category_id": "",
+            "priority": "Low",
+            "confidence": 0.0,
+        },
+    )
+
+    response = client.post(
+        "/api/v1/ai/analyze-complaint",
+        json={"resident_note": "look at my cat"},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["is_valid_complaint"] is False
+    assert "cat" in body["rejection_reason"]
+
+
 def test_analyze_complaint_is_resident_only(client, auth_headers, employee_user, category):
     response = client.post(
         "/api/v1/ai/analyze-complaint",
@@ -510,6 +537,38 @@ def test_dashboard_summary_excludes_cancelled_from_open_stats(
         headers=auth_headers(resident_user),
     )
     assert cancelled.status_code == 200, cancelled.text
+
+    captured = {}
+
+    def _capture(**kwargs):
+        captured["prompt"] = kwargs["prompt"]
+        return {"summary": "Test summary."}
+
+    monkeypatch.setattr("app.api.v1.endpoints.ai.generate_json", _capture)
+
+    response = client.get("/api/v1/ai/dashboard-summary", headers=auth_headers(manager_user))
+    assert response.status_code == 200, response.text
+    assert "Unassigned tickets: 0" in captured["prompt"]
+    assert "Resolution rate: 0%" in captured["prompt"]
+
+
+def test_dashboard_summary_excludes_rejected_from_open_stats(
+    client, auth_headers, resident_user, employee_user, manager_user, category, monkeypatch
+):
+    """A rejected ticket was dismissed by staff as implausible before any work started - it
+    shouldn't inflate 'unassigned'/'overdue' counts or drag down the resolution rate either,
+    same treatment as a resident-cancelled ticket."""
+    created = client.post(
+        "/api/v1/tickets/",
+        json={"title": "Leaking faucet", "category_id": category.id},
+        headers=auth_headers(resident_user),
+    ).json()
+    rejected = client.patch(
+        f"/api/v1/tickets/{created['id']}",
+        json={"status": "Rejected", "resolution_remarks": "Not a real complaint."},
+        headers=auth_headers(employee_user),
+    )
+    assert rejected.status_code == 200, rejected.text
 
     captured = {}
 

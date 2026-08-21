@@ -119,7 +119,18 @@ export function AuthLoginScreen({
 
   return (
     <View style={styles.wrapper}>
-      <ScreenHeader title={headerTitle} showBack onBack={() => router.back()} />
+      <ScreenHeader
+        title={headerTitle}
+        showBack
+        onBack={() => {
+          // These screens are often reached via router.replace() (e.g. logging out clears the
+          // history stack entirely), which leaves nothing for router.back() to go to - that
+          // throws "GO_BACK not handled" on native and silently no-ops on web. Fall back to the
+          // landing page whenever there's genuinely nowhere to go back to.
+          if (router.canGoBack()) router.back();
+          else router.replace('/(auth)/landing');
+        }}
+      />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

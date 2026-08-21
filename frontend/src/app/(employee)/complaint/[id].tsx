@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
@@ -21,7 +21,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import { APARTMENTS } from '@/data/seed';
 import { getCategoryById } from '@/data/categories';
-import { Spacing, Type } from '@/constants/theme';
+import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useTicketStore } from '@/store/ticketStore';
@@ -41,6 +41,7 @@ export default function EmployeeComplaintDetailScreen() {
   const history = useTicketStore((s) => s.history);
   const comments = useTicketStore((s) => s.comments);
   const reviewAndAssign = useTicketStore((s) => s.reviewAndAssign);
+  const rejectTicket = useTicketStore((s) => s.rejectTicket);
   const refreshTickets = useTicketStore((s) => s.refreshTickets);
   const refreshComments = useTicketStore((s) => s.refreshComments);
   const refreshTicketHistory = useTicketStore((s) => s.refreshTicketHistory);
@@ -63,6 +64,9 @@ export default function EmployeeComplaintDetailScreen() {
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(ticket?.workerId ?? null);
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectError, setRejectError] = useState('');
 
   const resident = ticket ? users.find((u) => u.userId === ticket.residentId) : null;
   const apartment =
@@ -128,6 +132,35 @@ export default function EmployeeComplaintDetailScreen() {
     } finally {
       setAssigning(false);
     }
+  };
+
+  const doReject = async () => {
+    if (!token || rejecting || !rejectReason.trim()) return;
+    setRejectError('');
+    setRejecting(true);
+    try {
+      await rejectTicket(token, ticket.ticketId, rejectReason.trim());
+      router.back();
+    } catch (err) {
+      setRejectError(
+        err instanceof ApiError ? err.message : 'Could not reject this complaint. Please try again.',
+      );
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const handleRejectPress = () => {
+    const message = `This will dismiss the complaint as implausible and notify the resident with your reason: "${rejectReason.trim()}". This cannot be undone.`;
+    // Alert.alert's buttons/onPress never fire on web - react-native-web ships it as a no-op.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Reject this complaint?\n\n${message}`)) doReject();
+      return;
+    }
+    Alert.alert('Reject this complaint?', message, [
+      { text: 'Keep Complaint', style: 'cancel' },
+      { text: 'Reject', style: 'destructive', onPress: doReject },
+    ]);
   };
 
   return (
@@ -255,6 +288,33 @@ export default function EmployeeComplaintDetailScreen() {
           ) : null}
         </View>
 
+        {ticket.status === 'Pending' && (
+          <Card style={styles.rejectCard}>
+            <Text style={styles.sectionTitleLg}>Reject Complaint</Text>
+            <Text style={styles.body}>
+              If this complaint isn&rsquo;t a real maintenance issue, reject it with a reason. The
+              resident will be notified.
+            </Text>
+            <TextInput
+              value={rejectReason}
+              onChangeText={setRejectReason}
+              placeholder="Reason for rejecting (required)"
+              placeholderTextColor={Colors.inkTertiary}
+              multiline
+              style={styles.rejectInput}
+            />
+            {!!rejectError && <Text style={styles.error}>{rejectError}</Text>}
+            <Button
+              label={rejecting ? 'Rejecting…' : 'Reject Complaint'}
+              icon="ban-outline"
+              variant="danger"
+              fullWidth
+              disabled={rejecting || !rejectReason.trim()}
+              onPress={handleRejectPress}
+            />
+          </Card>
+        )}
+
         {ticket.status === 'Closed' && ticket.residentRating != null && (
           <Card>
             <Text style={styles.sectionLabel}>Resident Feedback</Text>
@@ -356,5 +416,18 @@ const getStyles = (Colors: ThemeColors) =>
     workerCardSelected: {
       borderColor: Colors.primary,
       backgroundColor: Colors.primarySoft,
+    },
+    rejectCard: {
+      gap: Spacing.sm,
+    },
+    rejectInput: {
+      minHeight: 70,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: Colors.border,
+      borderRadius: Radius.md,
+      padding: Spacing.sm,
+      color: Colors.ink,
+      textAlignVertical: 'top',
+      backgroundColor: Colors.surfaceMuted,
     },
   });

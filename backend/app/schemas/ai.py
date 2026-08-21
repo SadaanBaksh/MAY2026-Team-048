@@ -16,6 +16,8 @@ class ComplaintAnalysisRead(BaseModel):
     category_id: str
     priority: Priority
     confidence: float = Field(ge=0, le=1)
+    is_valid_complaint: bool = True
+    rejection_reason: str | None = None
 
 
 class ChatTurn(BaseModel):

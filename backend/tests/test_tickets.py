@@ -293,6 +293,78 @@ def test_resident_cannot_cancel_assigned_ticket(
     assert response.status_code == 403
 
 
+def test_employee_can_reject_pending_ticket(
+    client, auth_headers, resident_user, employee_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Rejected", "resolution_remarks": "Photo shows a cat, not an issue."},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "Rejected"
+    assert body["resolution_remarks"] == "Photo shows a cat, not an issue."
+
+    history = client.get(
+        f"/api/v1/tickets/{ticket['id']}/history", headers=auth_headers(employee_user)
+    ).json()
+    assert [h["new_status"] for h in history] == ["Pending", "Rejected"]
+
+    notifications = client.get(
+        "/api/v1/notifications/me", headers=auth_headers(resident_user)
+    ).json()
+    assert any(n["title"] == "Complaint rejected" for n in notifications)
+
+
+def test_reject_requires_a_reason(client, auth_headers, resident_user, employee_user, category):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Rejected"},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 422
+
+
+def test_reject_forbidden_for_non_employee(
+    client, auth_headers, resident_user, manager_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+
+    for actor in (manager_user, maintenance_user):
+        response = client.patch(
+            f"/api/v1/tickets/{ticket['id']}",
+            json={"status": "Rejected", "resolution_remarks": "Not a real issue."},
+            headers=auth_headers(actor),
+        )
+        assert response.status_code == 403
+
+
+def test_reject_forbidden_once_assigned(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        headers=auth_headers(employee_user),
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Rejected", "resolution_remarks": "Not a real issue."},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 409
+
+
 def test_resident_cannot_update_other_fields(client, auth_headers, resident_user, category):
     ticket = _create_ticket(client, auth_headers, resident_user, category)
 
