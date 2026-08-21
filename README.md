@@ -165,7 +165,7 @@ Facility Manager) if you ran the optional seed scripts in step 2 — or register
 - Abhay Sharma - @asabhaysharma
 - Anusha Saha - @anusha-saha-3007
 - Mursleen Khan - @MursleenK
-- Namit Gutpa - @NamitCodes
+- Namit Gupta - @NamitCodes
 - Sadaan Baksh - @SadaanBaksh
 
 ## Team
