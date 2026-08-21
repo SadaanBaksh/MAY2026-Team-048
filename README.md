@@ -2,192 +2,163 @@
 
 Simplifix is an AI-assisted apartment community maintenance management system built by **Pied Piper (MAY2026-Team-048)** as a curriculum requirement for the **B.S. in Data Science and Applications, IIT Madras**.
 
-The project aims to replace fragmented maintenance communication across WhatsApp messages, phone calls, and paper registers with a structured workflow for reporting, assigning, resolving, and tracking residential maintenance complaints.
+The project replaces fragmented maintenance communication across WhatsApp messages, phone calls, and paper registers with a structured workflow for reporting, assigning, resolving, and tracking residential maintenance complaints.
 
-> Current status: the frontend mobile app runs on local mock data and on-device storage. A FastAPI + PostgreSQL backend skeleton (auth, data models, and CRUD APIs) has been started in [`backend/`](./backend); it is not yet wired up to the frontend. Cloud media storage and live AI integrations are still part of the planned full-system architecture.
+> Current status: a live FastAPI + PostgreSQL backend (JWT auth, AWS S3 media storage, Google Gemini AI integration) backs the Expo React Native frontend end-to-end. See [`frontend/README.md`](./frontend/README.md) and [`backend/README.md`](./backend/README.md) for how each half works, and [`docs/`](./docs) for setup, deployment, and AWS S3 guides.
+
+## Live Deployment
+
+| | URL |
+| --- | --- |
+| Frontend | https://may2026-team-048.onrender.com/ |
+| Backend API | https://simplifix-backend.onrender.com/ |
+| Backend API docs (Swagger) | https://simplifix-backend.onrender.com/docs |
+
+Both run on Render's free tier, which spins down after 15 minutes of inactivity — the first
+request after a while can take 30-60s to wake back up. See [`docs/deployment.md`](./docs/deployment.md)
+for how this is deployed.
 
 ## What the App Does
 
 Simplifix centralizes the complete complaint lifecycle for apartment communities:
 
-- Residents can create maintenance complaints, attach photos or videos, review AI-assisted complaint details, track status, verify completed work, and rate the resolution.
+- Residents can create maintenance complaints, attach photos or voice notes, review AI-assisted complaint details, track status, verify completed work, and rate the resolution.
 - Residents can publish common-area public service reports, discuss them with neighbours, and follow a shared resolution page when reports are merged.
-- Facility employees can review incoming complaints, validate AI-generated descriptions, assign jobs to maintenance staff, monitor workloads, and handle overdue complaints.
+- Facility employees can review incoming complaints, validate AI-generated descriptions, assign jobs to maintenance staff, monitor workloads, handle overdue complaints, and reject implausible complaints or public reports with a required reason.
 - Facility employees receive AI similarity suggestions for public reports and decide whether matching reports should be merged into a new combined service page.
 - Maintenance staff can view assigned jobs, inspect complaint details and media, update repair progress, add remarks, and upload completion proof.
-- Facility managers can monitor analytics, complaint trends, staff performance, workload distribution, recurring issues, and historical records.
+- Facility managers can monitor analytics, complaint trends, staff performance, workload distribution, recurring issues, and historical records, and draft AI-assisted resident notices.
 
-The intended complaint lifecycle is:
+The complaint lifecycle:
 
 ```text
 Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Closed
+                    \-> Rejected (facility employee, Pending only, reason required)
 ```
 
 ## Key Features
 
-- AI-assisted complaint description, category, and priority suggestions
+- AI-assisted complaint description, category, and priority suggestions, including flagging media/text that isn't a real maintenance issue
 - AI-assisted manager notices with tower targeting, editable drafts, scheduled delivery, and expiry
-- Media-based complaint reporting with image/video attachments
+- AI resident support chat and AI-generated role-specific dashboard summaries
+- Media-based complaint reporting via AWS S3-backed photo/voice-note uploads
 - Role-based app experience for residents, facility employees, maintenance staff, and facility managers
-- Complaint status tracking from submission to closure
+- Complaint status tracking from submission to closure, including employee-reviewed rejection
 - Worker assignment and workload visibility
 - Completion proof, remarks, resident verification, and ratings
-- Searchable complaint history and audit trail
+- Searchable complaint history and full audit trail
 - Society-wide public service feed with comments and dedicated issue pages
 - Employee-approved AI similarity scoring and information-preserving report merges
 - Manager analytics for resolution time, category trends, recurring issues, and staff performance
 
-## Current Implementation
+## Architecture
 
-The repository contains the Expo React Native frontend in [`frontend/`](./frontend) and a FastAPI +
-PostgreSQL backend skeleton in [`backend/`](./backend).
+- [`frontend/`](./frontend) — Expo React Native app (Expo Router, TypeScript, Zustand), talks to the backend over `EXPO_PUBLIC_API_URL`. See [`frontend/README.md`](./frontend/README.md).
+- [`backend/`](./backend) — FastAPI + PostgreSQL API (SQLAlchemy, Alembic, JWT auth, Gemini AI, AWS S3). See [`backend/README.md`](./backend/README.md).
+- [`docs/`](./docs) — local setup, AWS S3 setup, and production deployment guides.
 
-Implemented frontend capabilities include:
+| Layer | Stack |
+| --- | --- |
+| Frontend | Expo, Expo Router, React Native, TypeScript, Zustand |
+| Backend | FastAPI, PostgreSQL, SQLAlchemy 2.0, Alembic, JWT (`python-jose`/`passlib`) |
+| AI | Google Gemini (or the AI Pipe Gemini-compatible proxy) |
+| Media storage | AWS S3 |
+| Local dev | Docker Compose |
+| Production | Render (backend + Postgres) — see [`docs/deployment.md`](./docs/deployment.md) |
 
-- Expo Router file-based navigation
-- Role-specific screen groups for all four user types
-- Demo login accounts for quick role switching
-- Mock complaint, user, worker, notification, and analytics data
-- Zustand stores persisted with `AsyncStorage`
-- Server-backed Gemini complaint analysis and resident support chat
-- Resident complaint creation and tracking flows
-- Employee triage and assignment flows
-- Maintenance job update flows
-- Manager analytics, history, and performance views
-- Public service creation, discussion, assignment, resolution, merge review, and analytics flows
-- Manager notice drafting/scheduling and targeted resident notice feeds
+## Run It Locally
 
-The frontend needs no API key. To enable AI features, add `GEMINI_API_KEY` to `backend/.env`;
-keep it server-side and never use an `EXPO_PUBLIC_` variable for it.
-
-## Setup
+Both halves — backend API and Expo app — need to be running together. Start the backend first,
+then the frontend.
 
 ### Prerequisites
 
-- Node.js and npm
-- Expo-compatible mobile device with Expo Go, Android Emulator, iOS Simulator, or a web browser
-- Git
+- **Git**
+- **Docker Desktop** (runs Postgres + the API in containers — no manual Postgres install). See
+  [`docs/setup.md`](./docs/setup.md) if you'd rather install PostgreSQL natively instead.
+- **Node.js and npm**, for the Expo frontend
+- An Expo-compatible target: Android Emulator, iOS Simulator, a web browser, or a physical phone
+  with the **Expo Go** app
 
-The project uses Expo. Expo SDK packages should be installed and kept in compatible versions through Expo tooling, for example with `npx expo install`, as recommended by the Expo documentation.
+### 1. Clone and start the backend
 
-### Run the Frontend
+```bash
+git clone <this repo's URL>
+cd MAY2026-Team-048/backend
+cp .env.example .env
+docker compose up --build
+```
 
-From the repository root:
+Leave this running in its own terminal. The first run takes a minute or two to build; it also
+runs database migrations automatically before the API starts.
+
+### 2. Seed data (one-time, in a second terminal)
+
+```bash
+cd backend
+docker compose exec api python -m scripts.seed_categories     # required
+docker compose exec api python -m scripts.seed_demo_users     # optional - enables the demo-login buttons
+docker compose exec api python -m scripts.seed_demo_services  # optional - sample tickets/public services
+```
+
+### 3. Confirm the backend is up
+
+Open http://localhost:8000/docs in a browser — you should see the interactive Swagger UI. Or:
+
+```bash
+curl http://localhost:8000/health
+# {"status":"ok"}
+```
+
+### 4. Set up and start the frontend
+
+In a third terminal:
 
 ```bash
 cd frontend
 npm install
+cp .env.example .env
+```
+
+Open `frontend/.env` and set `EXPO_PUBLIC_API_URL` to where the backend is reachable from your
+Expo target:
+
+| Target | `EXPO_PUBLIC_API_URL` |
+| --- | --- |
+| Web browser or iOS Simulator (same machine) | `http://localhost:8000` |
+| Android Emulator | `http://10.0.2.2:8000` |
+| Physical phone (Expo Go) | `http://<your machine's LAN IP>:8000` — find it with `ipconfig` (Windows) / `ifconfig` (macOS/Linux); phone and computer must be on the same Wi-Fi |
+
+Then start Expo:
+
+```bash
 npx expo start
 ```
 
-Then choose a target from the Expo terminal:
+In the Expo terminal: press `w` for web, `a` for Android Emulator, `i` for iOS Simulator, or scan
+the QR code with Expo Go on your phone.
 
-- Press `a` to open Android Emulator
-- Press `i` to open iOS Simulator
-- Press `w` to open the web app
-- Scan the QR code with Expo Go on a physical phone connected to the same network
+### 5. Log in
 
-### Try Demo Roles
+On the login screen, tap any demo account (Resident, Facility Employee, Maintenance Staff,
+Facility Manager) if you ran the optional seed scripts in step 2 — or register a real account.
 
-On the login screen, select any demo account to enter the app as:
+### Troubleshooting and other setups
 
-- Resident
-- Facility Employee
-- Maintenance Staff
-- Facility Manager
-
-## Project Structure
-
-```text
-MAY2026-Team-048/
-├─ README.md                 # Root project overview
-├─ LICENSE
-├─ frontend/                 # Current Expo React Native application
-│  ├─ src/
-│  │  ├─ app/                # Expo Router screens and route groups
-│  │  │  ├─ (auth)/          # Welcome, login, and registration screens
-│  │  │  ├─ (resident)/      # Resident dashboard, complaints, details, notifications
-│  │  │  ├─ (employee)/      # Employee dashboard, queue, workers, assignment
-│  │  │  ├─ (maintenance)/   # Maintenance staff job list and job detail flows
-│  │  │  └─ (manager)/       # Manager analytics, performance, history, details
-│  │  ├─ components/
-│  │  │  ├─ ui/              # Reusable UI primitives
-│  │  │  └─ shared/          # Domain-specific shared components
-│  │  ├─ constants/          # Theme and design tokens
-│  │  ├─ data/               # Mock data and categories
-│  │  ├─ store/              # Zustand stores
-│  │  ├─ types/              # Shared TypeScript types
-│  │  └─ utils/              # Date, ID, overdue, and mock AI helpers
-│  ├─ assets/                # App icons, splash assets, and images
-│  ├─ scripts/               # Utility scripts
-│  ├─ app.json               # Expo app configuration
-│  ├─ metro.config.js        # Metro bundler configuration
-│  ├─ package.json           # Frontend dependencies and scripts
-│  └─ tsconfig.json          # TypeScript configuration
-└─ backend/                  # FastAPI + PostgreSQL backend skeleton
-   ├─ app/
-   │  ├─ core/               # Settings, password hashing, JWT
-   │  ├─ db/                 # SQLAlchemy engine/session, declarative base
-   │  ├─ models/              # SQLAlchemy models
-   │  ├─ schemas/             # Pydantic request/response models
-   │  ├─ api/v1/endpoints/    # auth, users, apartments, categories, tickets, comments, notifications
-   │  └─ main.py              # FastAPI app entrypoint
-   ├─ alembic/                # Database migrations
-   ├─ scripts/                # Seed scripts
-   ├─ requirements.txt
-   ├─ Dockerfile
-   └─ docker-compose.yml
-
-```
+- Full step-by-step guide, including a no-Docker/native-PostgreSQL option and a troubleshooting
+  table: [`docs/setup.md`](./docs/setup.md)
+- Full frontend setup details: [`frontend/README.md`](./frontend/README.md)
+- Testing photo/voice-note uploads locally needs AWS S3 configured: [`docs/s3-setup.md`](./docs/s3-setup.md)
+- Deploying the backend (Render): [`docs/deployment.md`](./docs/deployment.md)
 
 ## Roles
 
 | Role              | Route group     | Primary responsibilities                                                                |
-| ----------------- | --------------- | --------------------------------------------------------------------------------------- |
+| ----------------- | --------------- | ----------------------------------------------------------------------------------------- |
 | Resident          | `(resident)`    | Submit complaints, attach media, track progress, verify completion, rate work           |
-| Facility Employee | `(employee)`    | Review complaints, validate AI output, assign workers, monitor pending and overdue work |
+| Facility Employee | `(employee)`    | Review complaints, validate AI output, assign workers, reject implausible reports, monitor pending/overdue work |
 | Maintenance Staff | `(maintenance)` | View assigned jobs, update progress, add remarks, upload completion proof               |
 | Facility Manager  | `(manager)`     | Review analytics, monitor performance, inspect history, identify recurring issues       |
-
-## Tech Stack
-
-### Current Frontend
-
-- Expo
-- Expo Router
-- React Native
-- TypeScript
-- Zustand
-- AsyncStorage
-- Expo Image Picker
-- Expo Vector Icons
-- React Native Reanimated
-- React Native SVG
-
-### Planned Full-System Stack
-
-- Backend: FastAPI
-- Database: PostgreSQL
-- ORM and migrations: SQLAlchemy + Alembic
-- Authentication: JWT
-- AI: Gemini API
-- Image and media storage: Cloudinary
-- API documentation: Swagger/OpenAPI through FastAPI
-- Charts: `react-native-chart-kit` for mobile and Chart.js where a web dashboard is added
-- Project management: GitHub Projects
-
-## Frontend Scripts
-
-Run these from [`frontend/`](./frontend):
-
-| Command                 | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| `npm run start`         | Start the Expo Metro development server                     |
-| `npm run android`       | Start Expo and open Android                                 |
-| `npm run ios`           | Start Expo and open iOS                                     |
-| `npm run web`           | Start Expo and open the web target                          |
-| `npm run lint`          | Run Expo ESLint checks                                      |
-| `npm run reset-project` | Run the local reset script provided in the frontend project |
 
 ## Contributors
 

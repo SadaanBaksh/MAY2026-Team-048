@@ -150,13 +150,13 @@ This file is already gitignored — never commit real AWS keys.
 
 ## 5. Test it
 
-1. Install the new dependency and start the API (see `SETUP.md` if you haven't already):
+1. Install the new dependency and start the API (see [setup.md](./setup.md) if you haven't already):
    ```bash
    pip install -r requirements.txt
    uvicorn app.main:app --reload
    ```
 2. Open http://localhost:8000/docs.
-3. Register/login a test user and click **Authorize** with the token (see `SETUP.md` → Next Steps).
+3. Register/login a test user and click **Authorize** with the token (see [setup.md](./setup.md) → Next Steps).
 4. Try `POST /api/v1/uploads`: set `kind` to `photo`, choose an image file, and execute.
 5. You should get back `{"url": "https://YOUR-BUCKET-NAME.s3.YOUR-REGION.amazonaws.com/photos/<uuid>.jpg"}`.
    Paste that URL into a browser tab — the image should load directly.

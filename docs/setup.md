@@ -82,14 +82,20 @@ This will:
 Leave this running in its own terminal. The first run takes a minute or two to build; subsequent
 runs are fast.
 
-### A.5 Seed the fixed category list (one-time)
+### A.5 Seed data (one-time)
 
 In a **second terminal**:
 
 ```bash
 cd backend
-docker compose exec api python -m scripts.seed_categories
+docker compose exec api python -m scripts.seed_categories     # required - complaint categories
+docker compose exec api python -m scripts.seed_demo_users     # optional - backs the frontend's demo-login chips
+docker compose exec api python -m scripts.seed_demo_services  # optional - sample tickets/public services for the demo users
 ```
+
+Only `seed_categories` is required for the API itself to work — ticket/public-service creation
+needs at least one category to exist. The other two are only needed if you want the frontend's
+one-tap demo-account logins to work; skip them if you'll register real accounts instead.
 
 ### A.6 Confirm it's working
 
@@ -215,12 +221,13 @@ curl http://localhost:8000/health
      `username`/`password` as form data) to get a token.
   3. Click "Authorize" in Swagger and paste the token to call protected endpoints like
      `POST /api/v1/tickets/`.
-- See [README.md](./README.md) for the project structure and data model overview.
-- Want to test photo/voice note uploads on tickets? See [S3_SETUP.md](./S3_SETUP.md) to set up AWS S3.
-- Run the automated test suite: see the **Testing** section in [README.md](./README.md#testing) —
-  it runs against an in-memory database, no Docker/Postgres needed just for tests.
+- See [backend/README.md](../backend/README.md) for the project structure and data model overview.
+- Want to test photo/voice note uploads on tickets? See [s3-setup.md](./s3-setup.md) to set up AWS S3.
+- Run the automated test suite: see the **Testing** section in
+  [backend/README.md](../backend/README.md#testing) — it runs against an in-memory database, no
+  Docker/Postgres needed just for tests.
 - Ready to put the backend + a real Postgres somewhere live? See
-  [RENDER_DEPLOY.md](./RENDER_DEPLOY.md) — purely additive, doesn't change local dev at all.
+  [deployment.md](./deployment.md) — purely additive, doesn't change local dev at all.
 - Changed a model? Generate a new migration:
   ```bash
   alembic revision --autogenerate -m "describe your change"

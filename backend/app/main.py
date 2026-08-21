@@ -22,7 +22,7 @@ async def lifespan(_: FastAPI):
         logger.warning(
             "SENDGRID_API_KEY / SENDGRID_FROM_EMAIL are not set — OTP emails (registration, "
             "password reset) will NOT be sent. The API will still report success on "
-            "/auth/send-otp. See RENDER_DEPLOY.md, section 4, to configure them."
+            "/auth/send-otp. See docs/deployment.md, section 4, to configure them."
         )
     scheduler_task = asyncio.create_task(notice_scheduler())
     try:

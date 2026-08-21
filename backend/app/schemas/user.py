@@ -48,7 +48,7 @@ def _validate_email_length(value: str) -> str:
 
 
 # bcrypt silently ignores anything past 72 *bytes* on some builds and hard-errors on others —
-# passlib raises `ValueError: password cannot be longer than 72 bytes` (see SETUP.md's
+# passlib raises `ValueError: password cannot be longer than 72 bytes` (see docs/setup.md's
 # troubleshooting table; this has already happened once). Checked in bytes, not characters,
 # since multi-byte UTF-8 (emoji, accents) can exceed 72 bytes well before 72 characters.
 PASSWORD_MAX_BYTES = 72

@@ -1,16 +1,16 @@
 # Simplifix Frontend
 
-This README is only for the `frontend/` Expo React Native app of Simplifix. For the complete project overview, planned backend, AI integrations, and team details, see the root [`README.md`](../README.md).
+This README is only for the `frontend/` Expo React Native app of Simplifix. For the complete project overview, backend, AI integrations, and team details, see the root [`README.md`](../README.md).
 
 Simplifix is an AI-assisted complaint management app for residential communities, with role-based mobile experiences for residents, facility employees, maintenance staff, and facility managers.
 
 ## What This Frontend Does
 
-The current frontend streamlines the maintenance-complaint lifecycle for a residential community:
+The frontend streamlines the maintenance-complaint lifecycle for a residential community:
 
-- **Residents** file complaints (plumbing, electrical, etc.) with AI-assisted category/priority suggestions, attach photos or videos, and track status through to resolution.
+- **Residents** file complaints (plumbing, electrical, etc.) with AI-assisted category/priority suggestions, attach photos or voice notes, and track status through to resolution.
 - **Residents** publish and discuss common-area issues in a separate Community feed. Each issue has a dedicated page, and merged pages retain all contributing reports.
-- **Facility employees** triage incoming complaints and assign them to maintenance staff.
+- **Facility employees** triage incoming complaints, assign them to maintenance staff, and reject implausible complaints or public reports with a required reason.
 - **Facility employees** manage public services separately and accept or decline AI similarity merge popups.
 - **Maintenance staff** work through their assigned jobs and update progress.
 - **Maintenance staff** see private and public assignments in one job queue.
@@ -19,9 +19,14 @@ The current frontend streamlines the maintenance-complaint lifecycle for a resid
 
 ## Frontend Setup
 
+This app talks to the real Simplifix backend — it has no local mock-data mode. You need a running
+backend first (local via Docker, see [`../docs/setup.md`](../docs/setup.md), or a deployed one,
+see [`../docs/deployment.md`](../docs/deployment.md)).
+
 ```bash
 cd frontend
 npm install
+cp .env.example .env   # then set EXPO_PUBLIC_API_URL, see below
 npx expo start
 ```
 
@@ -32,11 +37,27 @@ Then, in the terminal:
 - Press `w` — open in a web browser
 - Scan the QR code with the **Expo Go** app on your phone (same Wi-Fi network)
 
-No environment variables or API keys are needed for the current frontend. The app runs entirely on local mock data (`src/data`) and on-device storage (`AsyncStorage`).
+### Pointing at a backend
+
+Set `EXPO_PUBLIC_API_URL` in `frontend/.env` to the backend's URL:
+
+- Android emulator: `http://10.0.2.2:8000` (the emulator's alias for the host machine's `localhost`)
+- Web or iOS simulator, same machine as the backend: `http://localhost:8000`
+- A physical phone: your dev machine's **LAN IP** (e.g. `http://192.168.1.23:8000`, from `ipconfig`/`ifconfig`) — `localhost` on a phone refers to the phone itself, not your computer, and both devices must be on the same Wi-Fi network
+- A deployed backend (e.g. Render): its public URL, e.g. `https://simplifix-backend.onrender.com`
+
+`EXPO_PUBLIC_*` variables are baked into the JS bundle at build time — restart `expo start` after
+changing this value, reloading the app alone won't pick it up.
+
+The Gemini API key is backend-only and never goes in an `EXPO_PUBLIC_` variable — see
+[`../backend/README.md`](../backend/README.md#ai-features).
 
 ### Try it without creating an account
 
-On the login screen, tap any of the listed demo accounts to jump straight into the app as a Resident, Facility Employee, Maintenance Staff, or Facility Manager.
+On the login screen, tap any of the listed demo accounts to jump straight into the app as a
+Resident, Facility Employee, Maintenance Staff, or Facility Manager. These log in against the real
+backend, so the demo users must already exist there — local Docker setups seed them automatically
+(`docs/setup.md`); other environments need them created once (see `docs/deployment.md`).
 
 ## Frontend Project Structure
 
@@ -44,32 +65,26 @@ On the login screen, tap any of the listed demo accounts to jump straight into t
 frontend/
 ├─ src/
 │  ├─ app/                 # Expo Router screens (file-based routing)
-│  │  ├─ (auth)/           # Welcome, login, register
+│  │  ├─ (auth)/           # Landing, login, register
 │  │  ├─ (resident)/       # Resident tabs, complaint detail, new complaint
 │  │  ├─ (employee)/       # Facility employee tabs, complaint detail
 │  │  ├─ (maintenance)/    # Maintenance staff tabs, job detail
 │  │  └─ (manager)/        # Facility manager tabs, complaint detail
+│  ├─ api/                  # Backend API client
 │  ├─ components/
 │  │  ├─ ui/               # Design-system primitives (Button, Card, Badge, Chip, ...)
 │  │  └─ shared/           # Domain components built on the UI kit (TicketCard, CommentsThread, ...)
-│  ├─ store/                # Zustand stores (auth, tickets, notifications), persisted to AsyncStorage
-│  ├─ data/                 # Mock/seed data and complaint categories
+│  ├─ store/                # Zustand stores (auth, tickets, public services, notices, notifications), persisted to AsyncStorage
+│  ├─ data/                 # Complaint categories and legacy seed-data cleanup helpers
 │  ├─ types/                 # Shared TypeScript types
-│  ├─ utils/                 # Date, id, mock-AI, and overdue helpers
+│  ├─ utils/                 # Date, id, overdue, and validation helpers
 │  └─ constants/theme.ts     # Design tokens: colors, spacing, radius, type scale, shadows
 ├─ app.json
 ├─ metro.config.js
 └─ package.json
 ```
 
-## Roles
-
-| Role              | Route group     | Can do                                         |
-| ----------------- | --------------- | ---------------------------------------------- |
-| Resident          | `(resident)`    | File complaints, track status, view history    |
-| Facility Employee | `(employee)`    | Triage complaints, assign to maintenance staff |
-| Maintenance Staff | `(maintenance)` | View and update assigned jobs                  |
-| Facility Manager  | `(manager)`     | Portfolio-wide history and performance view    |
+Roles and route groups are listed in the root [`README.md`](../README.md#roles).
 
 ## Frontend Tech Stack
 
@@ -84,6 +99,7 @@ Run these commands from the `frontend/` directory.
 - `npm run start` — start the Metro dev server
 - `npm run ios` / `npm run android` / `npm run web` — start and open a specific platform
 - `npm run lint` — run ESLint
+- `npm test` — run the Jest test suite
 
 ## Notes
 
