@@ -71,7 +71,8 @@ export function PublicServiceDetail() {
 
   const comments = commentsByService[service.id] ?? [];
   const isContributor = service.reports.some((report) => report.authorId === user.userId);
-  const locked = service.status === 'Resolved' || service.status === 'Merged';
+  const locked =
+    service.status === 'Resolved' || service.status === 'Merged' || service.status === 'Rejected';
   const workers = users.filter(
     (item): item is MaintenanceStaff =>
       item.role === 'maintenance_staff' && item.accountStatus === 'active',
@@ -107,6 +108,22 @@ export function PublicServiceDetail() {
     Alert.alert('Mark this issue resolved?', message, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Mark Resolved', onPress: resolve },
+    ]);
+  };
+
+  const rejectService = () => {
+    const reason = remarks.trim();
+    if (!reason) return;
+    const doReject = () => doUpdate({ status: 'Rejected', resolution_remarks: reason });
+    const message = `This will dismiss the report as implausible and notify contributors with your reason: "${reason}". This cannot be undone.`;
+    // Alert.alert's buttons/onPress never fire on web - react-native-web ships it as a no-op.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Reject this report?\n\n${message}`)) doReject();
+      return;
+    }
+    Alert.alert('Reject this report?', message, [
+      { text: 'Keep Report', style: 'cancel' },
+      { text: 'Reject', style: 'destructive', onPress: doReject },
     ]);
   };
 
@@ -252,6 +269,17 @@ export function PublicServiceDetail() {
                 onPress={() => doUpdate({ status: 'Resolved', resolution_remarks: remarks.trim() })}
               />
             )}
+            {user.role === 'facility_employee' && service.status === 'Pending' && (
+              <Button
+                label="Reject as Implausible"
+                icon="ban-outline"
+                variant="danger"
+                fullWidth
+                loading={working}
+                disabled={!remarks.trim()}
+                onPress={rejectService}
+              />
+            )}
           </Card>
         )}
 
@@ -270,6 +298,15 @@ export function PublicServiceDetail() {
             <Text style={styles.sectionTitle}>Resolved</Text>
             <Text style={styles.body}>
               {service.resolutionRemarks || 'This public issue has been resolved.'}
+            </Text>
+          </Card>
+        )}
+
+        {service.status === 'Rejected' && (
+          <Card style={styles.rejectedCard}>
+            <Text style={styles.sectionTitle}>Rejected</Text>
+            <Text style={styles.body}>
+              {service.resolutionRemarks || 'The facility team determined this was not a real issue.'}
             </Text>
           </Card>
         )}
@@ -346,5 +383,6 @@ const getStyles = (Colors: ThemeColors) =>
       backgroundColor: Colors.surfaceMuted,
     },
     resolvedCard: { gap: 4, backgroundColor: Colors.successSoft },
+    rejectedCard: { gap: 4, backgroundColor: Colors.dangerSoft },
     error: { ...Type.caption, color: Colors.danger },
   });

@@ -163,6 +163,23 @@ def update_ticket(
                 detail="Maintenance staff can only update progress on assigned tickets",
             )
 
+    if updates.get("status") == TicketStatus.Rejected:
+        if current_user.role != UserRole.facility_employee:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only facility employees can reject a complaint",
+            )
+        if ticket.status != TicketStatus.Pending:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only a pending complaint can be rejected - it's already being worked on",
+            )
+        if not (updates.get("resolution_remarks") or "").strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="A reason is required to reject a complaint",
+            )
+
     new_status = updates.get("status")
     old_status = ticket.status
     for field, value in updates.items():
@@ -239,6 +256,17 @@ def update_ticket(
                     title="Complaint cancelled",
                     message=f"{current_user.name} cancelled: {ticket.title}.",
                 )
+        elif new_status == TicketStatus.Rejected:
+            notify_user(
+                db,
+                user_id=ticket.resident_id,
+                ticket_id=ticket.id,
+                title="Complaint rejected",
+                message=(
+                    f'Your complaint "{ticket.title}" was rejected: '
+                    f"{updates.get('resolution_remarks')}"
+                ),
+            )
         elif new_status == TicketStatus.Closed and "resident_rating" in updates:
             if ticket.worker_id:
                 # Recompute the worker's displayed rating (`User.rating`) as the average of

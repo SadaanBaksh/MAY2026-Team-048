@@ -25,6 +25,7 @@ const STATUS_FILTERS: StatusFilter[] = [
   'Resolved',
   'Closed',
   'Cancelled',
+  'Rejected',
 ];
 
 export default function EmployeeComplaintsScreen() {

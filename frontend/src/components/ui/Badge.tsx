@@ -30,6 +30,7 @@ const STATUS_LABELS: Record<TicketStatus | PublicServiceStatus, string> = {
   Closed: 'Closed',
   Cancelled: 'Cancelled',
   Merged: 'Merged',
+  Rejected: 'Rejected',
 };
 
 export function StatusBadge({ status }: { status: TicketStatus | PublicServiceStatus }) {

@@ -264,6 +264,15 @@ export default function ResidentComplaintDetailScreen() {
           </Card>
         )}
 
+        {ticket.status === 'Rejected' && (
+          <Card style={styles.rejectedCard}>
+            <Text style={styles.sectionLabel}>Why this was rejected</Text>
+            <Text style={styles.body}>
+              {ticket.resolutionRemarks || 'The facility team determined this was not a maintenance issue.'}
+            </Text>
+          </Card>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitleLg}>Activity</Text>
           <Card>
@@ -387,6 +396,10 @@ const getStyles = (Colors: ThemeColors) =>
       gap: Spacing.sm,
       backgroundColor: Colors.accentSoft,
       borderColor: '#F1D9AE',
+    },
+    rejectedCard: {
+      gap: 4,
+      backgroundColor: Colors.dangerSoft,
     },
     verifyTitle: {
       ...Type.subtitle,

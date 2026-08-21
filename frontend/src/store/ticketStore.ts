@@ -74,6 +74,9 @@ interface TicketState {
   ) => Promise<void>;
   /** Lets a resident withdraw their own complaint - only valid while it's still Pending. */
   cancelTicket: (token: string, ticketId: string) => Promise<void>;
+  /** Lets a facility employee dismiss an implausible complaint - only valid while it's still
+   * Pending, and always requires a stated reason. */
+  rejectTicket: (token: string, ticketId: string, reason: string) => Promise<void>;
   /** Posts a new comment to the backend and appends it to local state. */
   postCommentAction: (token: string, ticketId: string, message: string) => Promise<void>;
 }
@@ -267,6 +270,15 @@ export const useTicketStore = create<TicketState>()(
 
         cancelTicket: async (token, ticketId) => {
           const apiTicket = await updateTicket(token, ticketId, { status: 'Cancelled' });
+          applyUpdatedTicket(apiTicket);
+          await get().refreshTicketHistory(token, ticketId);
+        },
+
+        rejectTicket: async (token, ticketId, reason) => {
+          const apiTicket = await updateTicket(token, ticketId, {
+            status: 'Rejected',
+            resolution_remarks: reason,
+          });
           applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);
         },

@@ -38,8 +38,8 @@ export default function ResidentComplaintsScreen() {
     const list = query.trim() ? matchingComplaints : myTickets;
     return list.filter((t) =>
       segment === 'active'
-        ? t.status !== 'Closed' && t.status !== 'Cancelled'
-        : t.status === 'Closed' || t.status === 'Cancelled',
+        ? t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Rejected'
+        : t.status === 'Closed' || t.status === 'Cancelled' || t.status === 'Rejected',
     );
   }, [query, matchingComplaints, myTickets, segment]);
 

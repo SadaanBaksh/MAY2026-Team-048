@@ -201,6 +201,15 @@ export default function NewComplaintScreen() {
         photo_urls: photoUrls,
         voice_note_url: voiceNoteUrl,
       });
+      if (!result.is_valid_complaint) {
+        setSubmitError(
+          result.rejection_reason ||
+            "This doesn't look like a maintenance issue. Please attach a relevant photo or description.",
+        );
+        setAiUnavailable(true);
+        setStep('capture');
+        return;
+      }
       setAiResult({
         aiDescription: result.ai_description,
         categoryId: result.category_id,

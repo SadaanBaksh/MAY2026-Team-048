@@ -31,6 +31,18 @@ export function StatusStepper({ status }: { status: TicketStatus }) {
     );
   }
 
+  if (status === 'Rejected') {
+    const c = StatusColors.Rejected;
+    return (
+      <View style={styles.cancelledRow}>
+        <Ionicons name="ban-outline" size={20} color={c.dot} />
+        <Text style={[styles.cancelledText, { color: c.text }]}>
+          This complaint was rejected by the facility team.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.row}>
       {STEPS.map((step, index) => {

@@ -193,7 +193,7 @@ def _create_similarity_suggestions(db: Session, service: PublicService) -> None:
         .filter(
             PublicService.id != service.id,
             PublicService.status.notin_(
-                [PublicServiceStatus.Resolved, PublicServiceStatus.Merged]
+                [PublicServiceStatus.Resolved, PublicServiceStatus.Merged, PublicServiceStatus.Rejected]
             ),
             PublicService.merged_into_id.is_(None),
         )
@@ -354,8 +354,14 @@ def update_public_service(
     service = db.get(PublicService, service_id)
     if service is None:
         raise HTTPException(status_code=404, detail="Public service not found")
-    if service.status in (PublicServiceStatus.Resolved, PublicServiceStatus.Merged):
-        raise HTTPException(status_code=409, detail="Resolved or merged public services are locked")
+    if service.status in (
+        PublicServiceStatus.Resolved,
+        PublicServiceStatus.Merged,
+        PublicServiceStatus.Rejected,
+    ):
+        raise HTTPException(
+            status_code=409, detail="Resolved, merged, or rejected public services are locked"
+        )
 
     updates = payload.model_dump(exclude_unset=True)
     old_status = service.status
@@ -394,6 +400,21 @@ def update_public_service(
             ):
                 raise HTTPException(status_code=422, detail="Worker must be active maintenance staff")
             updates.setdefault("status", PublicServiceStatus.Assigned)
+
+    if updates.get("status") == PublicServiceStatus.Rejected:
+        if current_user.role != UserRole.facility_employee:
+            raise HTTPException(
+                status_code=403, detail="Only facility employees can reject a public service report"
+            )
+        if old_status != PublicServiceStatus.Pending:
+            raise HTTPException(
+                status_code=409,
+                detail="Only a pending public service report can be rejected - it's already being worked on",
+            )
+        if not (updates.get("resolution_remarks") or "").strip():
+            raise HTTPException(
+                status_code=422, detail="A reason is required to reject a public service report"
+            )
 
     new_status = updates.get("status")
     if new_status == PublicServiceStatus.Merged:
@@ -480,7 +501,11 @@ def create_public_comment(
     if service is None:
         raise HTTPException(status_code=404, detail="Public service not found")
     _ensure_service_access(service, current_user)
-    if service.status in (PublicServiceStatus.Resolved, PublicServiceStatus.Merged):
+    if service.status in (
+        PublicServiceStatus.Resolved,
+        PublicServiceStatus.Merged,
+        PublicServiceStatus.Rejected,
+    ):
         raise HTTPException(status_code=409, detail="Discussion is closed for this public service")
     comment = PublicServiceComment(
         service_id=service.id, user_id=current_user.id, message=payload.message

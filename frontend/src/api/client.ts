@@ -390,6 +390,8 @@ export interface ComplaintAnalysisResponse {
   category_id: string;
   priority: Priority;
   confidence: number;
+  is_valid_complaint: boolean;
+  rejection_reason?: string | null;
 }
 
 /** Calls the server-side Gemini gateway; the Gemini key never reaches the client. */

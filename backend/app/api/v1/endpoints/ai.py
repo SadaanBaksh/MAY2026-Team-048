@@ -41,12 +41,21 @@ _ANALYSIS_SCHEMA = {
     # Schema enum values (uppercase), rather than ordinary JSON Schema's lowercase ones.
     "type": "OBJECT",
     "properties": {
+        "is_valid_complaint": {"type": "BOOLEAN"},
+        "rejection_reason": {"type": "STRING"},
         "ai_description": {"type": "STRING"},
         "category_id": {"type": "STRING"},
         "priority": {"type": "STRING", "enum": ["Low", "Medium", "High", "Critical", "Emergency"]},
         "confidence": {"type": "NUMBER"},
     },
-    "required": ["ai_description", "category_id", "priority", "confidence"],
+    "required": [
+        "is_valid_complaint",
+        "rejection_reason",
+        "ai_description",
+        "category_id",
+        "priority",
+        "confidence",
+    ],
 }
 
 _CHAT_SCHEMA = {
@@ -110,9 +119,17 @@ def analyze_complaint(
         media.append(media_part(str(payload.voice_note_url), 6 * 1024 * 1024))
     prompt = (
         "You classify residential maintenance complaints. Analyze only the supplied complaint text "
-        "and uploaded media. Return a concise factual description (max 80 words), exactly one "
-        "category_id from this list, a priority, and confidence between 0 and 1. Emergency is only "
-        "for immediate danger to life, fire, gas, severe electrical hazard, flooding, or security. "
+        "and uploaded media. First decide whether the text and/or media actually describe a "
+        "residential maintenance issue (e.g. plumbing, electrical, appliance, structural, pest, "
+        "cleanliness, safety). If none of the supplied text or media relates to a maintenance "
+        "complaint, set is_valid_complaint to false, give a short one-sentence rejection_reason "
+        "explaining what was supplied instead, and set category_id to an empty string, priority to "
+        "'Low', and confidence to 0. Do not reject something just because it's hard to classify or "
+        "the issue isn't fully clear - only reject when it's unrelated to a maintenance complaint. "
+        "Otherwise set is_valid_complaint to true, leave rejection_reason as an empty string, and "
+        "return a concise factual description (max 80 words), exactly one category_id from this "
+        "list, a priority, and confidence between 0 and 1. Emergency is only for immediate danger to "
+        "life, fire, gas, severe electrical hazard, flooding, or security. "
         f"Categories: {category_list}.\nResident note: {payload.resident_note or '(none)'}"
     )
     try:
@@ -297,9 +314,15 @@ def dashboard_summary(
     for t in tickets:
         status_counts[t.status.value] = status_counts.get(t.status.value, 0) + 1
 
-    # Cancelled tickets were withdrawn by the resident before any work started - they shouldn't
-    # count as outstanding work in any of the "still needs attention" stats below.
-    _INACTIVE_STATUSES = (TicketStatus.Resolved, TicketStatus.Closed, TicketStatus.Cancelled)
+    # Cancelled tickets were withdrawn by the resident before any work started, and rejected
+    # ones were dismissed by staff as implausible - neither should count as outstanding work
+    # in any of the "still needs attention" stats below.
+    _INACTIVE_STATUSES = (
+        TicketStatus.Resolved,
+        TicketStatus.Closed,
+        TicketStatus.Cancelled,
+        TicketStatus.Rejected,
+    )
 
     overdue = sum(1 for t in tickets if getattr(t, "is_overdue", False) and t.status not in _INACTIVE_STATUSES)
     
@@ -325,7 +348,9 @@ def dashboard_summary(
             PublicService.status != PublicServiceStatus.Merged
         ).all()
         public_open = sum(
-            1 for item in public_services if item.status != PublicServiceStatus.Resolved
+            1
+            for item in public_services
+            if item.status not in (PublicServiceStatus.Resolved, PublicServiceStatus.Rejected)
         )
         public_resolved = sum(
             1 for item in public_services if item.status == PublicServiceStatus.Resolved
@@ -341,9 +366,12 @@ def dashboard_summary(
         )
         if current_user.role == UserRole.facility_manager:
             resolved_closed = status_counts.get(TicketStatus.Resolved.value, 0) + status_counts.get(TicketStatus.Closed.value, 0)
-            # Cancelled tickets were withdrawn, not left unresolved - excluding them keeps the
-            # rate a measure of "of complaints we actually pursued, how many got resolved."
-            pursued_tickets = len(tickets) - status_counts.get(TicketStatus.Cancelled.value, 0)
+            # Cancelled tickets were withdrawn and rejected ones were never legitimate - excluding
+            # both keeps the rate a measure of "of complaints we actually pursued, how many got
+            # resolved."
+            pursued_tickets = len(tickets) - status_counts.get(
+                TicketStatus.Cancelled.value, 0
+            ) - status_counts.get(TicketStatus.Rejected.value, 0)
             resolution_rate = f"{(resolved_closed / pursued_tickets * 100):.1f}%" if pursued_tickets else "0%"
             
             resolved_tickets = [t for t in tickets if t.status == TicketStatus.Resolved and t.date_of_resolution]

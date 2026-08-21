@@ -4,9 +4,22 @@ export type AccountStatus = 'active' | 'pending' | 'rejected';
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency';
 
-export type TicketStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Closed' | 'Cancelled';
+export type TicketStatus =
+  | 'Pending'
+  | 'Assigned'
+  | 'In_Progress'
+  | 'Resolved'
+  | 'Closed'
+  | 'Cancelled'
+  | 'Rejected';
 
-export type PublicServiceStatus = 'Pending' | 'Assigned' | 'In_Progress' | 'Resolved' | 'Merged';
+export type PublicServiceStatus =
+  | 'Pending'
+  | 'Assigned'
+  | 'In_Progress'
+  | 'Resolved'
+  | 'Merged'
+  | 'Rejected';
 
 export type NoticeStatus = 'Draft' | 'Scheduled' | 'Sent' | 'Expired' | 'Cancelled';
 
