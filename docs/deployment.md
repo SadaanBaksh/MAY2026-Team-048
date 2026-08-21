@@ -3,7 +3,7 @@
 A from-scratch guide to getting the FastAPI backend and a real Postgres instance live on Render.
 
 **This is purely additive — it does not change or replace local development in any way.**
-`docker compose up --build` (see `SETUP.md`) keeps working exactly as before, against your local
+`docker compose up --build` (see [setup.md](./setup.md)) keeps working exactly as before, against your local
 Postgres. Render's Postgres is a separate, independent instance. Render also doesn't use
 docker-compose at all: it builds `backend/Dockerfile` directly as a single container, and its
 Postgres is a separate managed resource created through Render's dashboard — there's only ever the
@@ -53,7 +53,7 @@ On the web service → **Environment** tab, add each of these (they map directly
 | `ALGORITHM` | `HS256` (matches the default, fine to set explicitly) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (or your preference) |
 | `BACKEND_CORS_ORIGINS` | Comma-separated allowed origins. Only matters if you'll test via the Expo **web** build against this backend — CORS is a browser-only mechanism, so native app / device requests aren't affected by it either way. |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `S3_BUCKET_NAME` | Reuse the same values from `S3_SETUP.md`. If the AWS key that was pasted into a chat session during setup hasn't been rotated yet, do that in IAM before going live. |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `S3_BUCKET_NAME` | Reuse the same values from [s3-setup.md](./s3-setup.md). If the AWS key that was pasted into a chat session during setup hasn't been rotated yet, do that in IAM before going live. |
 | `SENDGRID_API_KEY` / `SENDGRID_FROM_EMAIL` | Required for registration/password-reset OTP emails to actually send, via SendGrid's HTTP API. `SENDGRID_FROM_EMAIL` must be verified first: app.sendgrid.com → Settings → Sender Authentication → **Single Sender Verification** — no domain/DNS needed, just confirm the link SendGrid emails to that address. Unlike Mailgun's sandbox mode, this only restricts the *from* address; you can send to any recipient once it's verified. If left blank, `app/services/email.py` silently skips sending and only logs a warning — the API still reports `"OTP sent successfully"`, so this is easy to miss until a user says emails never arrive. |
 | `PROJECT_NAME` / `API_V1_STR` | Optional — the defaults (`Simplifix API` / `/api/v1`) are fine to leave unset. |
 

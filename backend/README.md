@@ -40,17 +40,17 @@ backend/
 ├─ pytest.ini
 ├─ .env.example
 ├─ Dockerfile
-├─ docker-compose.yml   # local dev only
-├─ SETUP.md
-├─ S3_SETUP.md
-└─ RENDER_DEPLOY.md
+└─ docker-compose.yml   # local dev only
 ```
+
+Setup, deployment, and AWS S3 guides live in [`/docs`](../docs) at the repo root, not in this
+folder — see the links below.
 
 ## Setup
 
 New to this project, or don't have Docker/PostgreSQL installed yet? Follow
-**[SETUP.md](./SETUP.md)** — it walks through installing Docker (or PostgreSQL natively) from
-scratch and getting the API running.
+**[docs/setup.md](../docs/setup.md)** — it walks through installing Docker (or PostgreSQL
+natively) from scratch and getting the API running.
 
 If your environment is already set up, the short version:
 
@@ -178,7 +178,7 @@ pytest tests/test_tickets.py        # just one file
 pytest --cov=app --cov-report=term-missing   # with a coverage report
 ```
 
-If you already have the `SETUP.md` dev environment running via Docker, you can instead run tests
+If you already have the [docs/setup.md](../docs/setup.md) dev environment running via Docker, you can instead run tests
 inside the container: `docker compose exec api pip install -r requirements-dev.txt && docker
 compose exec api pytest`.
 
@@ -228,19 +228,17 @@ are gitignored (fully regenerated, never hand-edited) — re-run the script any 
 
 ## Deployment
 
-Local development (`docker compose up --build`, per `SETUP.md`) is the default and stays that way
-regardless of anything below — it doesn't depend on any of this. When you're ready to put the
-backend + a real Postgres somewhere live, see **[RENDER_DEPLOY.md](./RENDER_DEPLOY.md)** — a
-step-by-step guide to deploying on Render. It's purely additive: no second `docker-compose.yml`,
-no changes to how local dev works.
+Local development (`docker compose up --build`, per [docs/setup.md](../docs/setup.md)) is the
+default and stays that way regardless of anything below — it doesn't depend on any of this. When
+you're ready to put the backend + a real Postgres somewhere live, see
+**[docs/deployment.md](../docs/deployment.md)** — a step-by-step guide to deploying on Render.
+It's purely additive: no second `docker-compose.yml`, no changes to how local dev works.
 
 ## Not Yet Implemented
 
-This is a skeleton. Still to add as the project grows:
-- Gemini AI-assisted complaint description/category/priority suggestion
-- Pagination/filtering beyond the basic role-based scoping and `status` filter on tickets
-- Frontend (Jest) test coverage — this backend suite doesn't cover the Expo app
-
-Ticket comment threads (resident/staff/employee) now work end-to-end via the frontend's
-`app/comments/[ticketId].tsx` screen, polling this API every ~8s while open — not WebSocket-based
-real-time push, which would need backend changes this repo doesn't have yet.
+- True offset/limit pagination on ticket listing — `GET /tickets/` supports role-based scoping
+  and a `status` filter, but returns the full matching set rather than paging through it. Public
+  services (`GET /public-services/`) already caps results via a `limit` query param.
+- WebSocket-based real-time push. Ticket comment threads (resident/staff/employee) work end-to-end
+  via the frontend's `app/comments/[ticketId].tsx` screen, but by polling this API every ~8s while
+  open, not a live push channel.

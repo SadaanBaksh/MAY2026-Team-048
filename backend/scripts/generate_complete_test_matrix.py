@@ -10,7 +10,7 @@ from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 TEST_ROOT = BACKEND_ROOT / "tests"
-OUTPUT_PATH = BACKEND_ROOT / "COMPLETE_TEST_CASE_MATRIX.md"
+OUTPUT_PATH = BACKEND_ROOT.parent / "docs" / "testing" / "complete-test-matrix.md"
 HTTP_METHODS = {"get", "post", "put", "patch", "delete"}
 VERIFIED_RUN = "172 passed, 1 xfailed, 229 warnings in 42.27s"
 

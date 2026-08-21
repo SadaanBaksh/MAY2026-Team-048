@@ -1,6 +1,11 @@
 # Complete Backend Test Case Matrix
 
-Scope: Every collected backend pytest unit and integration test. Contract tests are excluded.
+> **Frozen sprint-1 grading snapshot.** This is point-in-time submission evidence for a specific
+> academic milestone (including an intentional `XFAIL`) and is not updated as the suite grows. For
+> current, always-up-to-date test coverage, see [complete-test-matrix.md](./complete-test-matrix.md).
+
+Suite roots: `backend/tests/integration/`, `backend/tests/test_security.py`, and selected tests from `backend/tests/test_limiter.py`  
+Scope: Repository-level API integration tests and a representative selection of backend unit tests. Contract tests are excluded. This is not a catalogue of every test in the repository.
 
 Verified run: `172 passed, 1 xfailed, 229 warnings in 42.27s`
 

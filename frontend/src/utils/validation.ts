@@ -39,7 +39,7 @@ export function toCanonicalPhone(value: string): string {
 }
 
 // bcrypt (used server-side) hard-caps input at 72 bytes and throws if exceeded — this has
-// already crashed registration once (see backend/SETUP.md's troubleshooting table). 72
+// already crashed registration once (see docs/setup.md's troubleshooting table). 72
 // characters is a close-enough proxy client-side; the backend enforces the exact byte count.
 export const passwordSchema = v.pipe(
   v.string(),
