@@ -66,7 +66,7 @@ Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Close
 | Local dev | Docker Compose |
 | Production | Render (backend + Postgres) — see [`docs/deployment.md`](./docs/deployment.md) |
 
-## Run It Locally
+## Instructions: Run It Locally
 
 Both halves — backend API and Expo app — need to be running together. Start the backend first,
 then the frontend.
