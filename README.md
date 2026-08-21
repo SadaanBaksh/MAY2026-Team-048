@@ -162,11 +162,11 @@ Facility Manager) if you ran the optional seed scripts in step 2 — or register
 
 ## Contributors
 
-- Abhay Sharma - @asabhaysharma
-- Anusha Saha - @anusha-saha-3007
-- Mursleen Khan - @MursleenK
-- Namit Gupta - @NamitCodes
-- Sadaan Baksh - @SadaanBaksh
+- Abhay Sharma - [@asabhaysharma](https://github.com/asabhaysharma)
+- Anusha Saha - [@anusha-saha-3007](https://github.com/anusha-saha-3007)
+- Mursleen Khan - [@MursleenK](https://github.com/MursleenK)
+- Namit Gupta - [@NamitCodes](https://github.com/NamitCodes)
+- Sadaan Baksh - [@SadaanBaksh](https://github.com/SadaanBaksh)
 
 ## Team
 
