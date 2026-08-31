@@ -1,7 +1,8 @@
-"""Wipe all ticket/user content from the database except the 4 demo accounts.
+"""Wipe all ticket/user content from the database except the seeded demo accounts.
 
 Deletes (in FK-safe order): notifications, ticket_media, ticket_history, comments, tickets,
-then every user that isn't one of DEMO_EMAILS, then every apartment not referenced by a
+then every user that isn't one of DEMO_EMAILS (imported from scripts.seed_demo_users, so it
+tracks every account that script creates), then every apartment not referenced by a
 remaining (demo) user. Categories are left untouched — they're app configuration, not content.
 
 Defaults to a DRY RUN that only prints what would happen. Run from backend/ with the venv
@@ -25,13 +26,7 @@ from app.models.ticket import Ticket
 from app.models.ticket_history import TicketHistory
 from app.models.ticket_media import TicketMedia
 from app.models.user import User
-
-DEMO_EMAILS = [
-    "demo.resident@simplifix.app",
-    "demo.employee@simplifix.app",
-    "demo.staff@simplifix.app",
-    "demo.manager@simplifix.app",
-]
+from scripts.seed_demo_users import SEED_EMAILS as DEMO_EMAILS
 
 
 def _masked_db_url() -> str:
