@@ -169,6 +169,19 @@ export const CATEGORIES: CategoryMeta[] = [
       'Common area at the {area} requires deep cleaning following resident-reported spillage.',
     ],
   },
+  {
+    // Neutral bucket for a genuine maintenance issue that fits none of the specific
+    // categories above. Kept last so it never shadows a better match. Non-maintenance
+    // input is still rejected by the AI's is_valid_complaint check, not filed here.
+    categoryId: 'cat_general',
+    categoryName: 'General / Other',
+    icon: 'ellipsis-horizontal-outline',
+    defaultPriority: 'Medium',
+    keywords: [],
+    descriptionTemplates: [
+      'Maintenance issue reported at the {area} that does not fall under a standard category. Facility team to review and route to the right trade.',
+    ],
+  },
 ];
 
 export function getCategoryById(categoryId: string): CategoryMeta {

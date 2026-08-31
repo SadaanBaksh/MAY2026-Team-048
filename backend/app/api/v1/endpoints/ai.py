@@ -128,7 +128,10 @@ def analyze_complaint(
         "the issue isn't fully clear - only reject when it's unrelated to a maintenance complaint. "
         "Otherwise set is_valid_complaint to true, leave rejection_reason as an empty string, and "
         "return a concise factual description (max 80 words), exactly one category_id from this "
-        "list, a priority, and confidence between 0 and 1. Emergency is only for immediate danger to "
+        "list, a priority, and confidence between 0 and 1. If it is a genuine maintenance issue but "
+        "none of the specific categories clearly fit, use the id for the 'General / Other' category "
+        "rather than forcing a poor match, and lower the confidence accordingly. Emergency is only "
+        "for immediate danger to "
         "life, fire, gas, severe electrical hazard, flooding, or security. "
         f"Categories: {category_list}.\nResident note: {payload.resident_note or '(none)'}"
     )

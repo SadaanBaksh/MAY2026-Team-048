@@ -17,6 +17,10 @@ CATEGORIES = [
     {"id": "cat_lift", "name": "Lift & Elevator", "icon": "swap-vertical-outline"},
     {"id": "cat_security", "name": "Security & Common Area", "icon": "shield-checkmark-outline"},
     {"id": "cat_housekeeping", "name": "Cleaning & Housekeeping", "icon": "sparkles-outline"},
+    # Neutral bucket for a genuine maintenance issue that fits none of the specific
+    # categories above. It is NOT a bypass for non-maintenance input - the AI's
+    # is_valid_complaint gate still rejects that before a ticket is ever created.
+    {"id": "cat_general", "name": "General / Other", "icon": "ellipsis-horizontal-outline"},
 ]
 
 

@@ -8,6 +8,7 @@ from app.api.deps import ensure_ticket_access, get_current_user, notify_user, re
 from app.api.response_docs import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
 from app.core.ai_cache import invalidate_summaries
 from app.db.session import get_db
+from app.models.category import Category
 from app.models.enums import MediaType, Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
 from app.models.ticket_history import TicketHistory
@@ -51,6 +52,12 @@ def create_ticket(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Ticket:
+    # Guard the categories FK explicitly so an unknown id is a clean 422 rather than a
+    # raw Postgres IntegrityError (500). Mirrors create_public_service.
+    if db.get(Category, payload.category_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Category not found"
+        )
     ticket = Ticket(
         **payload.model_dump(
             exclude={"priority", "ai_description", "ai_confidence", "photo_urls"}
