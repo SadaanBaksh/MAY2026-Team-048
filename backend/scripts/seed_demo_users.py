@@ -146,9 +146,19 @@ ADDITIONAL_USERS = [
     },
 ]
 
+# The platform admin. Not tied to any role chip in the frontend - it signs in through the
+# normal employee login page and lands on the admin-only manager CRUD screen.
+ADMIN_USER = {
+    "email": "admin@simplifix.app",
+    "name": "Platform Admin",
+    "phone": "+91 90210 00000",
+    "role": UserRole.admin,
+    "avatar_color": "#5B5F6D",
+}
+
 # Every email this script is responsible for - reset_demo_data imports this so a
 # reset keeps all seeded accounts, not just the original four.
-SEED_EMAILS = [entry["email"] for entry in DEMO_USERS + ADDITIONAL_USERS]
+SEED_EMAILS = [entry["email"] for entry in DEMO_USERS + ADDITIONAL_USERS + [ADMIN_USER]]
 
 
 def _get_or_create_apartment(db, building: str, unit_number: str) -> Apartment:
@@ -174,7 +184,7 @@ def seed() -> None:
         hashed_password = hash_password(DEMO_PASSWORD)
         created = 0
 
-        for entry in DEMO_USERS + ADDITIONAL_USERS:
+        for entry in DEMO_USERS + ADDITIONAL_USERS + [ADMIN_USER]:
             if db.query(User).filter(User.email == entry["email"]).first() is not None:
                 continue
 

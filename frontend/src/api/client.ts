@@ -49,14 +49,14 @@ export interface RegisterPayload {
 
 export interface UpdateUserPayload {
   name?: string;
-  email?: string;
-  phone?: string;
   avatar_color?: string;
   avatar_uri?: string;
   account_status?: AccountStatus;
   title?: string;
   specialization?: string;
 }
+// Email and phone are intentionally absent: phone is immutable, and an email change must go
+// through the OTP-verified flow below (requestEmailChangeOtp / verifyEmailChange).
 
 export class ApiError extends Error {
   status: number;
@@ -143,6 +143,8 @@ export function apiUserToAppUser(user: ApiUser): AppUser {
       };
     case 'facility_manager':
       return { ...base, role: 'facility_manager', title: user.title ?? '' };
+    case 'admin':
+      return { ...base, role: 'admin' };
     case 'facility_employee':
       return { ...base, role: 'facility_employee', title: user.title ?? '' };
     case 'maintenance_staff':
@@ -224,12 +226,80 @@ export async function verifyAndChangePassword(
   });
 }
 
+/** Step 1 of a self-service email change: sends a 4-digit OTP to the *new* address so the
+ * user proves they control that inbox before the login identity moves onto it. */
+export async function requestEmailChangeOtp(
+  token: string,
+  newEmail: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/v1/users/me/email/send-otp', {
+    method: 'POST',
+    token,
+    json: { new_email: newEmail },
+  });
+}
+
+/** Step 2: confirms the OTP and returns the updated user record with the new email. */
+export async function verifyEmailChange(
+  token: string,
+  newEmail: string,
+  otp: string,
+): Promise<ApiUser> {
+  return apiFetch<ApiUser>('/api/v1/users/me/email/verify', {
+    method: 'POST',
+    token,
+    json: { new_email: newEmail, otp },
+  });
+}
+
 export async function getCurrentUser(token: string): Promise<ApiUser> {
   return apiFetch<ApiUser>('/api/v1/users/me', { token });
 }
 
 export async function listUsers(token: string): Promise<ApiUser[]> {
   return apiFetch<ApiUser[]>('/api/v1/users/', { token });
+}
+
+// --- Admin: facility-manager CRUD (role `admin` only) -------------------------
+
+export interface ManagerCreatePayload {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  title?: string;
+}
+
+export interface ManagerUpdatePayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+  title?: string;
+  password?: string;
+  account_status?: Extract<AccountStatus, 'active' | 'suspended'>;
+}
+
+export async function listManagers(token: string): Promise<ApiUser[]> {
+  return apiFetch<ApiUser[]>('/api/v1/admin/managers', { token });
+}
+
+export async function createManager(
+  token: string,
+  payload: ManagerCreatePayload,
+): Promise<ApiUser> {
+  return apiFetch<ApiUser>('/api/v1/admin/managers', { method: 'POST', token, json: payload });
+}
+
+export async function updateManager(
+  token: string,
+  userId: string,
+  patch: ManagerUpdatePayload,
+): Promise<ApiUser> {
+  return apiFetch<ApiUser>(`/api/v1/admin/managers/${userId}`, {
+    method: 'PATCH',
+    token,
+    json: patch,
+  });
 }
 
 export type ManagerExportDataset = 'employees' | 'residents' | 'services';
@@ -691,6 +761,7 @@ export interface ApiPublicService {
   resolution_remarks: string | null;
   resolution_proof_url: string | null;
   merged_into_id: string | null;
+  merged_from_count: number;
   reports: ApiPublicReport[];
   comment_count: number;
 }
@@ -739,6 +810,7 @@ export function mapApiPublicService(value: ApiPublicService): PublicService {
     resolutionRemarks: value.resolution_remarks,
     resolutionProofUrl: value.resolution_proof_url,
     mergedIntoId: value.merged_into_id,
+    mergedFromCount: value.merged_from_count ?? 0,
     commentCount: value.comment_count,
     reports: value.reports.map((report) => ({
       id: report.id,
@@ -836,6 +908,34 @@ export async function updatePublicService(
       json: patch,
     }),
   );
+}
+
+/** Manually fold a facility employee's chosen set of open public services into one
+ * combined page. Returns the new merged service. */
+export async function mergePublicServices(
+  token: string,
+  serviceIds: string[],
+): Promise<PublicService> {
+  return mapApiPublicService(
+    await apiFetch<ApiPublicService>('/api/v1/public-services/merge', {
+      method: 'POST',
+      token,
+      json: { service_ids: serviceIds },
+    }),
+  );
+}
+
+/** Reverse a merge: move reports/comments back to their original pages, reopen the
+ * sources, and delete the combined page. Returns the restored source pages. */
+export async function unmergePublicService(
+  token: string,
+  serviceId: string,
+): Promise<PublicService[]> {
+  const values = await apiFetch<ApiPublicService[]>(
+    `/api/v1/public-services/${serviceId}/unmerge`,
+    { method: 'POST', token },
+  );
+  return values.map(mapApiPublicService);
 }
 
 export async function fetchPublicComments(

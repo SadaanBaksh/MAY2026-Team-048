@@ -103,6 +103,7 @@ export default function RootLayout() {
           <Stack.Screen name="(employee)" />
           <Stack.Screen name="(maintenance)" />
           <Stack.Screen name="(manager)" />
+          <Stack.Screen name="(admin)" />
         </Stack>
       </View>
     </GestureHandlerRootView>

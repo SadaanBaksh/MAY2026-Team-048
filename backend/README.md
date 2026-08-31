@@ -93,7 +93,17 @@ message; the provider never sends a notice itself.
 New public reports are also compared with recent unresolved public services. Scores strictly above
 `PUBLIC_SIMILARITY_THRESHOLD` (default `0.80`) create an employee review suggestion and
 notification. AI never merges reports automatically: an employee must accept or decline the popup.
-An accepted suggestion creates a new public service page containing every contributing report.
+
+Merging is not limited to the AI popup. A facility employee can also select any set of open public
+services and merge them directly (`POST /public-services/merge`, `{ "service_ids": [...] }`).
+Both routes go through one `_merge_services` helper that builds a new combined page, moves every
+contributing report and comment onto it, records each item's pre-merge page in
+`original_service_id`, and marks the sources `Merged`. While a combined page is still `Pending`
+and unassigned, an employee can reverse it (`POST /public-services/{id}/unmerge`): reports and
+comments return to their original pages, the sources reopen, an accepted AI suggestion for that
+page reopens, and the combined page is deleted. Unmerge is blocked once a worker is assigned, for
+merges created before this feature (no recorded origin), and for pages built from an earlier
+merge.
 
 **On model availability**: Google has restricted some model variants (e.g. `gemini-2.5-flash-lite`)
 from new users/projects even though they still appear in the API's `ListModels` response — the
@@ -114,14 +124,19 @@ alembic revision --autogenerate -m "describe change"
 alembic upgrade head
 ```
 
-The initial migration (`alembic/versions/`) already creates all tables described below.
+The initial migration (`alembic/versions/`) creates every table described below; later migrations
+add the `Rejected` ticket/public-service statuses, the `admin` user role, the `suspended` account
+status, and `original_service_id` on `public_reports` / `public_service_comments` (merge
+provenance for unmerge). `docker compose up` and the Render start command both run
+`alembic upgrade head` before serving traffic, so a normal deploy needs no manual migration step —
+watch the deploy logs for that line.
 
 ## Data Model
 
 | Table            | Purpose                                                            |
 | ---------------- | ------------------------------------------------------------------- |
 | `apartments`      | Unit/building records residents belong to                          |
-| `users`           | All four roles (resident, facility_employee, maintenance_staff, facility_manager) in one table, with role-specific nullable columns |
+| `users`           | All four roles (resident, facility_employee, maintenance_staff, facility_manager) in one table, with role-specific nullable columns. `account_status` is `pending`/`active`/`rejected`/`suspended` — a facility manager can move an active resident/employee/maintenance account to `suspended` and back |
 | `categories`      | Fixed complaint categories (plumbing, electrical, etc.)             |
 | `tickets`         | Core complaint/ticket record                                       |
 | `ticket_media`    | Extra photo/video attachments beyond the primary one on the ticket |
@@ -130,11 +145,11 @@ The initial migration (`alembic/versions/`) already creates all tables described
 | `notices`         | Manager drafts, schedules, sent notices, expiry, and delivery metadata |
 | `notice_targets`  | Towers selected for each notice                                      |
 | `public_services` | Society-wide service pages with assignment, resolution, and merge state |
-| `public_reports` | Original resident reports contained by a public service page |
+| `public_reports` | Original resident reports contained by a public service page; `original_service_id` remembers the pre-merge page so an employee can unmerge |
 | `public_report_media` | Photos attached to individual public reports |
-| `public_service_comments` | Society discussion for an active public service |
-| `public_service_history` | Auditable public-service lifecycle and merge events |
-| `public_similarity_suggestions` | AI scores, employee decisions, and resulting merged page |
+| `public_service_comments` | Society discussion for an active public service; also carries `original_service_id` for unmerge |
+| `public_service_history` | Auditable public-service lifecycle and merge/unmerge events |
+| `public_similarity_suggestions` | AI scores, employee decisions, and resulting merged page (reopened if that page is unmerged) |
 
 Public services are intentionally separate from private `tickets`. Residents can see every public
 service in this single-society deployment, while maintenance staff see only assigned public jobs.
@@ -150,9 +165,15 @@ backend must be running for scheduled delivery.
 
 - `POST /api/v1/auth/register` — creates a user (residents are active immediately; other roles
   start `pending` until a facility employee/manager promotes their `account_status`).
+- `PATCH /api/v1/users/{id}` with `account_status` — facility employees/managers promote a
+  `pending` account to `active` or `rejected`; only a facility manager can set `suspended` (or
+  move a suspended account back to `active`), and never on themselves or another manager. Suspend
+  and reactivate each send the affected user a notification.
 - `GET /api/v1/exports/{employees|residents|services}.csv` — manager-only CSV exports with
   complete roster or public-service details and spreadsheet-safe text values.
-- `POST /api/v1/auth/login` — OAuth2 password flow, returns a JWT bearer token.
+- `POST /api/v1/auth/login` — OAuth2 password flow, returns a JWT bearer token. Non-active
+  accounts (`pending`/`rejected`/`suspended`) still get a token; the client gates access on
+  `account_status` from `GET /users/me`.
 - Protected endpoints read the token via `Authorization: Bearer <token>`.
 
 ## Testing

@@ -328,6 +328,28 @@ describe('useTicketStore', () => {
         residentFeedback: 'Great job',
       });
     });
+
+    it('verifyAndClose forwards cost_responsibility only when the resident had to pick one', async () => {
+      mockUpdateTicket.mockResolvedValue(
+        buildApiTicket({ status: 'Closed', resident_rating: 4, cost_responsibility: 'Resident' }),
+      );
+
+      await useTicketStore
+        .getState()
+        .verifyAndClose('tok', 'tkt_api1', {
+          rating: 4,
+          feedback: '',
+          costResponsibility: 'Resident',
+        });
+
+      expect(mockUpdateTicket).toHaveBeenCalledWith('tok', 'tkt_api1', {
+        status: 'Closed',
+        resident_rating: 4,
+        resident_feedback: '',
+        cost_responsibility: 'Resident',
+      });
+      expect(useTicketStore.getState().tickets[0].costResponsibility).toBe('Resident');
+    });
   });
 
   describe('comments', () => {

@@ -15,7 +15,31 @@ export default function PendingApprovalScreen() {
   const currentUser = useAuthStore((s) => s.currentUser);
   const logout = useAuthStore((s) => s.logout);
 
-  const isRejected = currentUser?.accountStatus === 'rejected';
+  const status = currentUser?.accountStatus;
+  const view =
+    status === 'suspended'
+      ? {
+          icon: 'ban-outline' as const,
+          danger: true,
+          title: 'Account suspended',
+          message:
+            'Your account has been suspended by your facility manager. Please contact them to restore access.',
+        }
+      : status === 'rejected'
+        ? {
+            icon: 'close-circle-outline' as const,
+            danger: true,
+            title: 'Request declined',
+            message:
+              'Your facility manager declined this registration request. Contact your facility manager if you think this is a mistake.',
+          }
+        : {
+            icon: 'time-outline' as const,
+            danger: false,
+            title: 'Awaiting approval',
+            message:
+              'Your registration has been sent to your facility manager for approval. You will be able to log in once your account is approved.',
+          };
 
   const handleLogout = () => {
     const role = currentUser?.role;
@@ -32,19 +56,15 @@ export default function PendingApprovalScreen() {
   return (
     <SafeAreaView style={styles.wrapper}>
       <View style={styles.content}>
-        <View style={[styles.iconWrap, isRejected && styles.iconWrapDanger]}>
+        <View style={[styles.iconWrap, view.danger && styles.iconWrapDanger]}>
           <Ionicons
-            name={isRejected ? 'close-circle-outline' : 'time-outline'}
+            name={view.icon}
             size={36}
-            color={isRejected ? Colors.danger : Colors.primary}
+            color={view.danger ? Colors.danger : Colors.primary}
           />
         </View>
-        <Text style={styles.title}>{isRejected ? 'Request declined' : 'Awaiting approval'}</Text>
-        <Text style={styles.message}>
-          {isRejected
-            ? 'Your facility manager declined this registration request. Contact your facility manager if you think this is a mistake.'
-            : 'Your registration has been sent to your facility manager for approval. You will be able to log in once your account is approved.'}
-        </Text>
+        <Text style={styles.title}>{view.title}</Text>
+        <Text style={styles.message}>{view.message}</Text>
         <Button label="Log Out" variant="outline" onPress={handleLogout} style={styles.button} />
       </View>
     </SafeAreaView>
@@ -88,5 +108,8 @@ const getStyles = (Colors: ThemeColors) =>
     },
     button: {
       marginTop: Spacing.lg,
+      // Button defaults to alignSelf:'flex-start' unless fullWidth; override so it
+      // sits centered under the centered icon/title/message stack.
+      alignSelf: 'center',
     },
   });

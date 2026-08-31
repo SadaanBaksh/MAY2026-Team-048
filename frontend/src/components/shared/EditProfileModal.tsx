@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import * as v from 'valibot';
 
 import { ApiError } from '@/api/client';
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,7 +11,6 @@ import { TextField } from '@/components/ui/TextField';
 import { Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme, type ThemeColors } from '@/hooks/useTheme';
 import type { AppUser } from '@/types';
-import { emailSchema, firstIssueMessage, phoneSchema, toCanonicalPhone } from '@/utils/validation';
 
 export function EditProfileModal({
   visible,
@@ -22,19 +21,12 @@ export function EditProfileModal({
   visible: boolean;
   onClose: () => void;
   user: AppUser;
-  onSave: (update: {
-    name: string;
-    email: string;
-    phone: string;
-    avatarUri?: string;
-  }) => void | Promise<void>;
+  onSave: (update: { name: string; avatarUri?: string }) => void | Promise<void>;
 }) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
 
   const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState(user.phone);
   const [avatarUri, setAvatarUri] = useState(user.avatarUri);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -42,8 +34,6 @@ export function EditProfileModal({
   useEffect(() => {
     if (visible) {
       setName(user.name);
-      setEmail(user.email);
-      setPhone(user.phone);
       setAvatarUri(user.avatarUri);
       setError('');
     }
@@ -71,26 +61,11 @@ export function EditProfileModal({
       setError('Name is required.');
       return;
     }
-    const emailError = firstIssueMessage(v.safeParse(emailSchema, email));
-    if (emailError) {
-      setError(emailError);
-      return;
-    }
-    const phoneError = firstIssueMessage(v.safeParse(phoneSchema, phone));
-    if (phoneError) {
-      setError(phoneError);
-      return;
-    }
     if (submitting) return;
     setError('');
     setSubmitting(true);
     try {
-      await onSave({
-        name: name.trim(),
-        email: email.trim(),
-        phone: toCanonicalPhone(phone),
-        avatarUri,
-      });
+      await onSave({ name: name.trim(), avatarUri });
       onClose();
     } catch (err) {
       setError(
@@ -99,6 +74,11 @@ export function EditProfileModal({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const goToChangeEmail = () => {
+    onClose();
+    router.push('/(auth)/change-email');
   };
 
   return (
@@ -116,19 +96,27 @@ export function EditProfileModal({
 
           <View style={styles.fields}>
             <TextField label="Name" value={name} onChangeText={setName} autoCapitalize="words" />
-            <TextField
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <TextField
-              label="Phone"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-            />
+
+            <View>
+              <View style={styles.lockedLabelRow}>
+                <Text style={styles.lockedLabel}>Email</Text>
+                <Pressable onPress={goToChangeEmail} hitSlop={8}>
+                  <Text style={styles.changeLink}>Change</Text>
+                </Pressable>
+              </View>
+              <TextField value={user.email} editable={false} style={styles.lockedInput} />
+              <Text style={styles.hint}>
+                Changing your email needs a verification code sent to the new address.
+              </Text>
+            </View>
+
+            <View>
+              <Text style={styles.lockedLabel}>Phone</Text>
+              <TextField value={user.phone} editable={false} style={styles.lockedInput} />
+              <Text style={styles.hint}>
+                Phone number can’t be changed here. Contact your facility manager.
+              </Text>
+            </View>
           </View>
 
           {!!error && <Text style={styles.error}>{error}</Text>}
@@ -195,7 +183,30 @@ const getStyles = (Colors: ThemeColors) =>
     },
     fields: {
       alignSelf: 'stretch',
-      gap: Spacing.sm,
+      gap: Spacing.md,
+    },
+    lockedLabelRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    lockedLabel: {
+      ...Type.caption,
+      color: Colors.inkSecondary,
+      marginBottom: 6,
+    },
+    changeLink: {
+      ...Type.captionBold,
+      color: Colors.primary,
+    },
+    lockedInput: {
+      color: Colors.inkTertiary,
+    },
+    hint: {
+      ...Type.tiny,
+      color: Colors.inkTertiary,
+      marginTop: 4,
     },
     error: {
       ...Type.caption,

@@ -70,7 +70,7 @@ interface TicketState {
   verifyAndClose: (
     token: string,
     ticketId: string,
-    changes: { rating: number; feedback: string },
+    changes: { rating: number; feedback: string; costResponsibility?: CostResponsibility },
   ) => Promise<void>;
   /** Lets a resident withdraw their own complaint - only valid while it's still Pending. */
   cancelTicket: (token: string, ticketId: string) => Promise<void>;
@@ -263,6 +263,10 @@ export const useTicketStore = create<TicketState>()(
             status: 'Closed',
             resident_rating: changes.rating,
             resident_feedback: changes.feedback,
+            // Only sent when the resident had to resolve a "Pending Review" cost first.
+            ...(changes.costResponsibility
+              ? { cost_responsibility: changes.costResponsibility }
+              : {}),
           });
           applyUpdatedTicket(apiTicket);
           await get().refreshTicketHistory(token, ticketId);

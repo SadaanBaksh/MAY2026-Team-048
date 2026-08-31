@@ -7,7 +7,9 @@ import {
   fetchPublicService,
   fetchPublicServices,
   fetchSimilaritySuggestions,
+  mergePublicServices,
   reviewSimilaritySuggestion,
+  unmergePublicService,
   updatePublicService,
 } from '@/api/client';
 import type {
@@ -56,6 +58,10 @@ interface PublicServiceState {
     suggestionId: string,
     accept: boolean,
   ) => Promise<PublicSimilaritySuggestion>;
+  /** Facility-employee manual merge: fold the chosen open services into one combined page. */
+  mergeServices: (token: string, serviceIds: string[]) => Promise<PublicService>;
+  /** Facility-employee unmerge: split a combined page back into its source pages. */
+  unmergeService: (token: string, serviceId: string) => Promise<PublicService[]>;
 }
 
 function upsert(items: PublicService[], value: PublicService): PublicService[] {
@@ -63,7 +69,7 @@ function upsert(items: PublicService[], value: PublicService): PublicService[] {
   return exists ? items.map((item) => (item.id === value.id ? value : item)) : [value, ...items];
 }
 
-export const usePublicServiceStore = create<PublicServiceState>((set) => ({
+export const usePublicServiceStore = create<PublicServiceState>((set, get) => ({
   services: [],
   comments: {},
   suggestions: [],
@@ -121,5 +127,20 @@ export const usePublicServiceStore = create<PublicServiceState>((set) => ({
       suggestions: state.suggestions.filter((item) => item.id !== suggestionId),
     }));
     return reviewed;
+  },
+
+  mergeServices: async (token, serviceIds) => {
+    const merged = await mergePublicServices(token, serviceIds);
+    // The sources are now `Merged` (and drop out of the default feed) and pending
+    // AI suggestions touching them are gone — refetch both lists for a clean state.
+    await Promise.all([get().refreshServices(token), get().refreshSuggestions(token)]);
+    return merged;
+  },
+
+  unmergeService: async (token, serviceId) => {
+    const restored = await unmergePublicService(token, serviceId);
+    // The combined page is gone and the sources are back — refetch for a clean state.
+    await Promise.all([get().refreshServices(token), get().refreshSuggestions(token)]);
+    return restored;
   },
 }));

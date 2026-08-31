@@ -10,6 +10,7 @@ import {
   loginUser,
   registerUser,
   updateUser,
+  verifyEmailChange,
 } from '@/api/client';
 import type { AppUser, UserRole } from '@/types';
 import { clearToken, getToken, setToken } from '@/utils/tokenStorage';
@@ -34,6 +35,8 @@ const DEMO_CREDENTIALS: Record<UserRole, { email: string; password: string }> = 
   facility_employee: { email: 'demo.employee@simplifix.app', password: DEMO_PASSWORD },
   maintenance_staff: { email: 'demo.staff@simplifix.app', password: DEMO_PASSWORD },
   facility_manager: { email: 'demo.manager@simplifix.app', password: DEMO_PASSWORD },
+  // No demo chip surfaces this; the admin signs in via the employee login form.
+  admin: { email: 'admin@simplifix.app', password: DEMO_PASSWORD },
 };
 
 function errorMessage(err: unknown): string {
@@ -51,8 +54,15 @@ interface AuthState {
   register: (input: RegisterInput) => Promise<AuthResult>;
   logout: () => Promise<void>;
   updateCurrentUser: (partial: Partial<AppUser>) => Promise<void>;
+  /** Confirms an OTP sent to `newEmail` and moves the account's login identity onto it.
+   * Throws (ApiError) on a bad/expired code or a now-taken address. */
+  confirmEmailChange: (newEmail: string, otp: string) => Promise<void>;
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
+  /** Facility-manager action: revoke access from an active account. */
+  suspendUser: (userId: string) => Promise<void>;
+  /** Facility-manager action: restore access to a suspended account. */
+  reactivateUser: (userId: string) => Promise<void>;
   refreshUsers: () => Promise<void>;
   /** Refetches the logged-in user's own record — e.g. picks up a rating recomputed
    * server-side by someone else's action (a resident closing a rated ticket). */
@@ -115,13 +125,24 @@ export const useAuthStore = create<AuthState>()(
       updateCurrentUser: async (partial) => {
         const { currentUser, token } = get();
         if (!currentUser || !token) return;
+        // Email/phone are deliberately not forwarded — phone is immutable and email changes
+        // go through confirmEmailChange (OTP-verified).
         const apiUser = await updateUser(token, currentUser.userId, {
           name: partial.name,
-          email: partial.email,
-          phone: partial.phone,
           avatar_color: partial.avatarColor,
           avatar_uri: partial.avatarUri,
         });
+        const updated = apiUserToAppUser(apiUser);
+        set((state) => ({
+          currentUser: updated,
+          users: state.users.map((u) => (u.userId === updated.userId ? updated : u)),
+        }));
+      },
+
+      confirmEmailChange: async (newEmail, otp) => {
+        const { currentUser, token } = get();
+        if (!currentUser || !token) return;
+        const apiUser = await verifyEmailChange(token, newEmail, otp);
         const updated = apiUserToAppUser(apiUser);
         set((state) => ({
           currentUser: updated,
@@ -142,6 +163,24 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         if (!token) return;
         const apiUser = await updateUser(token, userId, { account_status: 'rejected' });
+        set((state) => ({
+          users: state.users.map((u) => (u.userId === userId ? apiUserToAppUser(apiUser) : u)),
+        }));
+      },
+
+      suspendUser: async (userId) => {
+        const { token } = get();
+        if (!token) return;
+        const apiUser = await updateUser(token, userId, { account_status: 'suspended' });
+        set((state) => ({
+          users: state.users.map((u) => (u.userId === userId ? apiUserToAppUser(apiUser) : u)),
+        }));
+      },
+
+      reactivateUser: async (userId) => {
+        const { token } = get();
+        if (!token) return;
+        const apiUser = await updateUser(token, userId, { account_status: 'active' });
         set((state) => ({
           users: state.users.map((u) => (u.userId === userId ? apiUserToAppUser(apiUser) : u)),
         }));

@@ -3,7 +3,9 @@ import {
   createPublicService,
   fetchPublicServices,
   fetchSimilaritySuggestions,
+  mergePublicServices,
   reviewSimilaritySuggestion,
+  unmergePublicService,
   updatePublicService,
 } from '@/api/client';
 import { usePublicServiceStore } from '@/store/publicServiceStore';
@@ -16,7 +18,9 @@ jest.mock('@/api/client', () => ({
   fetchPublicService: jest.fn(),
   fetchPublicServices: jest.fn(),
   fetchSimilaritySuggestions: jest.fn(),
+  mergePublicServices: jest.fn(),
   reviewSimilaritySuggestion: jest.fn(),
+  unmergePublicService: jest.fn(),
   updatePublicService: jest.fn(),
 }));
 
@@ -30,6 +34,8 @@ const mockFetchSuggestions = fetchSimilaritySuggestions as jest.MockedFunction<
 const mockReviewSuggestion = reviewSimilaritySuggestion as jest.MockedFunction<
   typeof reviewSimilaritySuggestion
 >;
+const mockMergeServices = mergePublicServices as jest.MockedFunction<typeof mergePublicServices>;
+const mockUnmergeService = unmergePublicService as jest.MockedFunction<typeof unmergePublicService>;
 
 function service(overrides: Partial<PublicService> = {}): PublicService {
   return {
@@ -51,6 +57,7 @@ function service(overrides: Partial<PublicService> = {}): PublicService {
     resolutionRemarks: null,
     resolutionProofUrl: null,
     mergedIntoId: null,
+    mergedFromCount: 0,
     reports: [],
     commentCount: 0,
     ...overrides,
@@ -129,5 +136,41 @@ describe('usePublicServiceStore', () => {
     mockReviewSuggestion.mockResolvedValue({ ...suggestion, status: 'Declined' });
     await usePublicServiceStore.getState().reviewSuggestion('token', suggestion.id, false);
     expect(usePublicServiceStore.getState().suggestions).toHaveLength(0);
+  });
+
+  it('merges the chosen services and refetches the feed and suggestions', async () => {
+    usePublicServiceStore.setState({
+      services: [service({ id: 'public-1' }), service({ id: 'public-2' })],
+    });
+    const merged = service({ id: 'public-merged', title: 'Combined page' });
+    mockMergeServices.mockResolvedValue(merged);
+    mockFetchServices.mockResolvedValue([merged]);
+    mockFetchSuggestions.mockResolvedValue([]);
+
+    const result = await usePublicServiceStore
+      .getState()
+      .mergeServices('token', ['public-1', 'public-2']);
+
+    expect(mockMergeServices).toHaveBeenCalledWith('token', ['public-1', 'public-2']);
+    expect(result.id).toBe('public-merged');
+    expect(mockFetchServices).toHaveBeenCalledWith('token');
+    expect(mockFetchSuggestions).toHaveBeenCalledWith('token');
+    expect(usePublicServiceStore.getState().services).toEqual([merged]);
+  });
+
+  it('unmerges a combined page and refetches the feed and suggestions', async () => {
+    const restored = [service({ id: 'public-1' }), service({ id: 'public-2' })];
+    mockUnmergeService.mockResolvedValue(restored);
+    mockFetchServices.mockResolvedValue(restored);
+    mockFetchSuggestions.mockResolvedValue([]);
+
+    const result = await usePublicServiceStore
+      .getState()
+      .unmergeService('token', 'public-merged');
+
+    expect(mockUnmergeService).toHaveBeenCalledWith('token', 'public-merged');
+    expect(result).toHaveLength(2);
+    expect(mockFetchServices).toHaveBeenCalledWith('token');
+    expect(mockFetchSuggestions).toHaveBeenCalledWith('token');
   });
 });

@@ -10,11 +10,11 @@ The frontend streamlines the maintenance-complaint lifecycle for a residential c
 
 - **Residents** file complaints (plumbing, electrical, etc.) with AI-assisted category/priority suggestions, attach photos or voice notes, and track status through to resolution.
 - **Residents** publish and discuss common-area issues in a separate Community feed. Each issue has a dedicated page, and merged pages retain all contributing reports.
-- **Facility employees** triage incoming complaints, assign them to maintenance staff, and reject implausible complaints or public reports with a required reason.
-- **Facility employees** manage public services separately and accept or decline AI similarity merge popups.
+- **Facility employees** triage incoming complaints, assign them to maintenance staff, and close a complaint from Pending with a required reason (outside-contractor fixes as well as implausible complaints).
+- **Facility employees** accept or decline AI similarity merge popups, hand-pick any set of open public services to merge with checkboxes on the Public Services tab, and unmerge a combined page while it is still unassigned.
 - **Maintenance staff** work through their assigned jobs and update progress.
 - **Maintenance staff** see private and public assignments in one job queue.
-- **Facility managers** get a portfolio-wide view of history and team performance.
+- **Facility managers** get a portfolio-wide view of history and team performance, and suspend or reactivate resident/employee/maintenance accounts from the **People** tab. The manager workspace is desktop-first — on a phone it shows a "sign in from a desktop" screen with a log-out button.
 - **Facility managers** see public-service totals, open/resolved counts, merged-report counts, and combined staff workloads.
 
 ## Frontend Setup
@@ -65,11 +65,11 @@ backend, so the demo users must already exist there — local Docker setups seed
 frontend/
 ├─ src/
 │  ├─ app/                 # Expo Router screens (file-based routing)
-│  │  ├─ (auth)/           # Landing, login, register
+│  │  ├─ (auth)/           # Landing, login, register, pending-approval (also the "account suspended" screen)
 │  │  ├─ (resident)/       # Resident tabs, complaint detail, new complaint
-│  │  ├─ (employee)/       # Facility employee tabs, complaint detail
+│  │  ├─ (employee)/       # Facility employee tabs, complaint detail, public service detail (merge / unmerge)
 │  │  ├─ (maintenance)/    # Maintenance staff tabs, job detail
-│  │  └─ (manager)/        # Facility manager tabs, complaint detail
+│  │  └─ (manager)/        # Facility manager tabs (incl. People / account suspension); desktop-first, phones get DesktopOnlyNotice
 │  ├─ api/                  # Backend API client
 │  ├─ components/
 │  │  ├─ ui/               # Design-system primitives (Button, Card, Badge, Chip, ...)

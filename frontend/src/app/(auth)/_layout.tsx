@@ -11,6 +11,7 @@ export default function AuthLayout() {
       <Stack.Screen name="pending-approval" />
       <Stack.Screen name="forgot-password" />
       <Stack.Screen name="change-password" />
+      <Stack.Screen name="change-email" />
     </Stack>
   );
 }

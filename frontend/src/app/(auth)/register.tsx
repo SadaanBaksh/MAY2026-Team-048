@@ -60,6 +60,8 @@ const ROLE_COPY: Record<UserRole, { title: string; subtitle: string }> = {
     subtitle:
       'Managers get full access right away, including approving employee and staff requests.',
   },
+  // Admin is never a selectable sign-up option; this entry only keeps the map exhaustive.
+  admin: { title: 'Admin', subtitle: '' },
 };
 
 export default function RegisterScreen() {

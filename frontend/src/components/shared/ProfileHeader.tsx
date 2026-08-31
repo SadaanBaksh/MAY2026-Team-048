@@ -15,6 +15,7 @@ const ROLE_LABELS: Record<AppUser['role'], string> = {
   facility_employee: 'Facility Employee',
   maintenance_staff: 'Maintenance Staff',
   facility_manager: 'Facility Manager',
+  admin: 'Admin',
 };
 
 export function ProfileHeader({ user, meta }: { user: AppUser; meta?: string }) {

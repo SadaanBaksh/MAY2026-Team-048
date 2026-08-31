@@ -1,6 +1,11 @@
-export type UserRole = 'resident' | 'facility_employee' | 'maintenance_staff' | 'facility_manager';
+export type UserRole =
+  | 'resident'
+  | 'facility_employee'
+  | 'maintenance_staff'
+  | 'facility_manager'
+  | 'admin';
 
-export type AccountStatus = 'active' | 'pending' | 'rejected';
+export type AccountStatus = 'active' | 'pending' | 'rejected' | 'suspended';
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency';
 
@@ -69,7 +74,17 @@ export interface FacilityManager extends BaseUser {
   title: string;
 }
 
-export type AppUser = Resident | FacilityEmployee | MaintenanceStaff | FacilityManager;
+/** Platform operator. Only ever reaches the admin screen that CRUDs facility managers. */
+export interface Admin extends BaseUser {
+  role: 'admin';
+}
+
+export type AppUser =
+  | Resident
+  | FacilityEmployee
+  | MaintenanceStaff
+  | FacilityManager
+  | Admin;
 
 export interface Category {
   categoryId: string;
@@ -176,6 +191,8 @@ export interface PublicService {
   resolutionRemarks: string | null;
   resolutionProofUrl: string | null;
   mergedIntoId: string | null;
+  /** How many source pages were folded into this one by a merge (0 = not a merge result). */
+  mergedFromCount: number;
   reports: PublicReport[];
   commentCount: number;
 }

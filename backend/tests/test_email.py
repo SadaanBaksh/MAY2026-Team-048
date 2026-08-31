@@ -96,6 +96,20 @@ def test_send_otp_email_change_password_purpose(monkeypatch):
     assert "change your password" in captured["json"]["content"][0]["value"]
 
 
+def test_send_otp_email_change_email_purpose(monkeypatch):
+    _configure_sendgrid(monkeypatch)
+    captured = {}
+    monkeypatch.setattr(
+        "app.services.email.requests.post",
+        lambda url, headers, json, timeout: captured.update(json=json) or _FakeResponse(),
+    )
+
+    send_otp_email("new-inbox@example.com", "4242", "change_email")
+
+    assert "New Email Address" in captured["json"]["subject"]
+    assert "4242" in captured["json"]["content"][0]["value"]
+
+
 def test_send_otp_email_unknown_purpose_uses_generic_body(monkeypatch):
     _configure_sendgrid(monkeypatch)
     captured = {}

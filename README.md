@@ -24,16 +24,17 @@ Simplifix centralizes the complete complaint lifecycle for apartment communities
 
 - Residents can create maintenance complaints, attach photos or voice notes, review AI-assisted complaint details, track status, verify completed work, and rate the resolution.
 - Residents can publish common-area public service reports, discuss them with neighbours, and follow a shared resolution page when reports are merged.
-- Facility employees can review incoming complaints, validate AI-generated descriptions, assign jobs to maintenance staff, monitor workloads, handle overdue complaints, and reject implausible complaints or public reports with a required reason.
-- Facility employees receive AI similarity suggestions for public reports and decide whether matching reports should be merged into a new combined service page.
+- Facility employees can review incoming complaints, validate AI-generated descriptions, assign jobs to maintenance staff, monitor workloads, handle overdue complaints, and close a complaint from Pending with a required reason (e.g. already handled by an outside contractor, or not a real maintenance issue).
+- Facility employees receive AI similarity suggestions for public reports, can hand-pick any set of open public reports and merge them into one combined page (then unmerge that page back into its sources while it is still unassigned), and can reject an implausible public report with a required reason.
 - Maintenance staff can view assigned jobs, inspect complaint details and media, update repair progress, add remarks, and upload completion proof.
-- Facility managers can monitor analytics, complaint trends, staff performance, workload distribution, recurring issues, and historical records, and draft AI-assisted resident notices.
+- Facility managers can monitor analytics, complaint trends, staff performance, workload distribution, recurring issues, and historical records, draft AI-assisted resident notices, and suspend or reactivate resident, employee, and maintenance-staff accounts. The manager workspace is desktop-first; on a phone it shows a "sign in from a desktop" notice.
 
 The complaint lifecycle:
 
 ```text
 Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Closed
-                    \-> Rejected (facility employee, Pending only, reason required)
+                    \-> Rejected  (facility employee closes it from Pending, reason required;
+                                   used for contractor-handled or implausible complaints)
 ```
 
 ## Key Features
@@ -42,13 +43,14 @@ Pending -> Assigned -> In Progress -> Resolved -> Resident Verification -> Close
 - AI-assisted manager notices with tower targeting, editable drafts, scheduled delivery, and expiry
 - AI resident support chat and AI-generated role-specific dashboard summaries
 - Media-based complaint reporting via AWS S3-backed photo/voice-note uploads
-- Role-based app experience for residents, facility employees, maintenance staff, and facility managers
-- Complaint status tracking from submission to closure, including employee-reviewed rejection
+- Role-based app experience for residents, facility employees, maintenance staff, and facility managers; the manager workspace is desktop-first and shows a "use a larger screen" notice on phones
+- Complaint status tracking from submission to closure, including an employee "close request" step from Pending (reason required)
+- Facility-manager account suspension and reactivation for resident, employee, and maintenance-staff accounts, with a blocked-login screen for suspended users
 - Worker assignment and workload visibility
 - Completion proof, remarks, resident verification, and ratings
 - Searchable complaint history and full audit trail
 - Society-wide public service feed with comments and dedicated issue pages
-- Employee-approved AI similarity scoring and information-preserving report merges
+- Employee-approved AI similarity scoring and information-preserving report merges, plus employee-driven manual merge of any open public reports and a reversible unmerge
 - Manager analytics for resolution time, category trends, recurring issues, and staff performance
 
 ## Architecture
@@ -145,12 +147,12 @@ File-based Expo Router app under [`frontend/src/`](./frontend/src):
 | --- | --- |
 | `app/` | Screens as routes. `_layout.tsx` hydrates the session, loads fonts, and routes into one of the role groups. `index.tsx` redirects by role/auth state. |
 | `app/(auth)/` | Landing, login (resident + employee variants), register, OTP forgot-password, pending-approval, change-password. |
-| `app/(resident)/`, `(employee)/`, `(maintenance)/`, `(manager)/` | One route group per role, each with a `(tabs)/` set plus detail screens (`complaint/[id]`, `job/[id]`, `public/[id]`, `notice/[id]`). A group only renders for its role. |
+| `app/(resident)/`, `(employee)/`, `(maintenance)/`, `(manager)/` | One route group per role, each with a `(tabs)/` set plus detail screens (`complaint/[id]`, `job/[id]`, `public/[id]`, `notice/[id]`). A group only renders for its role. `(manager)` adds a `people` tab (account suspension) and, below the desktop breakpoint, renders `DesktopOnlyNotice` instead of the sidebar workspace. |
 | `app/comments/[ticketId].tsx` | Shared ticket comment thread — polls the API every ~8s while open (no websockets). |
 | `api/client.ts` | The entire backend contract in one typed module: `apiFetch` wrapper, `ApiError`, snake_case↔camelCase mappers, one function per endpoint. |
 | `store/` | Zustand stores — `authStore` (persisted user, JWT in secure store), `ticketStore`, `publicServiceStore`, `noticeStore`, `notificationStore`, `themeStore`. Refreshed on login and on token change. |
 | `components/ui/` | Design-system primitives (Button, Card, Badge, Chip, StatCard, charts, StatusStepper…). |
-| `components/shared/` | Domain components built on the UI kit (TicketCard, CommentsThread, PublicServiceDetail, SimilarityReviewModal, NotificationBell…). |
+| `components/shared/` | Domain components built on the UI kit (TicketCard, CommentsThread, PublicServiceDetail, SimilarityReviewModal, NotificationBell, DesktopOnlyNotice…). |
 | `constants/theme.ts` | Design tokens (colour, spacing, radius, type scale, shadows); light/dark via `themeStore` + `useTheme`. |
 | `hooks/`, `utils/`, `types/` | Voice recorder, dashboard search, desktop breakpoint; date/id/overdue/validation helpers; shared TS types. |
 
@@ -182,6 +184,7 @@ erDiagram
     public_services ||--o{ public_service_comments : "society discussion"
     public_services ||--o{ public_service_history : "lifecycle + merge audit"
     public_services |o--o| public_services : "merged_into_id (redirect)"
+    public_services |o--o{ public_reports : "original_service_id (pre-merge home, for unmerge)"
     public_similarity_suggestions }o--|| public_services : "service_a / service_b / merged_service"
 
     users ||--o{ chat_messages : "resident AI chat history"
@@ -189,10 +192,11 @@ erDiagram
 
 Enum-driven lifecycles (`app/models/enums.py`):
 
-- **Ticket** — `Pending → Assigned → In_Progress → Resolved → Closed`, with `Cancelled` (resident withdrawal) and `Rejected` (employee dismissal from `Pending`, reason required).
-- **Public service** — `Pending → Assigned → In_Progress → Resolved`, plus `Rejected` and `Merged` (source pages become immutable redirects via `merged_into_id`).
+- **Ticket** — `Pending → Assigned → In_Progress → Resolved → Closed`, with `Cancelled` (resident withdrawal) and `Rejected` (facility employee closes the request from `Pending`, reason required — surfaced in the app as "Close request", and excluded from resolution/SLA analytics).
+- **Account** — `pending → active`, plus `rejected` (registration declined) and `suspended` (a facility manager revokes a previously-active resident/employee/maintenance account; reversible back to `active`, managers can't be suspended). Suspended and rejected users still get a token, but every role's route guard sends them to an explanatory screen.
+- **Public service** — `Pending → Assigned → In_Progress → Resolved`, plus `Rejected` and `Merged`. A merge — an AI-suggested pair, or an employee-picked set of any size — creates a new combined page and turns each source into an immutable redirect via `merged_into_id`; an employee can unmerge a still-unassigned combined page, which restores every report/comment to its pre-merge page via `original_service_id` and deletes the combined page.
 - **Notice** — `Draft → Scheduled → Sent → Expired`, with `Cancelled` before delivery.
-- **Similarity suggestion** — `Pending → Accepted | Declined` (employee decision; accepting creates the merged page).
+- **Similarity suggestion** — `Pending → Accepted | Declined` (employee decision; accepting creates the merged page, unmerging that page reopens the suggestion).
 
 ### Request lifecycle (authenticated call)
 
@@ -219,10 +223,10 @@ sequenceDiagram
 
 ### Cross-cutting flows
 
-- **Auth** — `POST /auth/login` (OAuth2 password flow) returns a 24h HS256 JWT; the client stores it in `expo-secure-store` and sends it as `Authorization: Bearer`. Residents/managers are active on registration; employees/maintenance staff start `pending` until promoted. Password reset and change use emailed OTPs (SendGrid).
+- **Auth** — `POST /auth/login` (OAuth2 password flow) returns a 24h HS256 JWT; the client stores it in `expo-secure-store` and sends it as `Authorization: Bearer`. Residents/managers are active on registration; employees/maintenance staff start `pending` until a facility employee or manager promotes them. A facility manager can also `suspend` any active resident/employee/maintenance account (and later reactivate it) from the manager **People** screen; suspended and rejected users receive a token but every route guard bounces them to an explanatory screen. Password reset and change use emailed OTPs (SendGrid).
 - **Media** — client uploads multipart to `POST /uploads/`; the API validates type/size, writes to S3 under `{folder}/{uploader_id}/{uuid}`, and returns the URL. The client then GETs media straight from S3. AI endpoints re-fetch media server-side and verify the S3 host + uploader before sending it to Gemini.
 - **AI** — every AI feature (complaint analysis, resident chat, notice drafting, dashboard summaries, public-report similarity) goes through `core/gemini.py`; endpoints are per-user rate-limited (6–15/min). Complaint analysis also flags media/text that isn't a real maintenance issue.
-- **Public-report merge** — a new public report is scored against recent unresolved services by the AI; scores above `PUBLIC_SIMILARITY_THRESHOLD` (0.80) create an employee review suggestion + notification. An employee accepts/declines; accepting builds a new combined page and redirects the sources.
+- **Public-report merge / unmerge** — a new public report is AI-scored against recent unresolved services; scores above `PUBLIC_SIMILARITY_THRESHOLD` (0.80) create an employee review suggestion + notification that the employee accepts or declines. Separately, an employee can tick any set of open public services on the Public Services tab and merge them directly (`POST /public-services/merge`). Both paths run one `_merge_services` helper: it builds a combined page, moves every report/comment onto it, and records each one's pre-merge page. A combined page that is still `Pending` and unassigned can be unmerged (`POST /public-services/{id}/unmerge`) — reports/comments go back and the combined page is deleted.
 - **Realtime** — none. Comment threads and notifications are polled (~8s while a thread is open); scheduled notices are delivered by the in-process scheduler.
 
 ### Environments
@@ -323,9 +327,9 @@ Facility Manager) if you ran the optional seed scripts in step 2 — or register
 | Role              | Route group     | Primary responsibilities                                                                |
 | ----------------- | --------------- | ----------------------------------------------------------------------------------------- |
 | Resident          | `(resident)`    | Submit complaints, attach media, track progress, verify completion, rate work           |
-| Facility Employee | `(employee)`    | Review complaints, validate AI output, assign workers, reject implausible reports, monitor pending/overdue work |
+| Facility Employee | `(employee)`    | Review complaints, validate AI output, assign workers, close complaints from Pending (reason required), merge / unmerge public service reports, monitor pending/overdue work |
 | Maintenance Staff | `(maintenance)` | View assigned jobs, update progress, add remarks, upload completion proof               |
-| Facility Manager  | `(manager)`     | Review analytics, monitor performance, inspect history, identify recurring issues       |
+| Facility Manager  | `(manager)`     | Review analytics, monitor performance, inspect history, identify recurring issues, draft notices, suspend / reactivate accounts (People tab). Desktop-first — phones show a "use a larger screen" notice |
 
 ## Contributors
 

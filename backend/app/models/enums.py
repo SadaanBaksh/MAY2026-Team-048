@@ -6,12 +6,19 @@ class UserRole(str, enum.Enum):
     facility_employee = "facility_employee"
     maintenance_staff = "maintenance_staff"
     facility_manager = "facility_manager"
+    # Platform operator. Not a self-registerable role — seeded via scripts.seed_demo_users
+    # and used only by the admin endpoints that CRUD facility-manager accounts.
+    admin = "admin"
 
 
 class AccountStatus(str, enum.Enum):
     active = "active"
     pending = "pending"
     rejected = "rejected"
+    # Set by a facility manager to revoke access from an account that was previously
+    # active (resident / employee / maintenance staff). Distinct from `rejected`, which
+    # means a registration request was declined and access was never granted.
+    suspended = "suspended"
 
 
 class Priority(str, enum.Enum):

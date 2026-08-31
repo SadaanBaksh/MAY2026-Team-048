@@ -1038,3 +1038,287 @@ def test_merge_transfers_comments_declines_stale_suggestions_and_notifies_worker
         "/api/v1/notifications/me", headers=auth_headers(maintenance_user)
     ).json()
     assert any(n["public_service_id"] == merged_id for n in worker_notifications)
+
+
+# --- manual merge (POST /public-services/merge) -----------------------------------
+
+
+def _create_service(client, auth_headers, author, monkeypatch, *, title, location):
+    monkeypatch.setattr("app.api.v1.endpoints.public_services._score_candidates", lambda *_: [])
+    return client.post(
+        "/api/v1/public-services/",
+        json=public_payload(title=title, location=location),
+        headers=auth_headers(author),
+    ).json()
+
+
+def test_employee_manual_merge_folds_selected_services_into_one_page(
+    client, db_session, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    r3 = make_user(role=UserRole.resident, name="Third")
+
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Gate broken", location="Main gate")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Gate won't shut", location="Main gate")
+    c = _create_service(client, auth_headers, r3, monkeypatch, title="Entrance gate stuck", location="Main gate")
+
+    response = client.post(
+        "/api/v1/public-services/merge",
+        json={"service_ids": [a["id"], b["id"], c["id"]]},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 200, response.text
+    merged = response.json()
+    assert merged["id"] not in {a["id"], b["id"], c["id"]}
+    assert merged["status"] == "Pending"
+    assert {report["author_id"] for report in merged["reports"]} == {
+        resident_user.id,
+        r2.id,
+        r3.id,
+    }
+
+    db_session.expire_all()
+    for src in (a, b, c):
+        row = db_session.get(PublicService, src["id"])
+        assert row.status == PublicServiceStatus.Merged
+        assert row.merged_into_id == merged["id"]
+
+    # Authors are notified about the combined page.
+    notifs = client.get("/api/v1/notifications/me", headers=auth_headers(r2)).json()
+    assert any(n["public_service_id"] == merged["id"] for n in notifs)
+
+
+def test_manual_merge_requires_two_distinct_services(
+    client, resident_user, employee_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Leak", location="Lobby")
+
+    response = client.post(
+        "/api/v1/public-services/merge",
+        json={"service_ids": [a["id"], a["id"]]},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 422
+
+
+def test_manual_merge_forbidden_for_non_employee(
+    client, resident_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Leak", location="Lobby")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Leak too", location="Lobby")
+
+    response = client.post(
+        "/api/v1/public-services/merge",
+        json={"service_ids": [a["id"], b["id"]]},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 403
+
+
+def test_manual_merge_rejects_missing_service(
+    client, resident_user, employee_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Leak", location="Lobby")
+
+    response = client.post(
+        "/api/v1/public-services/merge",
+        json={"service_ids": [a["id"], "does-not-exist"]},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 404
+
+
+def test_manual_merge_rejects_resolved_service(
+    client, db_session, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Leak", location="Lobby")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Leak too", location="Lobby")
+
+    row = db_session.get(PublicService, a["id"])
+    row.status = PublicServiceStatus.Resolved
+    db_session.commit()
+
+    response = client.post(
+        "/api/v1/public-services/merge",
+        json={"service_ids": [a["id"], b["id"]]},
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 409
+
+
+# --- manual unmerge (POST /public-services/{id}/unmerge) --------------------------
+
+
+def _merge(client, auth_headers, employee_user, ids):
+    return client.post(
+        "/api/v1/public-services/merge",
+        json={"service_ids": ids},
+        headers=auth_headers(employee_user),
+    )
+
+
+def test_employee_can_unmerge_a_fresh_combined_page(
+    client, db_session, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Pump noisy", location="Basement")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Loud pump", location="Basement")
+
+    merged = _merge(client, auth_headers, employee_user, [a["id"], b["id"]]).json()
+
+    response = client.post(
+        f"/api/v1/public-services/{merged['id']}/unmerge",
+        headers=auth_headers(employee_user),
+    )
+
+    assert response.status_code == 200, response.text
+    restored = {row["id"]: row for row in response.json()}
+    assert set(restored) == {a["id"], b["id"]}
+    assert all(row["status"] == "Pending" for row in restored.values())
+    assert all(row["merged_into_id"] is None for row in restored.values())
+
+    # Each report is back on its own page.
+    assert [r["author_id"] for r in restored[a["id"]]["reports"]] == [resident_user.id]
+    assert [r["author_id"] for r in restored[b["id"]]["reports"]] == [r2.id]
+
+    # The combined page is gone.
+    assert client.get(
+        f"/api/v1/public-services/{merged['id']}", headers=auth_headers(employee_user)
+    ).status_code == 404
+
+    db_session.expire_all()
+    assert db_session.get(PublicService, merged["id"]) is None
+
+    notifs = client.get("/api/v1/notifications/me", headers=auth_headers(r2)).json()
+    assert any(n["title"] == "Combined report split" for n in notifs)
+
+
+def test_unmerge_keeps_combined_page_comments_on_the_oldest_source(
+    client, db_session, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Gate A", location="Gate")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Gate B", location="Gate")
+    merged = _merge(client, auth_headers, employee_user, [a["id"], b["id"]]).json()
+
+    client.post(
+        f"/api/v1/public-services/{merged['id']}/comments",
+        json={"message": "Posted on the combined page"},
+        headers=auth_headers(employee_user),
+    )
+
+    client.post(
+        f"/api/v1/public-services/{merged['id']}/unmerge", headers=auth_headers(employee_user)
+    )
+
+    # `a` is the oldest source - the orphan comment lands there.
+    a_comments = client.get(
+        f"/api/v1/public-services/{a['id']}/comments", headers=auth_headers(resident_user)
+    ).json()
+    assert any(c["message"] == "Posted on the combined page" for c in a_comments)
+
+
+def test_unmerge_blocked_once_a_worker_is_assigned(
+    client, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    worker = make_user(role=UserRole.maintenance_staff, name="Tech")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Leak A", location="Roof")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Leak B", location="Roof")
+    merged = _merge(client, auth_headers, employee_user, [a["id"], b["id"]]).json()
+
+    assign = client.patch(
+        f"/api/v1/public-services/{merged['id']}",
+        json={"worker_id": worker.id},
+        headers=auth_headers(employee_user),
+    )
+    assert assign.status_code == 200
+
+    response = client.post(
+        f"/api/v1/public-services/{merged['id']}/unmerge", headers=auth_headers(employee_user)
+    )
+    assert response.status_code == 409
+
+
+def test_unmerge_forbidden_for_non_employee(
+    client, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    r2 = make_user(role=UserRole.resident, name="Second")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Leak A", location="Roof")
+    b = _create_service(client, auth_headers, r2, monkeypatch, title="Leak B", location="Roof")
+    merged = _merge(client, auth_headers, employee_user, [a["id"], b["id"]]).json()
+
+    response = client.post(
+        f"/api/v1/public-services/{merged['id']}/unmerge", headers=auth_headers(resident_user)
+    )
+    assert response.status_code == 403
+
+
+def test_unmerge_rejects_a_page_that_was_not_merged(
+    client, resident_user, employee_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    a = _create_service(client, auth_headers, resident_user, monkeypatch, title="Solo", location="Lift")
+
+    response = client.post(
+        f"/api/v1/public-services/{a['id']}/unmerge", headers=auth_headers(employee_user)
+    )
+    assert response.status_code == 409
+
+
+def test_unmerge_reopens_an_ai_accepted_suggestion(
+    client, db_session, resident_user, employee_user, make_user, make_category, auth_headers, monkeypatch
+):
+    make_category(id="cat_electrical", name="Electrical")
+    second_resident = make_user(role=UserRole.resident, name="Second Resident")
+
+    def fake_scores(service, candidates):
+        return [
+            {"service_id": c.id, "score": 0.93, "rationale": "same street light"}
+            for c in candidates
+        ]
+
+    monkeypatch.setattr("app.api.v1.endpoints.public_services._score_candidates", fake_scores)
+    first = client.post(
+        "/api/v1/public-services/", json=public_payload(), headers=auth_headers(resident_user)
+    ).json()
+    client.post(
+        "/api/v1/public-services/",
+        json=public_payload(title="Tower A lamp off", location="Street light below Tower A"),
+        headers=auth_headers(second_resident),
+    )
+    suggestion = client.get(
+        "/api/v1/public-services/similarity/suggestions", headers=auth_headers(employee_user)
+    ).json()[0]
+    accepted = client.post(
+        f"/api/v1/public-services/similarity/suggestions/{suggestion['id']}/review",
+        json={"accept": True},
+        headers=auth_headers(employee_user),
+    ).json()
+    merged_id = accepted["merged_service_id"]
+
+    response = client.post(
+        f"/api/v1/public-services/{merged_id}/unmerge", headers=auth_headers(employee_user)
+    )
+    assert response.status_code == 200, response.text
+
+    db_session.expire_all()
+    reopened = db_session.get(PublicSimilaritySuggestion, suggestion["id"])
+    assert reopened.status == SimilaritySuggestionStatus.Pending
+    assert reopened.merged_service_id is None

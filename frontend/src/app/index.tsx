@@ -8,6 +8,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   facility_employee: '/(employee)/(tabs)',
   maintenance_staff: '/(maintenance)/(tabs)',
   facility_manager: '/(manager)/(tabs)',
+  admin: '/(admin)',
 };
 
 export default function Index() {

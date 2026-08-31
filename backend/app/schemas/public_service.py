@@ -75,6 +75,7 @@ class PublicServiceRead(BaseModel):
     resolution_remarks: str | None
     resolution_proof_url: str | None
     merged_into_id: str | None
+    merged_from_count: int = 0
     reports: list[PublicReportRead] = []
     comment_count: int = 0
 
@@ -129,3 +130,9 @@ class SimilaritySuggestionRead(BaseModel):
 
 class SimilarityReview(BaseModel):
     accept: bool
+
+
+class PublicServiceMerge(BaseModel):
+    """Employee-picked set of public services to fold into one combined page."""
+
+    service_ids: list[str] = Field(min_length=2, max_length=10)

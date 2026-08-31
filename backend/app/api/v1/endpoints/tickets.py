@@ -9,7 +9,7 @@ from app.api.response_docs import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
 from app.core.ai_cache import invalidate_summaries
 from app.db.session import get_db
 from app.models.category import Category
-from app.models.enums import MediaType, Priority, TicketStatus, UserRole
+from app.models.enums import CostResponsibility, MediaType, Priority, TicketStatus, UserRole
 from app.models.ticket import Ticket
 from app.models.ticket_history import TicketHistory
 from app.models.ticket_media import TicketMedia
@@ -137,11 +137,18 @@ def update_ticket(
     updates = payload.model_dump(exclude_unset=True)
 
     if current_user.role == UserRole.resident:
-        allowed = {"resident_rating", "resident_feedback", "status"}
+        allowed = {"resident_rating", "resident_feedback", "status", "cost_responsibility"}
         if not set(updates).issubset(allowed) or ticket.resident_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Residents can only rate and give feedback on their own tickets",
+            )
+        # A resident only gets to touch cost_responsibility to answer the "who pays?" prompt
+        # shown when verifying-and-closing a complaint the facility team left as Pending Review.
+        if "cost_responsibility" in updates and updates.get("status") != TicketStatus.Closed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cost responsibility can only be set while closing a resolved complaint",
             )
         if "status" in updates:
             new_status_value = updates["status"]
@@ -156,6 +163,14 @@ def update_ticket(
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
                         detail="Only resolved tickets can be closed",
+                    )
+                effective_cost = updates.get(
+                    "cost_responsibility", ticket.cost_responsibility
+                )
+                if effective_cost == CostResponsibility.Pending_Review:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Select who is responsible for the repair cost before closing this complaint.",
                     )
             else:
                 raise HTTPException(
@@ -174,17 +189,17 @@ def update_ticket(
         if current_user.role != UserRole.facility_employee:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only facility employees can reject a complaint",
+                detail="Only facility employees can close a request",
             )
         if ticket.status != TicketStatus.Pending:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Only a pending complaint can be rejected - it's already being worked on",
+                detail="Only a pending request can be closed this way - it's already being worked on",
             )
         if not (updates.get("resolution_remarks") or "").strip():
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="A reason is required to reject a complaint",
+                detail="A reason is required to close a request",
             )
 
     new_status = updates.get("status")
@@ -268,9 +283,9 @@ def update_ticket(
                 db,
                 user_id=ticket.resident_id,
                 ticket_id=ticket.id,
-                title="Complaint rejected",
+                title="Request closed",
                 message=(
-                    f'Your complaint "{ticket.title}" was rejected: '
+                    f'Your request "{ticket.title}" was closed: '
                     f"{updates.get('resolution_remarks')}"
                 ),
             )

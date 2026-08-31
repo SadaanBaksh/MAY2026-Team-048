@@ -257,8 +257,14 @@ export default function MaintenanceJobDetailScreen() {
             ) : (
               <SwipeToResolve
                 loading={resolving}
-                disabled={!remarks.trim() || !proofUri}
-                disabledHint="Add resolution details and a proof photo to enable the gesture."
+                blocked={!remarks.trim() || !proofUri}
+                blockedMessage={
+                  !remarks.trim() && !proofUri
+                    ? 'Add resolution details and a proof photo before resolving.'
+                    : !remarks.trim()
+                      ? 'Add resolution details before resolving.'
+                      : 'Attach a proof-of-resolution photo before resolving.'
+                }
                 onResolve={handleResolve}
               />
             )}

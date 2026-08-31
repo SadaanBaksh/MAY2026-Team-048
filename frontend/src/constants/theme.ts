@@ -43,7 +43,7 @@ interface RoleColorEntry {
   soft: string;
 }
 export type RoleColorPalette = Record<
-  'resident' | 'facility_employee' | 'maintenance_staff' | 'facility_manager',
+  'resident' | 'facility_employee' | 'maintenance_staff' | 'facility_manager' | 'admin',
   RoleColorEntry
 >;
 
@@ -146,6 +146,7 @@ export const LightRoleColors: RoleColorPalette = {
   facility_employee: { text: '#7A3FC2', soft: '#F1E9FA' },
   maintenance_staff: { text: '#C2740F', soft: '#FBF0DA' },
   facility_manager: { text: '#1C7A5A', soft: '#E1F5ED' },
+  admin: { text: '#5B5F6D', soft: '#EEF0F6' },
 };
 
 export const DarkRoleColors: RoleColorPalette = {
@@ -153,6 +154,7 @@ export const DarkRoleColors: RoleColorPalette = {
   facility_employee: { text: '#B08AE0', soft: '#2C2340' },
   maintenance_staff: { text: '#E0A968', soft: '#3A2C14' },
   facility_manager: { text: '#5FC79A', soft: '#173328' },
+  admin: { text: '#A9ADBB', soft: '#22242D' },
 };
 
 export const LightPriorityColors: PriorityColorPalette = {

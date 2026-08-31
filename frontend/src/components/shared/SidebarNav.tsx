@@ -28,6 +28,7 @@ const PROFILE_ROUTES: Record<UserRole, string> = {
   facility_employee: '/(employee)/(tabs)/profile',
   maintenance_staff: '/(maintenance)/(tabs)/profile',
   facility_manager: '/(manager)/(tabs)/profile',
+  admin: '/(admin)',
 };
 
 export function SidebarNav({ title, items }: SidebarNavProps) {

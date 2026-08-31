@@ -99,11 +99,17 @@ def test_int_002_complete_ticket_lifecycle_updates_history_and_worker_rating(
 
     close_response = client.patch(
         ticket_url,
-        json={"status": "Closed", "resident_rating": 5, "resident_feedback": "Fixed well."},
+        json={
+            "status": "Closed",
+            "resident_rating": 5,
+            "resident_feedback": "Fixed well.",
+            "cost_responsibility": "Society",
+        },
         headers=auth_headers(resident_user),
     )
     assert close_response.status_code == 200
     assert close_response.json()["status"] == "Closed"
+    assert close_response.json()["cost_responsibility"] == "Society"
 
     history_response = client.get(
         f"{ticket_url}/history", headers=auth_headers(resident_user)

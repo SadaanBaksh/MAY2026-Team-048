@@ -5,6 +5,7 @@ import {
   loginUser,
   registerUser,
   updateUser,
+  verifyEmailChange,
   type ApiUser,
 } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +21,7 @@ jest.mock('@/api/client', () => {
     loginUser: jest.fn(),
     registerUser: jest.fn(),
     updateUser: jest.fn(),
+    verifyEmailChange: jest.fn(),
   };
 });
 
@@ -34,6 +36,7 @@ const mockListUsers = listUsers as jest.MockedFunction<typeof listUsers>;
 const mockLoginUser = loginUser as jest.MockedFunction<typeof loginUser>;
 const mockRegisterUser = registerUser as jest.MockedFunction<typeof registerUser>;
 const mockUpdateUser = updateUser as jest.MockedFunction<typeof updateUser>;
+const mockVerifyEmailChange = verifyEmailChange as jest.MockedFunction<typeof verifyEmailChange>;
 const mockGetToken = getToken as jest.MockedFunction<typeof getToken>;
 const mockSetToken = setToken as jest.MockedFunction<typeof setToken>;
 const mockClearToken = clearToken as jest.MockedFunction<typeof clearToken>;
@@ -200,8 +203,6 @@ describe('useAuthStore', () => {
 
       expect(mockUpdateUser).toHaveBeenCalledWith('tok', 'u1', {
         name: 'New Name',
-        email: undefined,
-        phone: undefined,
         avatar_color: '#000',
         avatar_uri: undefined,
       });
@@ -209,6 +210,38 @@ describe('useAuthStore', () => {
       expect(state.currentUser?.name).toBe('New Name');
       expect(state.users.find((u) => u.userId === 'u1')?.name).toBe('New Name');
       expect(state.users.find((u) => u.userId === 'u2')?.name).toBe('Other');
+    });
+  });
+
+  describe('confirmEmailChange', () => {
+    it('does nothing when there is no signed-in user', async () => {
+      await useAuthStore.getState().confirmEmailChange('new@x.com', '1234');
+      expect(mockVerifyEmailChange).not.toHaveBeenCalled();
+    });
+
+    it('verifies the OTP and writes the new email onto currentUser + the roster', async () => {
+      const currentUser = apiUserFixtureAsAppUser({ userId: 'u1', name: 'Jane' });
+      useAuthStore.setState({ currentUser, token: 'tok', users: [currentUser] });
+      mockVerifyEmailChange.mockResolvedValue(
+        buildApiUser({ id: 'u1', name: 'Jane', email: 'new@x.com' }),
+      );
+
+      await useAuthStore.getState().confirmEmailChange('new@x.com', '1234');
+
+      expect(mockVerifyEmailChange).toHaveBeenCalledWith('tok', 'new@x.com', '1234');
+      const state = useAuthStore.getState();
+      expect(state.currentUser?.email).toBe('new@x.com');
+      expect(state.users.find((u) => u.userId === 'u1')?.email).toBe('new@x.com');
+    });
+
+    it('propagates an ApiError from a bad code', async () => {
+      const currentUser = apiUserFixtureAsAppUser({ userId: 'u1' });
+      useAuthStore.setState({ currentUser, token: 'tok', users: [currentUser] });
+      mockVerifyEmailChange.mockRejectedValue(new ApiError(400, 'Invalid or expired OTP'));
+
+      await expect(
+        useAuthStore.getState().confirmEmailChange('new@x.com', '0000'),
+      ).rejects.toThrow('Invalid or expired OTP');
     });
   });
 
@@ -241,6 +274,38 @@ describe('useAuthStore', () => {
 
       expect(mockUpdateUser).toHaveBeenCalledWith('tok', 'u2', { account_status: 'rejected' });
       expect(useAuthStore.getState().users[0].accountStatus).toBe('rejected');
+    });
+  });
+
+  describe('suspendUser / reactivateUser', () => {
+    it('does nothing without a token', async () => {
+      await useAuthStore.getState().suspendUser('u2');
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+    });
+
+    it('suspendUser PATCHes account_status to suspended and updates only that user', async () => {
+      const active = apiUserFixtureAsAppUser({ userId: 'u2', accountStatus: 'active' });
+      const other = apiUserFixtureAsAppUser({ userId: 'u3', accountStatus: 'active' });
+      useAuthStore.setState({ token: 'tok', users: [active, other] });
+      mockUpdateUser.mockResolvedValue(buildApiUser({ id: 'u2', account_status: 'suspended' }));
+
+      await useAuthStore.getState().suspendUser('u2');
+
+      expect(mockUpdateUser).toHaveBeenCalledWith('tok', 'u2', { account_status: 'suspended' });
+      const state = useAuthStore.getState();
+      expect(state.users.find((u) => u.userId === 'u2')?.accountStatus).toBe('suspended');
+      expect(state.users.find((u) => u.userId === 'u3')?.accountStatus).toBe('active');
+    });
+
+    it('reactivateUser PATCHes account_status back to active', async () => {
+      const suspended = apiUserFixtureAsAppUser({ userId: 'u2', accountStatus: 'suspended' });
+      useAuthStore.setState({ token: 'tok', users: [suspended] });
+      mockUpdateUser.mockResolvedValue(buildApiUser({ id: 'u2', account_status: 'active' }));
+
+      await useAuthStore.getState().reactivateUser('u2');
+
+      expect(mockUpdateUser).toHaveBeenCalledWith('tok', 'u2', { account_status: 'active' });
+      expect(useAuthStore.getState().users[0].accountStatus).toBe('active');
     });
   });
 

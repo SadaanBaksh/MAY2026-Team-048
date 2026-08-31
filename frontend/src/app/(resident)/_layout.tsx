@@ -24,6 +24,7 @@ export default function ResidentLayout() {
   const isDesktop = useIsDesktop();
 
   if (!user || user.role !== 'resident') return <Redirect href="/(auth)/customer-login" />;
+  if (user.accountStatus !== 'active') return <Redirect href="/(auth)/pending-approval" />;
 
   if (isDesktop) {
     return (

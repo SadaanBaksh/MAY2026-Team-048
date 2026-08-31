@@ -317,7 +317,7 @@ def test_employee_can_reject_pending_ticket(
     notifications = client.get(
         "/api/v1/notifications/me", headers=auth_headers(resident_user)
     ).json()
-    assert any(n["title"] == "Complaint rejected" for n in notifications)
+    assert any(n["title"] == "Request closed" for n in notifications)
 
 
 def test_reject_requires_a_reason(client, auth_headers, resident_user, employee_user, category):
@@ -417,7 +417,11 @@ def test_full_ticket_lifecycle_and_resolution_date(
 
     assign = client.patch(
         f"/api/v1/tickets/{ticket['id']}",
-        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        json={
+            "worker_id": maintenance_user.id,
+            "status": "Assigned",
+            "cost_responsibility": "Society",
+        },
         headers=auth_headers(employee_user),
     )
     assert assign.status_code == 200
@@ -478,6 +482,110 @@ def test_resident_cannot_close_before_resolved(client, auth_headers, resident_us
 
     assert response.status_code == 409
     assert response.json()["detail"] == "Only resolved tickets can be closed"
+
+
+def _resolve_ticket(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category, **assign
+) -> dict:
+    """Take a fresh ticket all the way to Resolved. `assign` extends the employee's assign
+    payload — omit `cost_responsibility` to leave the ticket at its default Pending Review."""
+    ticket = _create_ticket(client, auth_headers, resident_user, category)
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"worker_id": maintenance_user.id, "status": "Assigned", **assign},
+        headers=auth_headers(employee_user),
+    )
+    client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Resolved", "resolution_remarks": "Fixed it."},
+        headers=auth_headers(maintenance_user),
+    )
+    return ticket
+
+
+def test_resident_cannot_close_while_cost_is_pending_review(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _resolve_ticket(
+        client, auth_headers, resident_user, employee_user, maintenance_user, category
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": 5},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 422
+    assert "cost" in response.json()["detail"].lower()
+    assert (
+        client.get(f"/api/v1/tickets/{ticket['id']}", headers=auth_headers(resident_user)).json()[
+            "status"
+        ]
+        == "Resolved"
+    )
+
+
+def test_resident_closes_and_sets_cost_responsibility(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _resolve_ticket(
+        client, auth_headers, resident_user, employee_user, maintenance_user, category
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": 5, "cost_responsibility": "Resident"},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "Closed"
+    assert body["cost_responsibility"] == "Resident"
+
+
+def test_resident_close_succeeds_when_employee_already_set_cost(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _resolve_ticket(
+        client,
+        auth_headers,
+        resident_user,
+        employee_user,
+        maintenance_user,
+        category,
+        cost_responsibility="Society",
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={"status": "Closed", "resident_rating": 4},
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["cost_responsibility"] == "Society"
+
+
+def test_resident_cannot_set_cost_responsibility_to_pending_review_on_close(
+    client, auth_headers, resident_user, employee_user, maintenance_user, category
+):
+    ticket = _resolve_ticket(
+        client, auth_headers, resident_user, employee_user, maintenance_user, category
+    )
+
+    response = client.patch(
+        f"/api/v1/tickets/{ticket['id']}",
+        json={
+            "status": "Closed",
+            "resident_rating": 5,
+            "cost_responsibility": "Pending Review",
+        },
+        headers=auth_headers(resident_user),
+    )
+
+    assert response.status_code == 422
 
 
 # --- history -----------------------------------------------------------------
@@ -602,7 +710,11 @@ def test_close_with_rating_notifies_worker(
     ticket = _create_ticket(client, auth_headers, resident_user, category)
     client.patch(
         f"/api/v1/tickets/{ticket['id']}",
-        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        json={
+            "worker_id": maintenance_user.id,
+            "status": "Assigned",
+            "cost_responsibility": "Society",
+        },
         headers=auth_headers(employee_user),
     )
     client.patch(
@@ -631,7 +743,11 @@ def _assign_resolve_close(
     ticket = _create_ticket(client, auth_headers, resident_user, category)
     client.patch(
         f"/api/v1/tickets/{ticket['id']}",
-        json={"worker_id": maintenance_user.id, "status": "Assigned"},
+        json={
+            "worker_id": maintenance_user.id,
+            "status": "Assigned",
+            "cost_responsibility": "Society",
+        },
         headers=auth_headers(employee_user),
     )
     client.patch(

@@ -19,6 +19,7 @@ from app.models.enums import (
     SimilaritySuggestionStatus,
     UserRole,
 )
+from app.models.notification import Notification
 from app.models.public_service import PublicReport, PublicReportMedia, PublicService
 from app.models.public_service_comment import PublicServiceComment
 from app.models.public_service_history import PublicServiceHistory
@@ -29,6 +30,7 @@ from app.schemas.public_service import (
     PublicCommentRead,
     PublicHistoryRead,
     PublicServiceCreate,
+    PublicServiceMerge,
     PublicServiceRead,
     PublicServiceUpdate,
     SimilarityReview,
@@ -107,6 +109,9 @@ def _service_dict(db: Session, service: PublicService) -> dict:
         "resolution_remarks": service.resolution_remarks,
         "resolution_proof_url": service.resolution_proof_url,
         "merged_into_id": service.merged_into_id,
+        "merged_from_count": (
+            db.query(PublicService).filter(PublicService.merged_into_id == service.id).count()
+        ),
         "reports": reports,
         "comment_count": len(service.comments),
     }
@@ -145,6 +150,118 @@ def _record_status(
             remarks=remarks,
         )
     )
+
+
+_MERGE_LOCKED_STATUSES = (
+    PublicServiceStatus.Resolved,
+    PublicServiceStatus.Merged,
+    PublicServiceStatus.Rejected,
+)
+
+
+def _merge_services(
+    db: Session,
+    services: list[PublicService],
+    actor: User,
+    *,
+    ai_summary: str,
+    keep_suggestion_id: str | None = None,
+) -> PublicService:
+    """Fold two or more public services into a single new combined page.
+
+    Callers must have already checked that every service exists and that none is in a
+    locked state (see `_MERGE_LOCKED_STATUSES`). Reports and comments are re-parented
+    onto the new page, each source is marked `Merged` and pointed at it, still-pending
+    similarity suggestions that reference a source are declined, and report authors plus
+    any inherited worker are notified. Returns the new merged service; the caller commits.
+    """
+    now = datetime.now(timezone.utc)
+    ordered = sorted(services, key=lambda item: item.created_at)
+    older = ordered[0]
+    source_ids = [item.id for item in services]
+
+    # Gather report authors before re-parenting, while `source.reports` still holds them.
+    author_ids = {report.author_id for item in services for report in item.reports}
+
+    worker_ids = {item.worker_id for item in services if item.worker_id}
+    worker_id = next(iter(worker_ids)) if len(worker_ids) == 1 else None
+    priority = max((item.priority for item in services), key=lambda item: _PRIORITY_RANK[item])
+
+    merged = PublicService(
+        created_by_id=older.created_by_id,
+        worker_id=worker_id,
+        category_id=older.category_id,
+        title=older.title,
+        description=older.description,
+        location=older.location,
+        ai_summary=ai_summary,
+        priority=priority,
+        status=PublicServiceStatus.Assigned if worker_id else PublicServiceStatus.Pending,
+    )
+    db.add(merged)
+    db.flush()
+
+    for source in services:
+        for report in list(source.reports):
+            if report.original_service_id is None:
+                report.original_service_id = report.service_id
+            report.service_id = merged.id
+        for comment in list(source.comments):
+            if comment.original_service_id is None:
+                comment.original_service_id = comment.service_id
+            comment.service_id = merged.id
+        old_status = source.status
+        source.status = PublicServiceStatus.Merged
+        source.merged_into_id = merged.id
+        source.updated_at = now
+        _record_status(
+            db,
+            source,
+            old_status,
+            PublicServiceStatus.Merged,
+            actor.id,
+            f"Merged into public service {merged.id}",
+        )
+    _record_status(
+        db,
+        merged,
+        None,
+        merged.status,
+        actor.id,
+        "Created by merging public services " + ", ".join(source_ids),
+    )
+
+    stale_query = db.query(PublicSimilaritySuggestion).filter(
+        PublicSimilaritySuggestion.status == SimilaritySuggestionStatus.Pending,
+        or_(
+            PublicSimilaritySuggestion.service_a_id.in_(source_ids),
+            PublicSimilaritySuggestion.service_b_id.in_(source_ids),
+        ),
+    )
+    if keep_suggestion_id is not None:
+        stale_query = stale_query.filter(PublicSimilaritySuggestion.id != keep_suggestion_id)
+    for stale in stale_query.all():
+        stale.status = SimilaritySuggestionStatus.Declined
+        stale.reviewed_by_id = actor.id
+        stale.reviewed_at = now
+
+    for author_id in author_ids:
+        notify_user(
+            db,
+            user_id=author_id,
+            public_service_id=merged.id,
+            title="Public reports merged",
+            message=f'Your report is now part of the combined service page "{merged.title}".',
+        )
+    if merged.worker_id:
+        notify_user(
+            db,
+            user_id=merged.worker_id,
+            public_service_id=merged.id,
+            title="Merged public service assignment",
+            message=f'The combined public service "{merged.title}" is assigned to you.',
+        )
+    return merged
 
 
 def _score_candidates(service: PublicService, candidates: list[PublicService]) -> list[dict]:
@@ -462,6 +579,177 @@ def update_public_service(
     return _service_dict(db, service)
 
 
+@router.post(
+    "/merge",
+    response_model=PublicServiceRead,
+    dependencies=[Depends(require_roles(UserRole.facility_employee))],
+    responses={**FORBIDDEN, **NOT_FOUND},
+)
+def merge_public_services(
+    payload: PublicServiceMerge,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Manually fold a facility employee's chosen set of open public services into one
+    combined page. Unlike the AI-suggested pairwise merge, the employee picks the set."""
+    unique_ids = list(dict.fromkeys(payload.service_ids))
+    if len(unique_ids) < 2:
+        raise HTTPException(
+            status_code=422, detail="Pick at least two different public services to merge"
+        )
+
+    services: list[PublicService] = []
+    for service_id in unique_ids:
+        service = db.get(PublicService, service_id)
+        if service is None:
+            raise HTTPException(status_code=404, detail=f"Public service {service_id} not found")
+        if service.status in _MERGE_LOCKED_STATUSES:
+            raise HTTPException(
+                status_code=409,
+                detail=f'"{service.title}" is {service.status.value.lower()} and cannot be merged',
+            )
+        services.append(service)
+
+    merged = _merge_services(
+        db,
+        services,
+        current_user,
+        ai_summary=(
+            f"Merged from {sum(len(item.reports) for item in services)} resident reports across "
+            f"{len(services)} public service pages, combined by {current_user.name}."
+        ),
+    )
+    db.commit()
+    db.refresh(merged)
+    return _service_dict(db, merged)
+
+
+@router.post(
+    "/{service_id}/unmerge",
+    response_model=list[PublicServiceRead],
+    dependencies=[Depends(require_roles(UserRole.facility_employee))],
+    responses={**FORBIDDEN, **NOT_FOUND},
+)
+def unmerge_public_service(
+    service_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[dict]:
+    """Reverse a merge: move every report/comment back to the page it came from, reopen the
+    source pages, and delete the combined page. Only allowed while the combined page is still
+    unassigned and pending — once a worker is on it, history has to be preserved."""
+    combined = db.get(PublicService, service_id)
+    if combined is None:
+        raise HTTPException(status_code=404, detail="Public service not found")
+
+    sources = (
+        db.query(PublicService).filter(PublicService.merged_into_id == combined.id).all()
+    )
+    if not sources:
+        raise HTTPException(status_code=409, detail="This page was not created by a merge")
+    if combined.status != PublicServiceStatus.Pending or combined.worker_id is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Only an unassigned, still-pending combined page can be unmerged",
+        )
+
+    source_ids = {source.id for source in sources}
+    reports = list(combined.reports)
+    comments = list(combined.comments)
+
+    if any(report.original_service_id is None for report in reports):
+        raise HTTPException(
+            status_code=409,
+            detail="This combined page predates unmerge support and can't be split automatically",
+        )
+    if any(report.original_service_id not in source_ids for report in reports) or any(
+        comment.original_service_id is not None and comment.original_service_id not in source_ids
+        for comment in comments
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="This page was built from an earlier merge - unmerge that one first",
+        )
+
+    pending_against_combined = (
+        db.query(PublicSimilaritySuggestion)
+        .filter(
+            PublicSimilaritySuggestion.status == SimilaritySuggestionStatus.Pending,
+            or_(
+                PublicSimilaritySuggestion.service_a_id == combined.id,
+                PublicSimilaritySuggestion.service_b_id == combined.id,
+            ),
+        )
+        .first()
+    )
+    if pending_against_combined is not None:
+        raise HTTPException(
+            status_code=409, detail="Resolve the pending duplicate suggestion for this page first"
+        )
+
+    now = datetime.now(timezone.utc)
+    oldest_source = min(sources, key=lambda source: source.created_at)
+
+    for report in reports:
+        report.service_id = report.original_service_id
+        report.original_service_id = None
+    for comment in comments:
+        # Comments authored on the combined page itself have no origin - keep them on the
+        # oldest source so nothing is lost.
+        comment.service_id = comment.original_service_id or oldest_source.id
+        comment.original_service_id = None
+
+    for source in sources:
+        old_status = source.status
+        source.status = PublicServiceStatus.Pending
+        source.merged_into_id = None
+        source.updated_at = now
+        _record_status(
+            db,
+            source,
+            old_status,
+            PublicServiceStatus.Pending,
+            current_user.id,
+            f"Unmerged from public service {combined.id}",
+        )
+
+    # An AI suggestion that was accepted into this page goes back to Pending to re-decide.
+    for suggestion in db.query(PublicSimilaritySuggestion).filter(
+        PublicSimilaritySuggestion.merged_service_id == combined.id
+    ):
+        suggestion.status = SimilaritySuggestionStatus.Pending
+        suggestion.merged_service_id = None
+        suggestion.reviewed_by_id = None
+        suggestion.reviewed_at = None
+
+    for author_id in {report.author_id for report in reports}:
+        notify_user(
+            db,
+            user_id=author_id,
+            public_service_id=oldest_source.id,
+            title="Combined report split",
+            message=(
+                "A facility employee split the combined page - your report is back on its "
+                "own page."
+            ),
+        )
+
+    # The combined page is about to be deleted; detach notifications that point at it
+    # (nullable FK, no ON DELETE rule).
+    db.query(Notification).filter(Notification.public_service_id == combined.id).update(
+        {Notification.public_service_id: None}, synchronize_session=False
+    )
+
+    db.flush()
+    # Reload the (now empty) collections so the delete-orphan cascade doesn't take the
+    # re-parented reports/comments down with the combined page.
+    db.expire(combined, ["reports", "comments"])
+    db.delete(combined)
+    db.commit()
+
+    return [_service_dict(db, db.get(PublicService, source_id)) for source_id in source_ids]
+
+
 @router.get("/{service_id}/comments", response_model=list[PublicCommentRead])
 def list_public_comments(
     service_id: str,
@@ -623,89 +911,18 @@ def review_similarity_suggestion(
     ):
         raise HTTPException(status_code=409, detail="Resolved or already merged services cannot be merged")
 
-    older, newer = sorted((first, second), key=lambda item: item.created_at)
-    worker_id = first.worker_id if first.worker_id == second.worker_id else first.worker_id or second.worker_id
-    if first.worker_id and second.worker_id and first.worker_id != second.worker_id:
-        worker_id = None
-    priority = max((first.priority, second.priority), key=lambda item: _PRIORITY_RANK[item])
-    merged = PublicService(
-        created_by_id=older.created_by_id,
-        worker_id=worker_id,
-        category_id=older.category_id,
-        title=older.title,
-        description=older.description,
-        location=older.location,
+    merged = _merge_services(
+        db,
+        [first, second],
+        current_user,
         ai_summary=(
             f"Merged from {len(first.reports) + len(second.reports)} resident reports. "
             f"AI review: {suggestion.rationale}"
         ),
-        priority=priority,
-        status=PublicServiceStatus.Assigned if worker_id else PublicServiceStatus.Pending,
-    )
-    db.add(merged)
-    db.flush()
-    for source in (first, second):
-        for report in list(source.reports):
-            report.service_id = merged.id
-        for comment in list(source.comments):
-            comment.service_id = merged.id
-        old_status = source.status
-        source.status = PublicServiceStatus.Merged
-        source.merged_into_id = merged.id
-        source.updated_at = now
-        _record_status(
-            db,
-            source,
-            old_status,
-            PublicServiceStatus.Merged,
-            current_user.id,
-            f"Merged into public service {merged.id}",
-        )
-    _record_status(
-        db,
-        merged,
-        None,
-        merged.status,
-        current_user.id,
-        f"Created by merging public services {first.id} and {second.id}",
+        keep_suggestion_id=suggestion.id,
     )
     suggestion.status = SimilaritySuggestionStatus.Accepted
     suggestion.merged_service_id = merged.id
-
-    other_pending = (
-        db.query(PublicSimilaritySuggestion)
-        .filter(
-            PublicSimilaritySuggestion.id != suggestion.id,
-            PublicSimilaritySuggestion.status == SimilaritySuggestionStatus.Pending,
-            or_(
-                PublicSimilaritySuggestion.service_a_id.in_([first.id, second.id]),
-                PublicSimilaritySuggestion.service_b_id.in_([first.id, second.id]),
-            ),
-        )
-        .all()
-    )
-    for stale in other_pending:
-        stale.status = SimilaritySuggestionStatus.Declined
-        stale.reviewed_by_id = current_user.id
-        stale.reviewed_at = now
-
-    author_ids = {report.author_id for report in first.reports + second.reports}
-    for author_id in author_ids:
-        notify_user(
-            db,
-            user_id=author_id,
-            public_service_id=merged.id,
-            title="Public reports merged",
-            message=f'Your report is now part of the combined service page "{merged.title}".',
-        )
-    if merged.worker_id:
-        notify_user(
-            db,
-            user_id=merged.worker_id,
-            public_service_id=merged.id,
-            title="Merged public service assignment",
-            message=f'The combined public service "{merged.title}" is assigned to you.',
-        )
     db.commit()
     db.refresh(suggestion)
     return _suggestion_dict(db, suggestion)

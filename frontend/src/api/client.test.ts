@@ -382,6 +382,21 @@ describe('api/client', () => {
       expect(apiUserToAppUser(user)).toMatchObject({ role: 'facility_manager', title: '' });
     });
 
+    it('maps an admin to a bare admin AppUser', () => {
+      const user: ApiUser = { ...base, role: 'admin' };
+      expect(apiUserToAppUser(user)).toEqual({
+        userId: 'u1',
+        name: 'Jane',
+        email: 'jane@x.com',
+        phone: '123',
+        avatarColor: '#fff',
+        avatarUri: undefined,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        accountStatus: 'active',
+        role: 'admin',
+      });
+    });
+
     it('maps a facility_employee, keeping a present title', () => {
       const user: ApiUser = { ...base, role: 'facility_employee', title: 'Supervisor' };
       expect(apiUserToAppUser(user)).toMatchObject({

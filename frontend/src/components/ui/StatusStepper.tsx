@@ -35,9 +35,9 @@ export function StatusStepper({ status }: { status: TicketStatus }) {
     const c = StatusColors.Rejected;
     return (
       <View style={styles.cancelledRow}>
-        <Ionicons name="ban-outline" size={20} color={c.dot} />
+        <Ionicons name="close-circle-outline" size={20} color={c.dot} />
         <Text style={[styles.cancelledText, { color: c.text }]}>
-          This complaint was rejected by the facility team.
+          This request was closed by the facility team without assigning maintenance staff.
         </Text>
       </View>
     );

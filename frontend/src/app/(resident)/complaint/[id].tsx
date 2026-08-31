@@ -15,6 +15,7 @@ import {
 import { ApiError } from '@/api/client';
 import { AIDescriptionCard } from '@/components/shared/AIDescriptionCard';
 import { CommentsThread } from '@/components/shared/CommentsThread';
+import { CostResponsibilityModal, type CostChoice } from '@/components/shared/CostResponsibilityModal';
 import { HistoryTimeline } from '@/components/shared/HistoryTimeline';
 import { MediaThumb } from '@/components/shared/MediaThumb';
 import { TicketMediaGallery } from '@/components/shared/TicketMediaGallery';
@@ -64,6 +65,7 @@ export default function ResidentComplaintDetailScreen() {
   const [feedback, setFeedback] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
+  const [showCostModal, setShowCostModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
 
@@ -84,19 +86,33 @@ export default function ResidentComplaintDetailScreen() {
   const ticketComments = comments.filter((c) => c.ticketId === ticket.ticketId);
   const ticketMedia = media.filter((m) => m.ticketId === ticket.ticketId);
 
-  const handleVerify = async () => {
+  const needsCostResponsibility = ticket.costResponsibility === 'Pending Review';
+
+  const submitClose = async (costResponsibility?: CostChoice) => {
     if (rating === 0 || !token || verifying) return;
     setVerifyError('');
     setVerifying(true);
     try {
-      await verifyAndClose(token, ticket.ticketId, { rating, feedback });
+      await verifyAndClose(token, ticket.ticketId, { rating, feedback, costResponsibility });
+      setShowCostModal(false);
     } catch (err) {
       setVerifyError(
         err instanceof ApiError ? err.message : 'Could not submit your feedback. Please try again.',
       );
+      throw err;
     } finally {
       setVerifying(false);
     }
+  };
+
+  const handleVerifyPress = () => {
+    if (rating === 0 || verifying) return;
+    if (needsCostResponsibility) {
+      setShowCostModal(true);
+      return;
+    }
+    // Error is surfaced via verifyError; swallow the rethrow used by the modal path.
+    submitClose().catch(() => {});
   };
 
   const doCancel = async () => {
@@ -211,7 +227,9 @@ export default function ResidentComplaintDetailScreen() {
             <Text style={styles.sectionLabel}>Cost Responsibility</Text>
             <Text style={styles.body}>
               {ticket.costResponsibility === 'Pending Review'
-                ? 'Will be confirmed once the facility team reviews this complaint.'
+                ? ticket.status === 'Resolved'
+                  ? 'Not set by the facility team — you’ll confirm this when you close the complaint.'
+                  : 'Will be confirmed once the facility team reviews this complaint.'
                 : `Payable by: ${ticket.costResponsibility}`}
             </Text>
           </View>
@@ -243,12 +261,18 @@ export default function ResidentComplaintDetailScreen() {
                 style={styles.feedbackInput}
                 multiline
               />
+              {needsCostResponsibility && (
+                <Text style={styles.body}>
+                  You&rsquo;ll be asked to confirm who covers the repair cost before this
+                  complaint is closed.
+                </Text>
+              )}
               {!!verifyError && <Text style={styles.error}>{verifyError}</Text>}
               <Button
                 label={verifying ? 'Submitting…' : 'Verify & Close Complaint'}
                 fullWidth
                 disabled={rating === 0 || verifying}
-                onPress={handleVerify}
+                onPress={handleVerifyPress}
               />
             </Card>
           </>
@@ -266,9 +290,9 @@ export default function ResidentComplaintDetailScreen() {
 
         {ticket.status === 'Rejected' && (
           <Card style={styles.rejectedCard}>
-            <Text style={styles.sectionLabel}>Why this was rejected</Text>
+            <Text style={styles.sectionLabel}>Why this was closed</Text>
             <Text style={styles.body}>
-              {ticket.resolutionRemarks || 'The facility team determined this was not a maintenance issue.'}
+              {ticket.resolutionRemarks || 'The facility team closed this request without assigning maintenance staff.'}
             </Text>
           </Card>
         )}
@@ -301,6 +325,12 @@ export default function ResidentComplaintDetailScreen() {
           </View>
         )}
       </Screen>
+
+      <CostResponsibilityModal
+        visible={showCostModal}
+        onClose={() => setShowCostModal(false)}
+        onConfirm={(choice) => submitClose(choice)}
+      />
     </View>
   );
 }

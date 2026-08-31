@@ -27,6 +27,9 @@ def send_otp_email(to_email: str, otp: str, purpose: str) -> None:
     elif purpose == "change_password":
         subject = "Simplifix - Password Change Request"
         body = f"<p>Hello,</p><p>Your verification code to change your password is: <strong>{otp}</strong></p><p>This code will expire in 15 minutes.</p>"
+    elif purpose == "change_email":
+        subject = "Simplifix - Confirm Your New Email Address"
+        body = f"<p>Hello,</p><p>Your verification code to confirm this address for your Simplifix account is: <strong>{otp}</strong></p><p>This code will expire in 15 minutes. If you did not request this change, please ignore this email.</p>"
     else:
         body = f"<p>Your OTP code is: <strong>{otp}</strong></p>"
 

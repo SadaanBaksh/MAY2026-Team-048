@@ -12,15 +12,31 @@ import { timeAgo } from '@/utils/date';
 export function PublicServiceCard({
   service,
   onPress,
+  selectable = false,
+  selected = false,
 }: {
   service: PublicService;
   onPress?: () => void;
+  /** Renders a leading checkbox (selection mode). `onPress` should toggle selection. */
+  selectable?: boolean;
+  selected?: boolean;
 }) {
   const { Colors } = useTheme();
   const styles = useMemo(() => getStyles(Colors), [Colors]);
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <Card
+      onPress={onPress}
+      style={[styles.card, selectable && styles.cardSelectable, selected && styles.cardSelected]}
+    >
       <View style={styles.topRow}>
+        {selectable && (
+          <Ionicons
+            name={selected ? 'checkbox' : 'square-outline'}
+            size={22}
+            color={selected ? Colors.primary : Colors.inkTertiary}
+            style={styles.checkbox}
+          />
+        )}
         <Text style={styles.title} numberOfLines={2}>
           {service.title}
         </Text>
@@ -59,7 +75,10 @@ export function PublicServiceCard({
 const getStyles = (Colors: ThemeColors) =>
   StyleSheet.create({
     card: { gap: Spacing.xs },
+    cardSelectable: { borderColor: Colors.borderStrong },
+    cardSelected: { borderColor: Colors.primary, backgroundColor: Colors.primarySoft },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.sm },
+    checkbox: { marginTop: 1 },
     title: { ...Type.subtitle, color: Colors.ink, flex: 1 },
     time: { ...Type.tiny, color: Colors.inkTertiary },
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },

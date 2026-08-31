@@ -63,6 +63,13 @@ Click **Create Web Service** (or **Manual Deploy** if you already created it). W
 tab — you should see `alembic upgrade head` run and report success, then uvicorn start listening.
 If it crashes here, check Troubleshooting below before digging further.
 
+**Redeploys are the same.** `git push` to the connected branch rebuilds the container and re-runs
+`alembic upgrade head` on start, so backend schema and API changes ship automatically — no manual
+step. Still watch the logs for that line: if this environment's database is behind by several
+migrations (or was ever built by anything other than Alembic), the catch-up run can fail on an
+object that already exists. The frontend is separate — a push does **not** redeploy the Expo web
+export or update installed apps.
+
 ## 6. Seed categories (one-time)
 
 If you're on a **paid** Render plan, the web service's **Shell** tab works the same as local setup:

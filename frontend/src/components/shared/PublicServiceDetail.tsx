@@ -28,6 +28,16 @@ function publicRoute(role: UserRole, id: string): string {
   return `/(resident)/public/${id}`;
 }
 
+// The public-service detail route is a sibling of each role's tab group, so a bare
+// router.back() from it is unreliable (it can surface whatever tab was last focused).
+// Navigate explicitly to where the request was opened from instead.
+function publicHomeRoute(role: UserRole): string {
+  if (role === 'facility_employee') return '/(employee)/(tabs)/public';
+  if (role === 'maintenance_staff') return '/(maintenance)/(tabs)';
+  if (role === 'facility_manager') return '/(manager)/(tabs)';
+  return '/(resident)/(tabs)/public';
+}
+
 export function PublicServiceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { Colors } = useTheme();
@@ -43,8 +53,10 @@ export function PublicServiceDetail() {
   const refreshComments = usePublicServiceStore((state) => state.refreshComments);
   const updateService = usePublicServiceStore((state) => state.updateService);
   const addComment = usePublicServiceStore((state) => state.addComment);
+  const unmergeService = usePublicServiceStore((state) => state.unmergeService);
   const [sending, setSending] = useState(false);
   const [working, setWorking] = useState(false);
+  const [unmerging, setUnmerging] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [error, setError] = useState('');
 
@@ -57,11 +69,13 @@ export function PublicServiceDetail() {
     }, [token, id, user.role, refreshService, refreshComments, refreshUsers]),
   );
 
+  const goBack = () => router.navigate(publicHomeRoute(user.role) as never);
+
   const service = services.find((item) => item.id === id);
   if (!service) {
     return (
       <View style={styles.root}>
-        <ScreenHeader title="Public Service" showBack />
+        <ScreenHeader title="Public Service" showBack onBack={goBack} />
         <Screen>
           <EmptyState icon="alert-circle-outline" title="Public service not found" />
         </Screen>
@@ -127,9 +141,40 @@ export function PublicServiceDetail() {
     ]);
   };
 
+  const canUnmerge =
+    user.role === 'facility_employee' &&
+    service.mergedFromCount > 0 &&
+    service.status === 'Pending' &&
+    !service.workerId;
+
+  const unmerge = () => {
+    const doUnmerge = async () => {
+      if (!token || unmerging) return;
+      setUnmerging(true);
+      setError('');
+      try {
+        await unmergeService(token, service.id);
+        goBack();
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : 'Could not unmerge this page.');
+      } finally {
+        setUnmerging(false);
+      }
+    };
+    const message = `The ${service.mergedFromCount} reports on this page move back to their own separate pages and this combined page is removed. Comments posted here move to the oldest report.`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Unmerge this combined page?\n\n${message}`)) doUnmerge();
+      return;
+    }
+    Alert.alert('Unmerge this combined page?', message, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Unmerge', style: 'destructive', onPress: doUnmerge },
+    ]);
+  };
+
   return (
     <View style={styles.root}>
-      <ScreenHeader title="Public Service" subtitle={service.location} showBack />
+      <ScreenHeader title="Public Service" subtitle={service.location} showBack onBack={goBack} />
       <Screen edges={['bottom']}>
         {service.status === 'Merged' && service.mergedIntoId && (
           <Card style={styles.mergedBanner}>
@@ -167,6 +212,22 @@ export function PublicServiceDetail() {
               <Text style={styles.sectionTitle}>Combined service</Text>
             </View>
             <Text style={styles.secondary}>{service.aiSummary}</Text>
+          </Card>
+        )}
+
+        {canUnmerge && (
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>Combined from {service.mergedFromCount} requests</Text>
+            <Text style={styles.secondary}>
+              Split this page back into separate requests. Available until a worker is assigned.
+            </Text>
+            <Button
+              label={unmerging ? 'Unmerging…' : 'Unmerge'}
+              variant="outline"
+              icon="git-branch-outline"
+              disabled={unmerging}
+              onPress={unmerge}
+            />
           </Card>
         )}
 
@@ -254,8 +315,8 @@ export function PublicServiceDetail() {
             {user.role === 'maintenance_staff' && !isDesktop ? (
               <SwipeToResolve
                 loading={working}
-                disabled={!remarks.trim()}
-                disabledHint="Add resolution details to enable the gesture."
+                blocked={!remarks.trim()}
+                blockedMessage="Add resolution details before resolving."
                 onResolve={() =>
                   doUpdate({ status: 'Resolved', resolution_remarks: remarks.trim() })
                 }

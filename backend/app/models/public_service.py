@@ -47,10 +47,14 @@ class PublicService(UUIDPKMixin, Base):
     )
 
     reports: Mapped[list["PublicReport"]] = relationship(  # noqa: F821
-        back_populates="service", cascade="all, delete-orphan"
+        back_populates="service",
+        cascade="all, delete-orphan",
+        foreign_keys="PublicReport.service_id",
     )
     comments: Mapped[list["PublicServiceComment"]] = relationship(  # noqa: F821
-        back_populates="service", cascade="all, delete-orphan"
+        back_populates="service",
+        cascade="all, delete-orphan",
+        foreign_keys="PublicServiceComment.service_id",
     )
     history: Mapped[list["PublicServiceHistory"]] = relationship(  # noqa: F821
         back_populates="service", cascade="all, delete-orphan"
@@ -65,6 +69,10 @@ class PublicReport(UUIDPKMixin, Base):
     service_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("public_services.id"), nullable=False, index=True
     )
+    # The page this report was first moved off of by a merge; lets an employee unmerge.
+    original_service_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("public_services.id"), nullable=True
+    )
     author_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -73,7 +81,9 @@ class PublicReport(UUIDPKMixin, Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-    service: Mapped["PublicService"] = relationship(back_populates="reports")
+    service: Mapped["PublicService"] = relationship(
+        back_populates="reports", foreign_keys=[service_id]
+    )
     author: Mapped["User"] = relationship()  # noqa: F821
     media: Mapped[list["PublicReportMedia"]] = relationship(  # noqa: F821
         back_populates="report", cascade="all, delete-orphan"

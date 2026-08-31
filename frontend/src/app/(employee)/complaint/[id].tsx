@@ -64,9 +64,9 @@ export default function EmployeeComplaintDetailScreen() {
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(ticket?.workerId ?? null);
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState('');
-  const [rejectReason, setRejectReason] = useState('');
-  const [rejecting, setRejecting] = useState(false);
-  const [rejectError, setRejectError] = useState('');
+  const [closeReason, setCloseReason] = useState('');
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState('');
 
   const resident = ticket ? users.find((u) => u.userId === ticket.residentId) : null;
   const apartment =
@@ -134,32 +134,32 @@ export default function EmployeeComplaintDetailScreen() {
     }
   };
 
-  const doReject = async () => {
-    if (!token || rejecting || !rejectReason.trim()) return;
-    setRejectError('');
-    setRejecting(true);
+  const doClose = async () => {
+    if (!token || closing || !closeReason.trim()) return;
+    setCloseError('');
+    setClosing(true);
     try {
-      await rejectTicket(token, ticket.ticketId, rejectReason.trim());
+      await rejectTicket(token, ticket.ticketId, closeReason.trim());
       router.back();
     } catch (err) {
-      setRejectError(
-        err instanceof ApiError ? err.message : 'Could not reject this complaint. Please try again.',
+      setCloseError(
+        err instanceof ApiError ? err.message : 'Could not close this request. Please try again.',
       );
     } finally {
-      setRejecting(false);
+      setClosing(false);
     }
   };
 
-  const handleRejectPress = () => {
-    const message = `This will dismiss the complaint as implausible and notify the resident with your reason: "${rejectReason.trim()}". This cannot be undone.`;
+  const handleClosePress = () => {
+    const message = `This closes the request without assigning maintenance staff and notifies the resident with your reason: "${closeReason.trim()}". This cannot be undone.`;
     // Alert.alert's buttons/onPress never fire on web - react-native-web ships it as a no-op.
     if (Platform.OS === 'web') {
-      if (window.confirm(`Reject this complaint?\n\n${message}`)) doReject();
+      if (window.confirm(`Close this request?\n\n${message}`)) doClose();
       return;
     }
-    Alert.alert('Reject this complaint?', message, [
-      { text: 'Keep Complaint', style: 'cancel' },
-      { text: 'Reject', style: 'destructive', onPress: doReject },
+    Alert.alert('Close this request?', message, [
+      { text: 'Keep Open', style: 'cancel' },
+      { text: 'Close Request', style: 'destructive', onPress: doClose },
     ]);
   };
 
@@ -290,27 +290,28 @@ export default function EmployeeComplaintDetailScreen() {
 
         {ticket.status === 'Pending' && (
           <Card style={styles.rejectCard}>
-            <Text style={styles.sectionTitleLg}>Reject Complaint</Text>
+            <Text style={styles.sectionTitleLg}>Close Request</Text>
             <Text style={styles.body}>
-              If this complaint isn&rsquo;t a real maintenance issue, reject it with a reason. The
-              resident will be notified.
+              Close this request without assigning staff &mdash; for example when it was already
+              handled by an external contractor, or it isn&rsquo;t a real maintenance issue. A
+              reason is required and the resident will be notified.
             </Text>
             <TextInput
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              placeholder="Reason for rejecting (required)"
+              value={closeReason}
+              onChangeText={setCloseReason}
+              placeholder="Reason for closing (required)"
               placeholderTextColor={Colors.inkTertiary}
               multiline
               style={styles.rejectInput}
             />
-            {!!rejectError && <Text style={styles.error}>{rejectError}</Text>}
+            {!!closeError && <Text style={styles.error}>{closeError}</Text>}
             <Button
-              label={rejecting ? 'Rejecting…' : 'Reject Complaint'}
-              icon="ban-outline"
-              variant="danger"
+              label={closing ? 'Closing…' : 'Close Request'}
+              icon="checkmark-done-outline"
+              variant="secondary"
               fullWidth
-              disabled={rejecting || !rejectReason.trim()}
-              onPress={handleRejectPress}
+              disabled={closing || !closeReason.trim()}
+              onPress={handleClosePress}
             />
           </Card>
         )}
